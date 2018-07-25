@@ -1,0 +1,19 @@
+---
+resources:
+    max_count: 768
+    availability_zones: 3
+    public_ip: True
+    memory: 8GB
+    cpus: 1
+    gpu: false
+    disks:
+        - size: 1TB
+          type: SSD
+          tags:
+              name: root
+
+image:
+    name: "ubuntu-1404-trusty-v20180703"
+
+initialization:
+    - path: "startup-scripts/startup_script.sh"

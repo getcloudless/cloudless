@@ -1,0 +1,19 @@
+---
+resources:
+    max_count: 768
+    availability_zones: 3
+    public_ip: True
+    memory: 8GB
+    cpus: 1
+    gpu: false
+    disks:
+        - size: 1TB
+          type: SSD
+          tags:
+              name: root
+
+image:
+    name: "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"
+
+initialization:
+    - path: "startup-scripts/haproxy-cloud-config.yml"
