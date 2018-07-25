@@ -1,6 +1,14 @@
+"""
+Butter Subnetwork on AWS
+
+This is a the AWS implmentation for the subnetwork API, a high level interface to manage groups of
+subnets.  This is mainly for internal use, as the instances API is the real high level interface.
+
+This is also in flux because of the differences between how cloud providers manage subnetworks, so
+it might go away.
+"""
 import math
 import time
-import logging
 import boto3
 
 from butter.util.blueprint import InstancesBlueprint
@@ -8,40 +16,25 @@ from butter.util.exceptions import BadEnvironmentStateException
 from butter.providers.aws import network
 from butter.providers.aws.impl.internet_gateways import InternetGateways
 from butter.providers.aws.impl.subnets import Subnets
-
-logger = logging.getLogger(__name__)
+from butter.providers.aws.impl.availability_zones import AvailabilityZones
+from butter.providers.aws.logging import logger
+from butter.providers.aws.schemas import canonicalize_subnetwork_info
 
 RETRY_COUNT = int(60)
 RETRY_DELAY = float(1.0)
 
 
-class SubnetworkClient(object):
+class SubnetworkClient:
+    """
+    Client object to manage subnetworks.
+    """
+
     def __init__(self, credentials):
         self.credentials = credentials
         self.network = network.NetworkClient(credentials)
         self.internet_gateways = InternetGateways(credentials)
         self.subnets = Subnets(credentials)
-
-    def _canonicalize_subnet_info(self, subnet):
-        return {
-            "Id": subnet["SubnetId"],
-            "CidrBlock": subnet["CidrBlock"],
-            "Region": subnet["AvailabilityZone"][:-1],
-            "AvailabilityZone": subnet["AvailabilityZone"]
-        }
-
-    def _get_availability_zones(self):
-        ec2 = boto3.client("ec2")
-        try:
-            availability_zones = ec2.describe_availability_zones()
-            return [az["ZoneName"]
-                    for az in availability_zones["AvailabilityZones"]]
-        except Exception as exception:
-            logger.info("Caught exception getting azs: %s", exception)
-            # TODO: XXX: Moto does not have this function supported...  So I
-            # need to fix that before this code can be reasonable again,
-            # because otherwise it just fails.
-            return ["us-east-1a", "us-east-1b", "us-east-1c"]
+        self.availability_zones = AvailabilityZones(credentials)
 
     def create(self, network_name, subnetwork_name, blueprint):
         """
@@ -60,7 +53,6 @@ class SubnetworkClient(object):
 
         # 2. Create subnets across availability zones.
         subnets_info = []
-        availability_zones = self._get_availability_zones()
         instances_blueprint = InstancesBlueprint(blueprint)
         az_count = instances_blueprint.availability_zone_count()
         max_count = instances_blueprint.max_count()
@@ -68,16 +60,15 @@ class SubnetworkClient(object):
         cidr_az_list = zip(self.subnets.carve_subnets(dc_info["Id"],
                                                       dc_info["CidrBlock"],
                                                       prefix, az_count),
-                           availability_zones)
+                           self.availability_zones.get_availability_zones())
         for subnet_cidr, availability_zone in cidr_az_list:
-            subnet_info = self._canonicalize_subnet_info(
+            subnet_info = canonicalize_subnetwork_info(
                 self.subnets.create(subnetwork_name, subnet_cidr,
                                     availability_zone, dc_info["Id"],
                                     RETRY_COUNT, RETRY_DELAY))
             subnets_info.append(subnet_info)
 
         # 3. Make sure we have a route to the internet.
-        # TODO: Make this configurable.
         self._make_internet_routable(network_name, subnetwork_name)
 
         return subnets_info
@@ -117,13 +108,16 @@ class SubnetworkClient(object):
                              DestinationCidrBlock="0.0.0.0/0")
 
     def discover(self, network_name, subnetwork_name):
+        """
+        Discover a subnetwork group named "network_name" and "subnetwork_name".
+        """
         ec2 = boto3.client("ec2")
         dc_id = self.network.discover(network_name)["Id"]
         subnets = ec2.describe_subnets(Filters=[{'Name': "vpc-id",
                                                  'Values': [dc_id]},
                                                 {'Name': "tag:Name",
                                                  'Values': [subnetwork_name]}])
-        return [self._canonicalize_subnet_info(subnet)
+        return [canonicalize_subnetwork_info(subnet)
                 for subnet in subnets["Subnets"]]
 
     def destroy(self, network_name, subnetwork_name):
@@ -199,7 +193,11 @@ class SubnetworkClient(object):
             retries = retries + 1
             time.sleep(1)
 
+    # pylint: disable=no-self-use
     def list(self):
+        """
+        Return a list of all subnetworks.
+        """
         ec2 = boto3.client("ec2")
 
         def get_name(tagged_resource):
@@ -221,5 +219,5 @@ class SubnetworkClient(object):
             if subnet_name not in subnet_info[vpc_name]:
                 subnet_info[vpc_name][subnet_name] = []
             subnet_info[vpc_name][subnet_name].append(
-                self._canonicalize_subnet_info(subnet))
+                canonicalize_subnetwork_info(subnet))
         return subnet_info

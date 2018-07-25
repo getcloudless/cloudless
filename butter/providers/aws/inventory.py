@@ -1,3 +1,6 @@
+"""
+Helper that returns a list of currently provisioned CIDR blocks.
+"""
 import boto3
 
 

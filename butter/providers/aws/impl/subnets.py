@@ -1,3 +1,4 @@
+# pylint: disable=no-self-use,missing-docstring
 """
 Subnets Impl
 
@@ -5,25 +6,23 @@ Implementation of some common helpers necessary to work with AWS subnets.
 """
 
 import time
-import logging
 import boto3
 
 from butter.util.subnet_generator import generate_subnets
 from butter.util.exceptions import (NotEnoughIPSpaceException,
                                     OperationTimedOut)
+from butter.providers.gce.logging import logger
 
-logger = logging.getLogger(__name__)
 
-
-class Subnets(object):
+class Subnets:
     """
     Subnets helpers class.
     """
 
     def __init__(self, credentials):
-        # TODO: Actually use credentials instead of only relying on boto3's
-        # default behavior of loading them from the environment.
-        pass
+        if credentials:
+            # Currently only using the global defaults is supported
+            raise NotImplementedError("Passing credentials not implemented")
 
     def carve_subnets(self, vpc_id, vpc_cidr, prefix=28, count=3):
         ec2 = boto3.client("ec2")
@@ -36,14 +35,12 @@ class Subnets(object):
 
         # Finally, iterate the list of all subnets of the given prefix that can
         # fit in the given VPC
-        subnets = []
-        for new_cidr in generate_subnets(vpc_cidr, existing_cidrs, prefix):
-            subnets.append(str(new_cidr))
-            if len(subnets) == count:
-                return subnets
-        raise NotEnoughIPSpaceException("Could not allocate %s subnets with "
-                                        "prefix %s in vpc %s" %
-                                        (count, prefix, vpc_id))
+        subnets = generate_subnets(vpc_cidr, existing_cidrs, prefix, count)
+        if len(subnets) < count:
+            raise NotEnoughIPSpaceException("Could not allocate %s subnets with "
+                                            "prefix %s in vpc %s" %
+                                            (count, prefix, vpc_id))
+        return subnets
 
     def delete(self, subnet_id, retry_count, retry_delay):
         ec2 = boto3.client("ec2")
@@ -70,6 +67,7 @@ class Subnets(object):
                     raise OperationTimedOut(
                         "Failed to delete subnet: %s" % str(client_error))
 
+    # pylint: disable=too-many-arguments,too-many-locals
     def create(self, subnetwork_name, subnet_cidr,
                availability_zone, dc_id, retry_count, retry_delay):
         """
@@ -101,8 +99,8 @@ class Subnets(object):
                     time.sleep(float(retry_delay))
                 else:
                     break
-            except Exception as exception:
-                logger.info("Caught exception creating tags: %s", exception)
+            except ec2.exceptions.ClientError as client_error:
+                logger.info("Caught exception creating tags: %s", client_error)
                 time.sleep(float(retry_delay))
                 creation_retries = creation_retries + 1
                 if creation_retries >= retry_count:

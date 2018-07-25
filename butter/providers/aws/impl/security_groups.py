@@ -1,3 +1,4 @@
+# pylint: disable=no-self-use,missing-docstring
 """
 Security Groups Impl
 
@@ -5,23 +6,21 @@ Implementation of some common helpers necessary to work with security groups.
 """
 
 import time
-import logging
 import boto3
 from botocore.exceptions import ClientError
 from butter.util.exceptions import OperationTimedOut
+from butter.providers.gce.logging import logger
 
-logger = logging.getLogger(__name__)
 
-
-class SecurityGroups(object):
+class SecurityGroups:
     """
     Security Groups helpers class.
     """
 
     def __init__(self, credentials):
-        # TODO: Actually use credentials instead of only relying on boto3's
-        # default behavior of loading them from the environment.
-        pass
+        if credentials:
+            # Currently only using the global defaults is supported
+            raise NotImplementedError("Passing credentials not implemented")
 
     def create(self, name, vpc_id):
         ec2 = boto3.client("ec2")

@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+"""
+General Butter exeptions.
+"""
 
 
 class BadEnvironmentStateException(Exception):
@@ -10,12 +12,21 @@ class BadEnvironmentStateException(Exception):
 
 
 class DisallowedOperationException(Exception):
+    """
+    Trying to do something that's invalid.
+    """
     pass
 
 
 class NotEnoughIPSpaceException(Exception):
+    """
+    Could not allocate the given CIDR range.
+    """
     pass
 
 
 class OperationTimedOut(Exception):
+    """
+    Exceeded max retries to perform operation.
+    """
     pass

@@ -1,11 +1,17 @@
-import logging
+"""
+Butter Paths on GCE
 
+This is a the GCE implmentation for the paths API, a high level interface to add routes between
+services, doing the conversion to firewalls and firewall rules.
+"""
 from butter.providers.gce.driver import get_gce_driver
+from butter.providers.gce.logging import logger
 
-logger = logging.getLogger(__name__)
 
-
-class PathsClient(object):
+class PathsClient:
+    """
+    Client object to interact with paths between resources.
+    """
 
     def __init__(self, credentials):
         self.credentials = credentials
@@ -64,40 +70,29 @@ class PathsClient(object):
                 fw_info[source][dest] = []
             fw_info[source][dest].append(rule)
 
+        def handle_target(port, target, firewall):
+            logger.debug('Found target %s in firewall', target)
+            if hasattr(firewall, "source_tags") and firewall.source_tags:
+                for source_tag in firewall.source_tags:
+                    add_rule(fw_info, source_tag, target,
+                             {"protocol": "tcp", "port": port})
+            if hasattr(firewall, "source_ranges") and firewall.source_ranges:
+                for source_range in firewall.source_ranges:
+                    add_rule(fw_info, source_range, target,
+                             {"protocol": "tcp", "port": port})
+
         for firewall in firewalls:
-            # TODO: This is for a poc, I need to find a real way to find what's
-            # provisioned by butter.
-            if not firewall.name.startswith("bu-"):
-                continue
+            logger.debug('Found firewall %s', firewall)
             for rule in firewall.allowed:
                 for port in rule["ports"]:
                     logger.debug('Found allowed port %s in firewall', port)
-                    for target_tag in firewall.target_tags:
-                        logger.debug('Found target %s in firewall', target_tag)
-                        if not firewall.source_tags:
-                            add_rule(fw_info, "0.0.0.0/0", target_tag,
-                                     {"protocol": "tcp", "port": port})
-                            continue
-                        for source_tag in firewall.source_tags:
-                            add_rule(fw_info, source_tag, target_tag,
-                                     {"protocol": "tcp", "port": port})
+                    if hasattr(firewall, "target_tags") and firewall.target_tags:
+                        for target_tag in firewall.target_tags:
+                            handle_target(port, target_tag, firewall)
+                    if hasattr(firewall, "target_ranges") and firewall.target_ranges:
+                        for target_range in firewall.target_ranges:
+                            handle_target(port, target_range, firewall)
         return fw_info
-
-    def graph(self):
-        """
-        List all paths in a graph string.
-        """
-        paths = self.list()
-        graph_string = "\n"
-        for from_node, to_info in paths.items():
-            for to_node, path_info, in to_info.items():
-                for path in path_info:
-                    graph_string += ("%s -(%s:%s)-> %s\n" %
-                                     (from_node,
-                                      path["protocol"],
-                                      path["port"],
-                                      to_node))
-        return graph_string
 
     def internet_accessible(self, network_name, subnetwork_name, port):
         """
