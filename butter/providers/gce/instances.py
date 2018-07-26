@@ -1,20 +1,29 @@
-import logging
+"""
+Butter Instances on GCE
+
+This is the GCE implmentation for the instances API, a high level interface to manage groups of
+instances.
+"""
+import re
 
 from butter.providers.gce.driver import get_gce_driver
 
 from butter.util.blueprint import InstancesBlueprint
-from butter.util.instance_fitter import InstanceFitter
+from butter.util.instance_fitter import get_fitting_instance
 from butter.util.exceptions import (DisallowedOperationException,
                                     BadEnvironmentStateException)
 from butter.providers.gce import subnetwork
 from butter.providers.gce.impl.firewalls import Firewalls
-
-logger = logging.getLogger(__name__)
+from butter.providers.gce.logging import logger
+from butter.providers.gce.schemas import canonicalize_instances_info
 
 DEFAULT_REGION = "us-east1"
 
 
-class InstancesClient(object):
+class InstancesClient:
+    """
+    Client object to manage instances.
+    """
 
     def __init__(self, credentials):
         self.credentials = credentials
@@ -22,40 +31,34 @@ class InstancesClient(object):
         self.subnetwork = subnetwork.SubnetworkClient(credentials)
         self.firewalls = Firewalls(self.driver)
 
-    def _canonicalize_node_info(self, node):
-        return {
-            "Id": node.uuid,
-            "PublicIp": node.public_ips[0],
-            "PrivateIp": node.private_ips[0],
-            "State": node.state
-        }
-
     def create(self, network_name, subnetwork_name, blueprint):
+        """
+        Create a group of instances in "network_name" named "subnetwork_name" with blueprint file at
+        "blueprint".
+        """
         logger.info('Creating instances %s, %s with blueprint %s',
                     network_name, subnetwork_name, blueprint)
-        # TODO: Handle return values here, for now I just care that it didn't
-        # throw an exception.
         self.subnetwork.create(network_name, subnetwork_name,
                                blueprint=blueprint)
         instances_blueprint = InstancesBlueprint(blueprint)
         az_count = instances_blueprint.availability_zone_count()
-        image_name = instances_blueprint.image()
-        node_info = []
-        # TODO: Get latest image if there are duplicate names, and support
-        # wildcards.
-        images = [image for image in self.driver.list_images() if image.name ==
-                  image_name]
-        if not images:
-            raise DisallowedOperationException("Could not find image named %s"
-                                               % image_name)
-        image = images[0]
-        instance_fitter = InstanceFitter()
-        instance_type = instance_fitter.get_fitting_instance("gce", blueprint)
+
+        def get_image(image_specifier):
+            images = [image for image in self.driver.list_images() if re.match(image_specifier,
+                                                                               image.name)]
+            if not images:
+                raise DisallowedOperationException("Could not find image named %s"
+                                                   % image_specifier)
+            if len(images) > 1:
+                raise DisallowedOperationException("Found multiple images for specifier %s: %s"
+                                                   % (image_specifier, images))
+            return images[0]
+
+        image = get_image(instances_blueprint.image())
+        instance_type = get_fitting_instance("gce", blueprint)
         for zone in self._get_availability_zones():
             if az_count == 0:
-                return node_info
-            # TODO: This namespacing hasn't been figured out, since subnetworks
-            # have to be globally unique in a region.
+                break
             full_subnetwork_name = "%s-%s" % (network_name, subnetwork_name)
             instance_name = "%s-%s" % (full_subnetwork_name, az_count)
             startup_script = instances_blueprint.runtime_scripts()
@@ -65,28 +68,30 @@ class InstancesClient(object):
                 {"key": "subnetwork", "value": subnetwork_name}
             ]
             logger.info('Creating instance %s in zone %s', instance_name, zone)
-            node = self.driver.create_node(instance_name, instance_type, image,
-                                           location=zone,
-                                           ex_network=network_name,
-                                           ex_subnetwork=full_subnetwork_name,
-                                           external_ip="ephemeral",
-                                           ex_metadata=metadata,
-                                           ex_tags=[full_subnetwork_name])
+            self.driver.create_node(instance_name, instance_type, image, location=zone,
+                                    ex_network=network_name, ex_subnetwork=full_subnetwork_name,
+                                    external_ip="ephemeral", ex_metadata=metadata,
+                                    ex_tags=[full_subnetwork_name])
             az_count = az_count - 1
-            node_info.append(self._canonicalize_node_info(node))
-        return node_info
+        return self.discover(network_name, subnetwork_name)
 
     def discover(self, network_name, subnetwork_name):
+        """
+        Discover a group of instances in "network_name" named "subnetwork_name".
+        """
         logger.info('Discovering instances %s, %s', network_name,
                     subnetwork_name)
-        node_results = []
+        nodes = []
         node_name = "%s-%s" % (network_name, subnetwork_name)
         for node in self.driver.list_nodes():
             if node.name.startswith(node_name):
-                node_results.append(self._canonicalize_node_info(node))
-        return {"Id": node_name, "Instances": node_results}
+                nodes.append(node)
+        return canonicalize_instances_info(node_name, nodes)
 
     def destroy(self, network_name, subnetwork_name):
+        """
+        Destroy a group of instances named "subnetwork_name" in "network_name".
+        """
         logger.info('Destroying instances: %s, %s', network_name,
                     subnetwork_name)
         destroy_results = []
@@ -104,11 +109,6 @@ class InstancesClient(object):
     def list(self):
         """
         List all instance groups.
-
-        Example:
-
-            butter.instances.list()
-
         """
         logger.info('Listing instances')
         instances_info = {}
@@ -129,9 +129,8 @@ class InstancesClient(object):
                                              subnetwork_names[0])
             if instance_group_name not in instances_info:
                 instances_info[instance_group_name] = []
-            instance_info = self._canonicalize_node_info(node)
-            instances_info[instance_group_name].append(instance_info)
-        return [{"Id": group, "Instances": instances} for (group, instances) in
+            instances_info[instance_group_name].append(node)
+        return [canonicalize_instances_info(group, instances) for (group, instances) in
                 instances_info.items()]
 
     def _get_availability_zones(self):

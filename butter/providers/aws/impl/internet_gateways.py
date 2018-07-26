@@ -1,24 +1,22 @@
+# pylint: disable=no-self-use,missing-docstring
 """
 Internet Gateway Impl
 
 Implementation of some common helpers necessary to work with Internet Gateways.
 """
 
-import logging
 import boto3
 
-logger = logging.getLogger(__name__)
 
-
-class InternetGateways(object):
+class InternetGateways:
     """
     Internet Gateways helpers class.
     """
 
     def __init__(self, credentials):
-        # TODO: Actually use credentials instead of only relying on boto3's
-        # default behavior of loading them from the environment.
-        pass
+        if credentials:
+            # Currently only using the global defaults is supported
+            raise NotImplementedError("Passing credentials not implemented")
 
     def route_count(self, vpc_id, igw_id):
         """

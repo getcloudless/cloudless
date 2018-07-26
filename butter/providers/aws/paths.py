@@ -1,24 +1,22 @@
 """
-Butter Paths
+Butter Paths on AWS
 
-This is a high level interface to add routes between services, busting holes in
-security groups and firewall rules.
-
-For now this calls directly into butter, but eventually I might find a way to
-decouple it.
+This is a the AWS implmentation for the paths API, a high level interface to add
+routes between services, doing the conversion to security groups and firewall
+rules.
 """
-
-import logging
 import boto3
 
 from butter.util import netgraph
 from butter.providers.aws import instances
 from butter.providers.aws.impl.asg import (ASG, AsgName)
+from butter.providers.aws.logging import logger
 
-logger = logging.getLogger(__name__)
 
-
-class PathsClient(object):
+class PathsClient:
+    """
+    Client object to interact with paths between resources.
+    """
     def __init__(self, credentials):
         self.credentials = credentials
         self.instances = instances.InstancesClient(credentials)
@@ -26,10 +24,7 @@ class PathsClient(object):
 
     def expose(self, network_name, subnetwork_name, port):
         """
-        Make this launch configuration open to the internet.
-
-        This involves opening up the security group and exposing the network
-        layer which will route through the internet gateway.
+        Make the "subnetwork_name" service accessible on the internet.
         """
         ec2 = boto3.client("ec2")
         security_group_id = self.asg.get_launch_configuration_security_group(
@@ -86,6 +81,9 @@ class PathsClient(object):
                                           )
 
     def list(self):
+        """
+        List all paths and return a dictionary structure representing a graph.
+        """
         ec2 = boto3.client("ec2")
         sg_to_service = {}
         for instance in self.instances.list():
@@ -119,26 +117,14 @@ class PathsClient(object):
             fw_info[sg_to_service[security_group["GroupId"]][0]] = rules
         return netgraph.firewalls_to_net(fw_info)
 
-    def graph(self):
-        paths = self.list()
-        graph_string = "\n"
-        for from_node, to_info in paths.items():
-            for to_node, path_info, in to_info.items():
-                for path in path_info:
-                    graph_string += ("%s -(%s:%s)-> %s\n" %
-                                     (from_node,
-                                      path["protocol"],
-                                      path["port"],
-                                      to_node))
-        return graph_string
-
     def internet_accessible(self, network_name, subnetwork_name, port):
+        """
+        Return true if the "subnetwork_name" service is accessible on the
+        internet.
+        """
         ec2 = boto3.client("ec2")
         security_group_id = self.asg.get_launch_configuration_security_group(
             network_name, subnetwork_name)
-        # TODO: Actually do something real here.  Right now this is half
-        # implemented so this is just to get the end to end test passing with
-        # the basic skeleton.
         security_group = ec2.describe_security_groups(
             GroupIds=[security_group_id])
         ip_permissions = security_group["SecurityGroups"][0]["IpPermissions"]
@@ -149,14 +135,21 @@ class PathsClient(object):
         return False
 
     def has_access(self, network, from_name, to_name, port):
+        """
+        Return true if there is a route from "from_name" to "to_name".
+
+        Note, this only checks if the security group is referenced, which is
+        what this tool implements internally.  It will not catch if you
+        explicitly added subnet CIDR blocks or if the destination service is
+        fully internet accessible based on CIDR.
+
+        See https://github.com/sverch/butter/issues/3 for details.
+        """
         ec2 = boto3.client("ec2")
         to_group_id = self.asg.get_launch_configuration_security_group(
             network, to_name)
         from_group_id = self.asg.get_launch_configuration_security_group(
             network, from_name)
-        # TODO: Actually do something real here.  Right now this is half
-        # implemented so this is just to get the end to end test passing with
-        # the basic skeleton.
         security_group = ec2.describe_security_groups(GroupIds=[to_group_id])
         ip_permissions = security_group["SecurityGroups"][0]["IpPermissions"]
         logger.debug("ip_permissions: %s", ip_permissions)

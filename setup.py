@@ -1,9 +1,11 @@
+"""
+setup.py file
+
+NOTE: This setup.py was lifted from https://github.com/kennethreitz/setup.py/blob/master/setup.py
+and https://github.com/requests/requests/blob/master/setup.py.  So see there for more details.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# NOTE: This setup.py was lifted from
-# https://github.com/kennethreitz/setup.py/blob/master/setup.py and
-# https://github.com/requests/requests/blob/master/setup.py.
 
 # Note: To use the 'upload' functionality of this file, you must:
 #   $ pip install twine
@@ -22,7 +24,8 @@ NAME = 'butter'
 REQUIRED = [
     'boto3',
     'attr',
-    'apache-libcloud'
+    'apache-libcloud',
+    'pycrypto'
 ]
 
 # What packages are required for this module to be tested?
@@ -36,7 +39,6 @@ TESTS_REQUIRED = [
 # What packages are optional?
 EXTRAS = {
     "testing": TESTS_REQUIRED
-    # 'fancy feature': ['django'],
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -45,20 +47,21 @@ EXTRAS = {
 # If you do change the License, remember to change the Trove Classifier for
 # that!
 
-here = os.path.abspath(os.path.dirname(__file__))
+here = os.path.abspath(os.path.dirname(__file__)) # pylint: disable=invalid-name
 
 # Load the package's __version__.py module as a dictionary.
-about = {}
+about = {} # pylint: disable=invalid-name
 with open(os.path.join(here, NAME, '__version__.py')) as f:
+    # pylint: disable=exec-used
     exec(f.read(), about)
 
 # Import the README and use it as the long-description.
 # Note: this will only work if 'README.md' is present in your MANIFEST.in file!
 try:
     with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
-        long_description = '\n' + f.read()
+        LONG_DESCRIPTION = '\n' + f.read()
 except FileNotFoundError:
-    long_description = about["__description__"]
+    LONG_DESCRIPTION = about["__description__"]
 
 
 class UploadCommand(Command):
@@ -68,17 +71,26 @@ class UploadCommand(Command):
     user_options = []
 
     @staticmethod
-    def status(s):
+    def status(message):
         """Prints things in bold."""
-        print('\033[1m{0}\033[0m'.format(s))
+        print('\033[1m{0}\033[0m'.format(message))
 
     def initialize_options(self):
+        """
+        Unused/noop
+        """
         pass
 
     def finalize_options(self):
+        """
+        Unused/noop
+        """
         pass
 
     def run(self):
+        """
+        Runs package upload
+        """
         try:
             self.status('Removing previous builds…')
             rmtree(os.path.join(here, 'dist'))
@@ -104,7 +116,7 @@ setup(
     name=NAME,
     version=about['__version__'],
     description=about["__description__"],
-    long_description=long_description,
+    long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     author=about["__author__"],
     author_email=about["__author_email__"],

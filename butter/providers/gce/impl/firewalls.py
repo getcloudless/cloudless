@@ -1,15 +1,14 @@
+# pylint: disable=missing-docstring
 """
 Firewalls Impl
 
 Helper utilities for dealing with google compute engine firewalls.
 """
-
-import logging
-
-logger = logging.getLogger(__name__)
+from butter.providers.gce.logging import logger
 
 
-class Firewalls(object):
+# pylint: disable=too-few-public-methods
+class Firewalls:
     def __init__(self, driver):
         self.driver = driver
 
@@ -23,9 +22,6 @@ class Firewalls(object):
                     pass
                 for tag in node.extra["tags"]:
                     if not firewall.source_tags and not firewall.target_tags:
-                        # XXX: This is here now so I don't delete the default
-                        # firewall rules, but it shows an issue in how I'm
-                        # interpreting these.
                         used = True
                         continue
                     if firewall.source_tags:

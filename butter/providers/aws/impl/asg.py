@@ -1,20 +1,20 @@
+# pylint: disable=no-self-use,missing-docstring
 """
 ASG Impl
 
 Implementation of some common helpers necessary to work with ASGs.
 """
 
-import logging
 import boto3
 
 from botocore.exceptions import ClientError
 
 from butter.util.exceptions import BadEnvironmentStateException
+from butter.providers.aws.logging import logger
 
-logger = logging.getLogger(__name__)
 
-
-class AsgName(object):
+# pylint: disable=too-few-public-methods
+class AsgName:
     """
     Wrapper to hold the autoscaling group name, because I've refactored a few
     times and this needs to be consistent regardless of what it is.  Someday
@@ -37,15 +37,15 @@ class AsgName(object):
         return "%s.%s" % (self.network, self.subnetwork)
 
 
-class ASG(object):
+class ASG:
     """
     Autoscaling groups helpers class.
     """
 
     def __init__(self, credentials):
-        # TODO: Actually use credentials instead of only relying on boto3's
-        # default behavior of loading them from the environment.
-        pass
+        if credentials:
+            # Currently only using the global defaults is supported
+            raise NotImplementedError("Passing credentials not implemented")
 
     def _describe_launch_configuration(self, asg_name):
         autoscaling = boto3.client("autoscaling")
@@ -55,6 +55,7 @@ class ASG(object):
             return None
         return launch_configurations["LaunchConfigurations"][0]
 
+    # pylint: disable=invalid-name
     def get_launch_configuration_security_group(self, network_name,
                                                 subnetwork_name):
         logger.debug("Getting security group for launch configuration %s, %s",
@@ -72,6 +73,7 @@ class ASG(object):
                                                launch_configuration)
         return security_groups[0]
 
+    # pylint: disable=invalid-name
     def destroy_auto_scaling_group_instances(self, asg_name):
         autoscaling = boto3.client("autoscaling")
         try:

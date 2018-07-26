@@ -1,40 +1,37 @@
-import logging
+"""
+Butter Network on GCE
 
+This component should allow for intuitive and transparent control over networks, which are the top
+level containers for groups of instances/services.  This is the GCE implementation.
+"""
 from libcloud.common.google import ResourceNotFoundError
 
 from butter.providers.gce.driver import get_gce_driver
+from butter.providers.gce.logging import logger
+from butter.providers.gce.schemas import canonicalize_network_info
 
-logger = logging.getLogger(__name__)
 
+class NetworkClient:
+    """
+    Butter Network Client Object for GCE
 
-class NetworkClient(object):
+    This is the object through which all network related calls are made for GCE.
+    """
 
     def __init__(self, credentials):
         self.credentials = credentials
         self.driver = get_gce_driver(credentials)
-
-    def _canonicalize_network_info(self, network):
-        """
-        Convert what is returned from GCE into the butter standard format.
-        """
-        cidr_block = network.cidr
-        if not cidr_block:
-            cidr_block = "N/A"
-        return {
-            "Name": network.name,
-            "Id": network.id,
-            "CidrBlock": cidr_block
-        }
 
     # pylint: disable=unused-argument
     def create(self, name, blueprint, inventories=None):
         """
         Create new network named "name" with blueprint file at "blueprint".
 
-        Note that google compute VPCs
+        Note that google compute networks do not actually have a network block.  They are merely a
+        container for subnets, which do.
         """
         network = self.driver.ex_create_network(name, cidr=None, mode="custom")
-        return self._canonicalize_network_info(network)
+        return canonicalize_network_info(network)
 
     def discover(self, name):
         """
@@ -46,7 +43,7 @@ class NetworkClient(object):
             logger.info("Caught exception trying to discover network: %s",
                         not_found)
             return None
-        return self._canonicalize_network_info(network)
+        return canonicalize_network_info(network)
 
     def destroy(self, name):
         """
@@ -64,7 +61,5 @@ class NetworkClient(object):
         """
         List all networks.
         """
-        # TODO: Turn this return format into something better.  This is a carry
-        # over from AWS which can have unnamed VPCs.
-        return {"Named": [self._canonicalize_network_info(network) for network
+        return {"Named": [canonicalize_network_info(network) for network
                           in self.driver.ex_list_networks()]}

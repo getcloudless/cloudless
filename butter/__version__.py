@@ -1,5 +1,6 @@
-# Butter
-
+"""
+Butter Package Information
+"""
 __title__ = 'butter'
 __description__ = 'Dang.'
 __url__ = 'https://github.com/sverch/butter'

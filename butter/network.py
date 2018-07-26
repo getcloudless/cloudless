@@ -1,11 +1,30 @@
-import logging
+"""
+Butter Network
 
+This component should allow for intuitive and transparent control over networks, which are the top
+level containers for groups of instances/services.
+"""
+from butter.logging import logger
 from butter.providers import get_provider
 
-logger = logging.getLogger(__name__)
 
+class NetworkClient:
+    """
+    Butter Network Client Object
 
-class NetworkClient(object):
+    This is the object through which all network related calls are made.
+
+    Usage:
+
+        import butter
+        client = butter.Client(provider, credentials)
+        client.network.create("network", blueprint="tests/blueprints/network.yml")
+        client.network.discover("network")
+        client.network.list()
+        client.network.destroy("network")
+
+    The above commands will create and destroy a network named "network".
+    """
     def __init__(self, provider, credentials):
         self.network = get_provider(provider).network.NetworkClient(
             credentials)

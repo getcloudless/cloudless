@@ -1,7 +1,9 @@
+# pylint: disable=missing-docstring
 import os
 
 import logging
 
+# pylint: disable=invalid-name
 logger = logging.getLogger(__name__)
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
