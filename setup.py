@@ -25,7 +25,7 @@ REQUIRED = [
     'boto3',
     'attr',
     'apache-libcloud',
-    'pycrypto'
+    'pycryptodome'
 ]
 
 # What packages are required for this module to be tested?
