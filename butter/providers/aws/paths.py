@@ -95,6 +95,15 @@ class PathsClient:
             else:
                 sg_to_service[sg_id].append(instance["Id"])
         security_groups = ec2.describe_security_groups()
+
+        def make_rule(source, rule):
+            return {
+                "source": source,
+                "protocol": rule["IpProtocol"],
+                "port": rule.get("FromPort", "N/A"),
+                "type": "ingress"
+            }
+
         fw_info = {}
         for security_group in security_groups["SecurityGroups"]:
             if security_group["GroupId"] not in sg_to_service:
@@ -103,17 +112,14 @@ class PathsClient:
             for rule in security_group["IpPermissions"]:
                 if rule["IpRanges"]:
                     source = rule["IpRanges"][0].get("CidrIp", "0.0.0.0/0")
+                    rules.append(make_rule(source, rule))
                 elif rule["UserIdGroupPairs"]:
-                    group_id = rule["UserIdGroupPairs"][0]["GroupId"]
-                    source = sg_to_service[group_id][0]
+                    for group in rule["UserIdGroupPairs"]:
+                        for source in sg_to_service[group["GroupId"]]:
+                            rules.append(make_rule(source, rule))
                 else:
                     source = "0.0.0.0/0"
-                rules.append({
-                    "source": source,
-                    "protocol": rule["IpProtocol"],
-                    "port": rule.get("FromPort", "N/A"),
-                    "type": "ingress"
-                })
+                    rules.append(make_rule(source, rule))
             fw_info[sg_to_service[security_group["GroupId"]][0]] = rules
         return netgraph.firewalls_to_net(fw_info)
 
