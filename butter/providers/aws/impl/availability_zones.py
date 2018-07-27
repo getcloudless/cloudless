@@ -2,7 +2,7 @@
 Helper to get availability zones for AWS.
 """
 import boto3
-from butter.providers.aws.logging import logger
+from butter.providers.aws.log import logger
 
 
 # pylint: disable=too-few-public-methods

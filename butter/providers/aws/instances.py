@@ -16,7 +16,7 @@ from butter.util.exceptions import (BadEnvironmentStateException,
 from butter.providers.aws import (subnetwork, network)
 from butter.providers.aws.impl.asg import (ASG, AsgName)
 from butter.providers.aws.impl.security_groups import SecurityGroups
-from butter.providers.aws.logging import logger
+from butter.providers.aws.log import logger
 from butter.providers.aws.schemas import canonicalize_instances_info
 
 RETRY_COUNT = int(60)

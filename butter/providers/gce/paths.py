@@ -5,7 +5,7 @@ This is a the GCE implmentation for the paths API, a high level interface to add
 services, doing the conversion to firewalls and firewall rules.
 """
 from butter.providers.gce.driver import get_gce_driver
-from butter.providers.gce.logging import logger
+from butter.providers.gce.log import logger
 
 
 class PathsClient:

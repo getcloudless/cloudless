@@ -15,7 +15,7 @@ from butter.util.exceptions import (BadEnvironmentStateException,
                                     NotEnoughIPSpaceException)
 from butter.providers.aws.impl.internet_gateways import InternetGateways
 from butter.providers.aws.schemas import canonicalize_network_info
-from butter.providers.aws.logging import logger
+from butter.providers.aws.log import logger
 
 RETRY_COUNT = int(60)
 RETRY_DELAY = float(1.0)

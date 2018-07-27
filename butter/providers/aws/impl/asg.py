@@ -10,7 +10,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from butter.util.exceptions import BadEnvironmentStateException
-from butter.providers.aws.logging import logger
+from butter.providers.aws.log import logger
 
 
 # pylint: disable=too-few-public-methods

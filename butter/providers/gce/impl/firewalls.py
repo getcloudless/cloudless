@@ -4,7 +4,7 @@ Firewalls Impl
 
 Helper utilities for dealing with google compute engine firewalls.
 """
-from butter.providers.gce.logging import logger
+from butter.providers.gce.log import logger
 
 
 # pylint: disable=too-few-public-methods

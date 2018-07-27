@@ -10,7 +10,7 @@ import boto3
 from butter.util import netgraph
 from butter.providers.aws import instances
 from butter.providers.aws.impl.asg import (ASG, AsgName)
-from butter.providers.aws.logging import logger
+from butter.providers.aws.log import logger
 
 
 class PathsClient:
