@@ -4,7 +4,7 @@ Butter Subnetwork
 This component should allow for intuitive and transparent control over subnetworks, which are
 provisioned inside networks and are where instances are provisioned.
 """
-from butter.logging import logger
+from butter.log import logger
 from butter.providers import get_provider
 
 

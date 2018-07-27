@@ -7,7 +7,7 @@ level containers for groups of instances/services.  This is the GCE implementati
 from libcloud.common.google import ResourceNotFoundError
 
 from butter.providers.gce.driver import get_gce_driver
-from butter.providers.gce.logging import logger
+from butter.providers.gce.log import logger
 from butter.providers.gce.schemas import canonicalize_network_info
 
 

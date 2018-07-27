@@ -14,7 +14,7 @@ from butter.util.exceptions import (DisallowedOperationException,
                                     BadEnvironmentStateException)
 from butter.providers.gce import subnetwork
 from butter.providers.gce.impl.firewalls import Firewalls
-from butter.providers.gce.logging import logger
+from butter.providers.gce.log import logger
 from butter.providers.gce.schemas import canonicalize_instances_info
 
 DEFAULT_REGION = "us-east1"

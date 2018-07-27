@@ -15,7 +15,7 @@ from butter.util.blueprint import InstancesBlueprint
 from butter.util.subnet_generator import generate_subnets
 from butter.util.exceptions import NotEnoughIPSpaceException
 from butter.providers.gce.driver import get_gce_driver
-from butter.providers.gce.logging import logger
+from butter.providers.gce.log import logger
 from butter.providers.gce.schemas import canonicalize_subnetwork_info
 
 DEFAULT_BASE_CIDR = "10.0.0.0/16"

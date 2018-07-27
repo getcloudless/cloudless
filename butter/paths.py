@@ -5,7 +5,7 @@ This component should allow for intuitive and transparent control over which
 instance groups can communicate.  The abstraction it provides is a graph, and it
 does the transformation to and from the underlying firewall rules.
 """
-from butter.logging import logger
+from butter.log import logger
 from butter.providers import get_provider
 
 

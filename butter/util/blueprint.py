@@ -7,7 +7,7 @@ standard format.
 import os
 import yaml
 
-from butter.util.logging import logger
+from butter.util.log import logger
 
 
 # pylint: disable=too-few-public-methods

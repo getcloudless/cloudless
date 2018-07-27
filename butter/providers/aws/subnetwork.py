@@ -17,7 +17,7 @@ from butter.providers.aws import network
 from butter.providers.aws.impl.internet_gateways import InternetGateways
 from butter.providers.aws.impl.subnets import Subnets
 from butter.providers.aws.impl.availability_zones import AvailabilityZones
-from butter.providers.aws.logging import logger
+from butter.providers.aws.log import logger
 from butter.providers.aws.schemas import canonicalize_subnetwork_info
 
 RETRY_COUNT = int(60)

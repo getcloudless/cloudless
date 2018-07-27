@@ -4,7 +4,7 @@ Butter Instances
 This component should allow for intuitive and transparent control over groups of instances, which
 must be provisioned within a subnetwork.
 """
-from butter.logging import logger
+from butter.log import logger
 from butter.providers import get_provider
 
 
