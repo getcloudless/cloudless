@@ -3,8 +3,8 @@ resources:
     availability_zones: 3
     max_count: 768
     public_ip: True
-    memory: 0.5GB
-    cpus: 0.2
+    memory: 16GB
+    cpus: 4
     gpu: false
     disks:
         - size: 8GB
@@ -15,4 +15,4 @@ image:
     name: "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"
 
 initialization:
-    - path: "haproxy-cloud-config-generated.yml"
+    - path: "startup-scripts/cloud-config.yml"

@@ -15,7 +15,8 @@ from butter.util.exceptions import (DisallowedOperationException,
 from butter.providers.gce import subnetwork
 from butter.providers.gce.impl.firewalls import Firewalls
 from butter.providers.gce.log import logger
-from butter.providers.gce.schemas import canonicalize_instances_info
+from butter.providers.gce.schemas import (canonicalize_instances_info,
+                                          canonicalize_node_size)
 
 DEFAULT_REGION = "us-east1"
 
@@ -31,16 +32,17 @@ class InstancesClient:
         self.subnetwork = subnetwork.SubnetworkClient(credentials)
         self.firewalls = Firewalls(self.driver)
 
-    def create(self, network_name, subnetwork_name, blueprint):
+    def create(self, network_name, subnetwork_name, blueprint, template_vars):
         """
-        Create a group of instances in "network_name" named "subnetwork_name" with blueprint file at
-        "blueprint".
+        Create a group of instances in "network_name" named "subnetwork_name"
+        with blueprint file at "blueprint".
         """
-        logger.info('Creating instances %s, %s with blueprint %s',
-                    network_name, subnetwork_name, blueprint)
+        logger.info('Creating instances %s, %s with blueprint %s and '
+                    'template_vars %s', network_name, subnetwork_name,
+                    blueprint, template_vars)
         self.subnetwork.create(network_name, subnetwork_name,
                                blueprint=blueprint)
-        instances_blueprint = InstancesBlueprint(blueprint)
+        instances_blueprint = InstancesBlueprint(blueprint, template_vars)
         az_count = instances_blueprint.availability_zone_count()
 
         def get_image(image_specifier):
@@ -55,15 +57,15 @@ class InstancesClient:
             return images[0]
 
         image = get_image(instances_blueprint.image())
-        instance_type = get_fitting_instance("gce", blueprint)
+        instance_type = get_fitting_instance(self, blueprint)
         for zone in self._get_availability_zones():
             if az_count == 0:
                 break
             full_subnetwork_name = "%s-%s" % (network_name, subnetwork_name)
             instance_name = "%s-%s" % (full_subnetwork_name, az_count)
-            startup_script = instances_blueprint.runtime_scripts()
             metadata = [
-                {"key": "startup-script", "value": startup_script},
+                {"key": "startup-script", "value":
+                 instances_blueprint.runtime_scripts()},
                 {"key": "network", "value": network_name},
                 {"key": "subnetwork", "value": subnetwork_name}
             ]
@@ -136,3 +138,18 @@ class InstancesClient:
     def _get_availability_zones(self):
         zones = self.driver.ex_list_zones()
         return [zone for zone in zones if zone.name.startswith(DEFAULT_REGION)]
+
+    def node_types(self):
+        """
+        Get a list of node sizes to use for matching resource requirements to
+        instance type.
+        """
+        # Need to do this because the "list_sizes" function doesn't seem to work
+        # with region strings.
+        zones = self.driver.ex_list_zones()
+        for zone in zones:
+            if zone.name.startswith(DEFAULT_REGION):
+                node_sizes = self.driver.list_sizes(location=zone)
+                return [canonicalize_node_size(node_size) for node_size in node_sizes]
+        raise DisallowedOperationException("Could not find zone in region: %s" %
+                                           DEFAULT_REGION)

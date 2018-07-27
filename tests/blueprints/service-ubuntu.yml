@@ -3,8 +3,8 @@ resources:
     max_count: 768
     availability_zones: 3
     public_ip: True
-    memory: 0.5GB
-    cpus: 0.2
+    memory: 2GB
+    cpus: 1
     gpu: false
     disks:
         - size: 8GB

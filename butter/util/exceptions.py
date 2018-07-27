@@ -30,3 +30,10 @@ class OperationTimedOut(Exception):
     Exceeded max retries to perform operation.
     """
     pass
+
+
+class BlueprintException(Exception):
+    """
+    Encountered error interpreting Blueprint file.
+    """
+    pass

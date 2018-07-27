@@ -7,3 +7,4 @@ Logging configuration for this module.  Import it with:
 import logging
 
 logger = logging.getLogger(__name__) # pylint: disable=locally-disabled, invalid-name
+logger.setLevel(logging.INFO)
