@@ -9,9 +9,19 @@
     <script type="text/javascript">
        var timer = null;
 
+       function example(){
+          var d = document.getElementById("svg"); // gets svg-div
+          d.innerHTML = '<embed src="graph-example.svg" width="650" height="500">';
+       }
+
        function refresh(){
           var d = document.getElementById("svg"); // gets svg-div
           d.innerHTML = '<embed src="graph.svg" width="650" height="500">';
+       }
+
+       function showExample(){
+          clearTimeout(timer);
+          example();
        }
 
        function autoRefresh(){
@@ -30,6 +40,7 @@
 <body>
    <button onclick="manualRefresh()">manual refresh</button>
    <button onclick="autoRefresh()">auto refresh</button>
+   <button onclick="showExample()">show example</button>
    <div id="svg"></div>
 </body>
 <script type="text/javascript">refresh();</script>
