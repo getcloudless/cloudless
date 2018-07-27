@@ -113,13 +113,10 @@ class PathsClient:
                 if rule["IpRanges"]:
                     source = rule["IpRanges"][0].get("CidrIp", "0.0.0.0/0")
                     rules.append(make_rule(source, rule))
-                elif rule["UserIdGroupPairs"]:
+                if rule["UserIdGroupPairs"]:
                     for group in rule["UserIdGroupPairs"]:
                         for source in sg_to_service[group["GroupId"]]:
                             rules.append(make_rule(source, rule))
-                else:
-                    source = "0.0.0.0/0"
-                    rules.append(make_rule(source, rule))
             fw_info[sg_to_service[security_group["GroupId"]][0]] = rules
         return netgraph.firewalls_to_net(fw_info)
 
