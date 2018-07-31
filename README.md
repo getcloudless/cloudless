@@ -61,7 +61,7 @@ client.subnetwork.destroy("dev", "public")
 ### Instances (VMs)
 
 ```
-client.instances.create("dev", "public", blueprint="tests/blueprints/haproxy-service.yml")
+client.instances.create("dev", "public", blueprint="tests/blueprints/service.yml")
 client.instances.create("dev", "private", blueprint="tests/blueprints/service.yml")
 client.instances.discover("dev", "public")
 client.instances.discover("dev", "private")
@@ -97,3 +97,8 @@ pytest -m "aws" --fulltrace
 
 For GCE, you must set `BUTTER_GCE_USER_ID`, `BUTTER_GCE_CREDENTIALS_PATH`, and
 `BUTTER_GCE_PROJECT_NAME` as described above.
+
+## Module Testing
+
+This project provides a framework to test "modules" or "blueprints".  See
+[example-modules/README.md](example-modules/README.md) for details.

@@ -23,6 +23,11 @@ NAME = 'butter'
 # What packages are required for this module to be executed?
 REQUIRED = [
     'boto3',
+    'PyYaml',
+    'jinja2',
+    # This pytest dependency is only for the module tester.  Perhaps this should
+    # be a separate module eventually.
+    'pytest',
     'attr',
     'apache-libcloud',
     'pycryptodome'

@@ -24,12 +24,12 @@ def run_instances_test(provider, credentials):
     # Provision all the resources
     client.network.create("unittest", blueprint=NETWORK_BLUEPRINT)
     if provider == "aws":
-        client.instances.create("unittest", "web-lb", AWS_SERVICE_BLUEPRINT)
-        client.instances.create("unittest", "web", AWS_SERVICE_BLUEPRINT)
+        client.instances.create("unittest", "web-lb", AWS_SERVICE_BLUEPRINT, {})
+        client.instances.create("unittest", "web", AWS_SERVICE_BLUEPRINT, {})
     else:
         assert provider == "gce"
-        client.instances.create("unittest", "web-lb", GCE_SERVICE_BLUEPRINT)
-        client.instances.create("unittest", "web", GCE_SERVICE_BLUEPRINT)
+        client.instances.create("unittest", "web-lb", GCE_SERVICE_BLUEPRINT, {})
+        client.instances.create("unittest", "web", GCE_SERVICE_BLUEPRINT, {})
 
     # Wait for at least one instance to start provisioning in each group
     while len(client.instances.discover("unittest", "web-lb")["Instances"]) == 0:

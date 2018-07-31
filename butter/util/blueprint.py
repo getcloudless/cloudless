@@ -6,8 +6,11 @@ standard format.
 
 import os
 import yaml
+import jinja2
 
 from butter.util.log import logger
+from butter.util.exceptions import BlueprintException
+from butter.util.storage_size_parser import parse_storage_size
 
 
 # pylint: disable=too-few-public-methods
@@ -44,6 +47,12 @@ class InstancesBlueprint(Blueprint):
     """
     Blueprint for instances/subnetworks.
     """
+    def __init__(self, blueprint_file, template_vars=None):
+        super(InstancesBlueprint, self).__init__(blueprint_file)
+        self.template_vars = template_vars
+        if not self.template_vars:
+            self.template_vars = {}
+
     def max_count(self):
         """
         Returns the maximum number of instances expected.  Used to compute subnet sizes.
@@ -70,10 +79,34 @@ class InstancesBlueprint(Blueprint):
         """
         if len(self.blueprint["initialization"]) > 1:
             raise NotImplementedError("Only one initialization script currently supported")
-        relative_path = self.blueprint["initialization"][0]["path"]
-        config_path = os.path.join(self.blueprint_path, relative_path)
-        with open(config_path) as startup_script_file:
-            return startup_script_file.read()
+        def handle_initialization_block(script):
+            """
+            Handles a single initialization block.  Factored out in case I
+            want to support multiple startup scripts.
+            """
+            full_path = os.path.join(self.blueprint_path,
+                                     script["path"])
+            with open(full_path) as startup_script_file:
+                startup_script = startup_script_file.read()
+            template = jinja2.Template(startup_script)
+            if "vars" in script:
+                for name, opts in script["vars"].items():
+                    if opts["required"] and name not in self.template_vars:
+                        raise BlueprintException(
+                            "Template Variable: \"%s\" must be set." %
+                            (name))
+            return template.render(self.template_vars)
+        all_template_vars = [
+            name
+            for initialization in self.blueprint["initialization"]
+            if "vars" in initialization
+            for name in initialization["vars"]]
+        for template_var in self.template_vars:
+            if template_var not in all_template_vars:
+                raise BlueprintException(
+                    "Unrecognized Template Variable: \"%s\"." %
+                    (template_var))
+        return handle_initialization_block(self.blueprint["initialization"][0])
 
     def public_ip(self):
         """
@@ -97,7 +130,7 @@ class InstancesBlueprint(Blueprint):
         """
         Returns the memory to allocate for the instance.  This is required.
         """
-        return self.blueprint["resources"]["memory"]
+        return parse_storage_size(self.blueprint["resources"]["memory"])
 
     def disks(self):
         """

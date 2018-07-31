@@ -5,7 +5,9 @@ This is the AWS implmentation for the instances API, a high level interface to m
 instances.
 """
 import time
+import json
 import boto3
+import requests
 import dateutil.parser
 from botocore.exceptions import ClientError
 
@@ -17,7 +19,8 @@ from butter.providers.aws import (subnetwork, network)
 from butter.providers.aws.impl.asg import (ASG, AsgName)
 from butter.providers.aws.impl.security_groups import SecurityGroups
 from butter.providers.aws.log import logger
-from butter.providers.aws.schemas import canonicalize_instances_info
+from butter.providers.aws.schemas import (canonicalize_instances_info,
+                                          canonicalize_node_size)
 
 RETRY_COUNT = int(60)
 RETRY_DELAY = float(1.0)
@@ -35,7 +38,9 @@ class InstancesClient:
         self.asg = ASG(credentials)
         self.security_groups = SecurityGroups(credentials)
 
-    def create(self, network_name, subnetwork_name, blueprint, count=3):
+    # pylint: disable=too-many-arguments
+    def create(self, network_name, subnetwork_name, blueprint,
+               template_vars=None, count=3):
         """
         Create a group of instances in "network_name" named "subnetwork_name" with blueprint file at
         "blueprint".
@@ -63,29 +68,41 @@ class InstancesClient:
                     result_image = image
             return result_image["ImageId"]
 
-        def create_launch_configuration(asg_name, blueprint):
-            instances_blueprint = InstancesBlueprint(blueprint)
+        def create_launch_configuration(asg_name, blueprint, template_vars):
+            instances_blueprint = InstancesBlueprint(blueprint, template_vars)
             ami_id = lookup_ami(instances_blueprint.image())
             user_data = instances_blueprint.runtime_scripts()
             associate_public_ip = instances_blueprint.public_ip()
-            instance_type = get_fitting_instance("aws", blueprint)
+            instance_type = get_fitting_instance(self, blueprint)
             autoscaling = boto3.client("autoscaling")
             autoscaling.create_launch_configuration(
                 LaunchConfigurationName=str(asg_name), ImageId=ami_id,
                 SecurityGroups=[security_group_id], UserData=user_data,
                 AssociatePublicIpAddress=associate_public_ip,
                 InstanceType=instance_type)
-        create_launch_configuration(asg_name, blueprint)
+        create_launch_configuration(asg_name, blueprint, template_vars)
 
         # Auto Scaling Group
-        comma_separated_subnets = ",".join(subnet_ids)
         autoscaling = boto3.client("autoscaling")
         autoscaling.create_auto_scaling_group(
             AutoScalingGroupName=str(asg_name),
             LaunchConfigurationName=str(asg_name), MinSize=count,
             MaxSize=count, DesiredCapacity=count,
-            VPCZoneIdentifier=comma_separated_subnets, LoadBalancerNames=[],
+            VPCZoneIdentifier=",".join(subnet_ids), LoadBalancerNames=[],
             HealthCheckType='ELB', HealthCheckGracePeriod=120)
+
+        def wait_until(state):
+            asg = self.discover(network_name, subnetwork_name)
+            retries = 0
+            while len([instance for instance in asg["Instances"]
+                       if instance["State"] == state]) < count:
+                logger.info("Waiting for instance creation in asg: %s", asg)
+                asg = self.discover(network_name, subnetwork_name)
+                retries = retries + 1
+                if retries > 60:
+                    raise OperationTimedOut("Timed out waiting for ASG scale down")
+                time.sleep(float(10))
+        wait_until("running")
 
         return self.discover(network_name, subnetwork_name)
 
@@ -176,8 +193,8 @@ class InstancesClient:
         # the actual ASG otherwise it will error.
         asg = self.discover(network_name, subnetwork_name)
         retries = 0
-        while [instance for instance in asg["Instances"]
-               if instance["State"] != "terminated"]:
+        while asg and [instance for instance in asg["Instances"]
+                       if instance["State"] != "terminated"]:
             logger.info("Waiting for instance termination in asg: %s", asg)
             asg = self.discover(network_name, subnetwork_name)
             retries = retries + 1
@@ -209,3 +226,42 @@ class InstancesClient:
             self.security_groups.delete_with_retries(lc_security_group,
                                                      RETRY_COUNT, RETRY_DELAY)
         self.subnetwork.destroy(network_name, subnetwork_name)
+
+    def node_types(self):
+        """
+        Get a list of node sizes to use for matching resource requirements to
+        instance type.
+        """
+        pricing = boto3.client("pricing")
+
+        filters = [
+            {"Type":"TERM_MATCH", "Field":"ServiceCode", "Value":"AmazonEC2"},
+            {"Type":"TERM_MATCH", "Field":"location", "Value":"US East (N. Virginia)"},
+            {"Type":"TERM_MATCH", "Field":"instanceFamily", "Value":"General Purpose"},
+            {"Type":"TERM_MATCH", "Field":"currentGeneration", "Value":"Yes"},
+            {"Type":"TERM_MATCH", "Field":"operatingSystem", "Value":"Linux"},
+            {"Type":"TERM_MATCH", "Field":"productFamily",
+             "Value":"Compute Instance"},
+            {"Type":"TERM_MATCH", "Field":"preinstalledSw", "Value":"NA"}
+            ]
+        next_token = ""
+        node_sizes = []
+        try:
+            while True:
+                products = pricing.get_products(ServiceCode="AmazonEC2",
+                                                Filters=filters, NextToken=next_token)
+                for node_info in products["PriceList"]:
+                    node_sizes.append(
+                        canonicalize_node_size(json.loads(node_info)["product"]["attributes"]))
+                if "NextToken" not in products:
+                    break
+                next_token = products["NextToken"]
+        except requests.exceptions.ConnectionError:
+            # This happens in moto, this should probably figure out whether moto
+            # is in use in a smarter way.
+            return [{
+                "type": "t2.small",
+                "memory": 2147483648,
+                "cpus": 1
+                }]
+        return node_sizes

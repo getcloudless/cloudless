@@ -42,3 +42,17 @@ def canonicalize_instances_info(node_name, nodes):
                     } for node in nodes
                 ]
             }
+
+def canonicalize_node_size(node):
+    """
+    Given a node description from the GCE API returns the canonical butter
+    format.
+    """
+    return {
+        "type": node.name,
+        # Memory is returned in "MB"
+        "memory": int(node.ram * 1000 * 1000),
+        "cpus": float(node.extra["guestCpus"]),
+        "storage": node.disk * 1024,
+        "location": node.extra["zone"].name
+    }

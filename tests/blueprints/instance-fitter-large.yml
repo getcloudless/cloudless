@@ -1,10 +1,10 @@
 ---
 resources:
-    max_count: 768
     availability_zones: 3
+    max_count: 768
     public_ip: True
-    memory: 0.5GB
-    cpus: 0.2
+    memory: 16GB
+    cpus: 4
     gpu: false
     disks:
         - size: 8GB
@@ -12,7 +12,7 @@ resources:
           device_name: /dev/sda1
 
 image:
-    name: "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"
+    name: "N/A - only to test instance fitter"
 
 initialization:
-    - path: "startup-scripts/haproxy-cloud-config.yml"
+    - path: "N/A - only to test instance fitter"

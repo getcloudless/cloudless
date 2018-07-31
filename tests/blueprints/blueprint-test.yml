@@ -1,0 +1,32 @@
+---
+# This file only exists to test the blueprint library.
+resources:
+    availability_zones: 3
+    max_count: 768
+    public_ip: True
+    memory: 0.5GB
+    cpus: 0.2
+    gpu: false
+    disks:
+        - size: 8GB
+          type: standard
+          device_name: /dev/sda1
+
+image:
+    name: "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"
+
+initialization:
+    - path: "startup-scripts/blueprint-test1.sh"
+      vars:
+          list_var:
+              required: true
+          other_var:
+              required: true
+          optional_var:
+              required: false
+    # TODO: Eventually I might support multiple startup scripts, but I don't
+    # know what each cloud provider supports in this regard.
+    #- path: "startup-scripts/blueprint-test2.sh"
+    #  vars:
+    #      other_template_var:
+    #          required: false

@@ -1,43 +1,48 @@
 """
 Helper to return a fitting instance given the provided resource requirements.
 """
-import re
 from butter.util.blueprint import InstancesBlueprint
+from butter.util.storage_size_parser import parse_storage_size
+from butter.util.log import logger
 
 # pylint: disable=unused-argument
-def get_fitting_instance(provider, blueprint):
+def get_fitting_instance(instances_client, blueprint):
     """
     Finds the cheapest instance that satisfies the requirements specified in
     the given blueprint.
     """
     instances_blueprint = InstancesBlueprint(blueprint)
 
-    units = {"B": 1, "KB": 10**3, "MB": 10**6, "GB": 10**9, "TB": 10**12}
-    def parse_size(size):
-        match = re.match(r"(\d+(?:\.\d+)?)(B|KB|MB|GB|TB)", size)
-        number = match.group(1)
-        unit = match.group(2)
-        return int(float(number)*units[unit])
-    memory_bytes = parse_size(instances_blueprint.memory())
-
-    # Currently, this doesn't support anything besides the smallest instance types.
-    if memory_bytes > parse_size("0.5GB"):
-        raise NotImplementedError
-    if instances_blueprint.cpus() > 0.2:
-        raise NotImplementedError
-    if instances_blueprint.gpus():
-        raise NotImplementedError
+    # Raise exceptions for anything not supported
     if len(instances_blueprint.disks()) > 1:
         raise NotImplementedError
     for disk in instances_blueprint.disks():
-        if parse_size(disk["size"]) > parse_size("8GB"):
+        if parse_storage_size(disk["size"]) > parse_storage_size("8GB"):
             raise NotImplementedError
         if disk["type"] != "standard":
             raise NotImplementedError
         if disk["device_name"] != "/dev/sda1":
             raise NotImplementedError
-    if provider == "aws":
-        return "t2.nano"
-    if provider == "gce":
-        return "f1-micro"
-    raise NotImplementedError
+
+    # Get the smallest node type that satisfies our requirements
+    node_types = instances_client.node_types()
+    current_node = None
+    for node_type in node_types:
+
+        # First, check if the node even satisfies our requirements
+        if (node_type["cpus"] >= instances_blueprint.cpus() and
+                node_type["memory"] >= instances_blueprint.memory()):
+            logger.debug("Need cpus: %s memory: %s", instances_blueprint.cpus(),
+                         instances_blueprint.memory())
+            logger.debug("Found satisfying node: %s", node_type)
+
+            # Set our node to this one if it's the first we've found
+            if not current_node:
+                current_node = node_type
+
+            # Otherwise, if this node is smaller than the one we found before,
+            # reset (this is a heuristic for "cheapest").
+            elif (node_type["cpus"] <= current_node["cpus"] and
+                  node_type["memory"] <= current_node["memory"]):
+                current_node = node_type
+    return current_node["type"]

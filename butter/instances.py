@@ -31,14 +31,20 @@ class InstancesClient:
         self.instances = get_provider(provider).instances.InstancesClient(
             credentials)
 
-    def create(self, network_name, subnetwork_name, blueprint):
+    def create(self, network_name, subnetwork_name, blueprint,
+               template_vars=None):
         """
         Create a group of instances in "network_name" named "subnetwork_name" with blueprint file at
         "blueprint".
+
+        "template_vars" are passed to the initialization scripts as jinja2
+        variables.
         """
-        logger.info('Creating instances %s in network %s with blueprint %s',
-                    subnetwork_name, network_name, blueprint)
-        return self.instances.create(network_name, subnetwork_name, blueprint)
+        logger.info('Creating instances %s in network %s with blueprint %s and '
+                    'template_vars %s', subnetwork_name, network_name,
+                    blueprint, template_vars)
+        return self.instances.create(network_name, subnetwork_name, blueprint,
+                                     template_vars)
 
     def discover(self, network_name, subnetwork_name):
         """
@@ -62,3 +68,10 @@ class InstancesClient:
         """
         logger.info('Listing instances')
         return self.instances.list()
+
+    def node_types(self):
+        """
+        Get mapping of node types to the resources.
+        """
+        logger.info('Listing node types')
+        return self.instances.node_types()
