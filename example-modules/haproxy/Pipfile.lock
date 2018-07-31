@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "9f2896b13baf4b20783432962016c9ee20d29bee22705527605895c4ff5c50cf"
+            "sha256": "e042c7591d6593c390a3f2da130bcde1e8e250ca7f9315b898f379be4460278b"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -60,7 +60,7 @@
         "butter": {
             "editable": true,
             "git": "https://github.com/sverch/butter",
-            "ref": "9e9e5fc54e94187dfd2e11fe2394df57901067ff"
+            "ref": "2a14a7a8b4732f20cb44e7016cca295e824edad7"
         },
         "certifi": {
             "hashes": [
