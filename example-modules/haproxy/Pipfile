@@ -1,0 +1,2 @@
+[packages]
+butter = {git = "https://github.com/sverch/butter", ref = "module-test-harness", editable = true}

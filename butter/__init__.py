@@ -14,7 +14,7 @@ The goal is to provide an intuitive abstraction that is powerful enough to build
 on, so that building other layers on top is easy and anything built on it is
 automatically cross cloud.
 """
-from butter import network, subnetwork, instances, paths, modules
+from butter import network, subnetwork, instances, paths
 
 
 # pylint: disable=too-few-public-methods
