@@ -20,7 +20,7 @@ class Fixture:
         Make sure all the paths are properly setup for the test.
         """
         raise NotImplementedError(
-                "setup_routes must be implemented in test fixture")
+            "setup_routes must be implemented in test fixture")
 
     def verify(self, service_name):
         """
@@ -40,11 +40,11 @@ class Fixture:
         Get the network this fixture is or will be deployed in.
         """
         raise NotImplementedError(
-                "get_network must be implemented in test fixture")
+            "get_network must be implemented in test fixture")
 
     def get_blueprint_vars(self):
         """
         Get the variables that should be passed to the blueprint under test.
         """
         raise NotImplementedError(
-                "get_blueprint_vars must be implemented in test fixture")
+            "get_blueprint_vars must be implemented in test fixture")
