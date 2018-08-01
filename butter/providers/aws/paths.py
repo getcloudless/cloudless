@@ -9,7 +9,7 @@ import boto3
 
 from butter.util import netgraph
 from butter.providers.aws import instances
-from butter.providers.aws.impl.asg import (ASG, AsgName)
+from butter.providers.aws.impl.asg import ASG
 from butter.providers.aws.log import logger
 
 
@@ -26,6 +26,11 @@ class PathsClient:
         """
         Make the "subnetwork_name" service accessible on the internet.
         """
+        if self.internet_accessible(network_name, subnetwork_name, port):
+            logger.info("Service %s in network %s is already internet "
+                        "accessible on port: %s", subnetwork_name,
+                        network_name, port)
+            return True
         ec2 = boto3.client("ec2")
         security_group_id = self.asg.get_launch_configuration_security_group(
             network_name, subnetwork_name)
@@ -39,11 +44,17 @@ class PathsClient:
                                                  }]
                                              }]
                                              )
+        return True
 
     def add(self, network, from_name, to_name, port):
         """
         Adds a route from "from_name" to "to_name".
         """
+        if self.has_access(network, from_name, to_name, port):
+            logger.info("Service %s already has access to %s in network %s "
+                        "on port: %s", from_name, to_name,
+                        network, port)
+            return True
         ec2 = boto3.client("ec2")
         to_sg_id = self.asg.get_launch_configuration_security_group(network,
                                                                     to_name)
@@ -59,6 +70,7 @@ class PathsClient:
                                                  ]
                                              }]
                                              )
+        return True
 
     def remove(self, network, from_name, to_name, port):
         """
@@ -87,9 +99,8 @@ class PathsClient:
         ec2 = boto3.client("ec2")
         sg_to_service = {}
         for instance in self.instances.list():
-            asg_name = AsgName(name_string=instance["Id"])
             sg_id = self.asg.get_launch_configuration_security_group(
-                asg_name.network, asg_name.subnetwork)
+                instance["Network"], instance["Id"])
             if sg_id not in sg_to_service:
                 sg_to_service[sg_id] = [instance["Id"]]
             else:

@@ -29,6 +29,7 @@ REQUIRED = [
     # be a separate module eventually.
     'pytest',
     'attr',
+    'click',
     'apache-libcloud',
     'pycryptodome'
 ]
@@ -131,9 +132,9 @@ setup(
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['mypackage'],
 
-    # entry_points={
-    #     'console_scripts': ['mycli=mymodule:cli'],
-    # },
+    entry_points={
+        'console_scripts': ['butter-test=butter.testutils.cli:main'],
+    },
     install_requires=REQUIRED,
     tests_require=TESTS_REQUIRED,
     extras_require=EXTRAS,

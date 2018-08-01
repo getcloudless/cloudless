@@ -28,11 +28,12 @@ def canonicalize_subnetwork_info(subnetwork):
         "AvailabilityZone": "N/A",
     }
 
-def canonicalize_instances_info(node_name, nodes):
+def canonicalize_instances_info(network_name, subnetwork_name, nodes):
     """
     Convert what is returned from GCE into the butter standard format.
     """
-    return {"Id": node_name,
+    return {"Id": subnetwork_name,
+            "Network": network_name,
             "Instances": [
                 {
                     "Id": node.uuid,

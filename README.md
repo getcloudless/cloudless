@@ -100,5 +100,7 @@ For GCE, you must set `BUTTER_GCE_USER_ID`, `BUTTER_GCE_CREDENTIALS_PATH`, and
 
 ## Module Testing
 
-This project provides a framework to test "modules" or "blueprints".  See
-[example-modules/README.md](example-modules/README.md) for details.
+This project provides a framework to test "modules" or "blueprints".  If you
+have butter installed, run `butter-test` for usage.
+
+See [example-modules/README.md](example-modules/README.md) for details.

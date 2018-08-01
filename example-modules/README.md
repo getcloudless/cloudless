@@ -8,16 +8,20 @@ You must define the following:
 - [A test fixture](#fixture)
 - [A blueprint](#blueprint)
 
-## Fixture
+Once you do that, if you have butter installed you can run `butter-test` with no
+argutments to see usage.
 
-Your module must contain a `fixture` module that defines a `Fixture` class at
-the top level.  You should inherit from `butter.testutils.fixture.Fixture` and
-implement all the required methods.  Here's an example:
+## Blueprint Fixture
+
+Your module must contain a `blueprint_fixture` module or file that defines a
+`BlueprintTest` class at the top level.  You should inherit from
+`butter.testutils.fixture.BlueprintTestInterface` and implement all the required
+methods.  Here's an example:
 
     from butter.testutils.blueprint_tester import generate_unique_name
-    from butter.testutils.fixture import Fixture
+    from butter.testutils.fixture import BlueprintTestInterface
 
-    class Fixture(Fixture):
+    class BlueprintTest(BlueprintTestInterface):
         # Define all the required methods on this class.  See parent class for
         # details.
 

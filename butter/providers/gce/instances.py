@@ -88,7 +88,7 @@ class InstancesClient:
         for node in self.driver.list_nodes():
             if node.name.startswith(node_name):
                 nodes.append(node)
-        return canonicalize_instances_info(node_name, nodes)
+        return canonicalize_instances_info(network_name, subnetwork_name, nodes)
 
     def destroy(self, network_name, subnetwork_name):
         """
@@ -130,10 +130,15 @@ class InstancesClient:
             instance_group_name = "%s-%s" % (network_names[0],
                                              subnetwork_names[0])
             if instance_group_name not in instances_info:
-                instances_info[instance_group_name] = []
-            instances_info[instance_group_name].append(node)
-        return [canonicalize_instances_info(group, instances) for (group, instances) in
-                instances_info.items()]
+                instances_info[instance_group_name] = {}
+                instances_info[instance_group_name]["Nodes"] = []
+                instances_info[instance_group_name]["Network"] = network_names[0]
+                instances_info[instance_group_name]["Id"] = subnetwork_names[0]
+            instances_info[instance_group_name]["Nodes"].append(node)
+        return [canonicalize_instances_info(group_info["Network"],
+                                            group_info["Id"],
+                                            group_info["Nodes"])
+                for group_info in instances_info.values()]
 
     def _get_availability_zones(self):
         zones = self.driver.ex_list_zones()

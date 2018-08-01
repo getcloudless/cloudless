@@ -24,11 +24,12 @@ def canonicalize_subnetwork_info(subnet):
         "AvailabilityZone": subnet["AvailabilityZone"]
     }
 
-def canonicalize_instances_info(asg, instances):
+def canonicalize_instances_info(network_name, subnetwork_name, instances):
     """
     Convert what is returned from AWS into the butter standard format.
     """
-    return {"Id": asg["AutoScalingGroupName"],
+    return {"Id": subnetwork_name,
+            "Network": network_name,
             "Instances": [
                 {
                     "Id": instance["InstanceId"],
