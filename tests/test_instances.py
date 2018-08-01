@@ -1,10 +1,9 @@
-import boto3
-import time
-import pytest
-from moto import mock_ec2, mock_autoscaling, mock_elb, mock_route53
-import butter
 import ipaddress
 import os
+import pytest
+import boto3
+from moto import mock_ec2, mock_autoscaling, mock_elb, mock_route53
+import butter
 
 # Get the blueprint locations relative to the test script
 blueprints_dir = os.path.join(os.path.dirname(__file__), "blueprints")
@@ -31,11 +30,10 @@ def run_instances_test(provider, credentials):
         client.instances.create("unittest", "web-lb", GCE_SERVICE_BLUEPRINT, {})
         client.instances.create("unittest", "web", GCE_SERVICE_BLUEPRINT, {})
 
-    # Wait for at least one instance to start provisioning in each group
-    while len(client.instances.discover("unittest", "web-lb")["Instances"]) == 0:
-        time.sleep(1)
-    while len(client.instances.discover("unittest", "web")["Instances"]) == 0:
-        time.sleep(1)
+    assert client.instances.discover("unittest", "web")["Network"] == "unittest"
+    assert client.instances.discover("unittest", "web")["Id"] == "web"
+    assert client.instances.discover("unittest", "web-lb")["Network"] == "unittest"
+    assert client.instances.discover("unittest", "web-lb")["Id"] == "web-lb"
 
     if provider == "aws":
         # Networking
@@ -53,19 +51,17 @@ def run_instances_test(provider, credentials):
         # AutoScalingGroup
         autoscaling = boto3.client("autoscaling")
         web_asgs = autoscaling.describe_auto_scaling_groups(
-                AutoScalingGroupNames=["unittest.web"])
+            AutoScalingGroupNames=["unittest.web"])
         assert len(web_asgs["AutoScalingGroups"]) == 1
         web_asg = web_asgs["AutoScalingGroups"][0]
         assert web_asg["AutoScalingGroupName"] == "unittest.web"
         assert web_asg["LaunchConfigurationName"] == "unittest.web"
-        assert client.instances.discover("unittest", "web")["Id"] == "unittest.web"
         web_lb_asgs = autoscaling.describe_auto_scaling_groups(
-                AutoScalingGroupNames=["unittest.web-lb"])
+            AutoScalingGroupNames=["unittest.web-lb"])
         assert len(web_lb_asgs["AutoScalingGroups"]) == 1
         web_lb_asg = web_lb_asgs["AutoScalingGroups"][0]
         assert web_lb_asg["AutoScalingGroupName"] == "unittest.web-lb"
         assert web_lb_asg["LaunchConfigurationName"] == "unittest.web-lb"
-        assert client.instances.discover("unittest", "web-lb")["Id"] == "unittest.web-lb"
 
         # Make sure subnets don't overlap
         web_asg = web_asgs["AutoScalingGroups"][0]

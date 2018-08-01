@@ -126,7 +126,7 @@ class InstancesClient:
         Discover a group of subnetworks in "network_name" named "subnetwork_name".
         """
         logger.info("Discovering autoscaling group named %s in network: %s",
-                    network_name, subnetwork_name)
+                    subnetwork_name, network_name)
 
         def discover_asg(network_name, subnetwork_name):
             autoscaling = boto3.client("autoscaling")
@@ -160,7 +160,8 @@ class InstancesClient:
                 instance_ids = [instance["InstanceId"] for instance
                                 in asg["Instances"]]
                 instances = discover_instances(instance_ids)
-                return canonicalize_instances_info(asg, instances)
+                return canonicalize_instances_info(network_name,
+                                                   subnetwork_name, instances)
             except ClientError as client_error:
                 # There is a race between when I discover the autoscaling group
                 # itself and when I try to search for the instances inside it,

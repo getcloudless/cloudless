@@ -9,7 +9,7 @@ import time
 import boto3
 from botocore.exceptions import ClientError
 from butter.util.exceptions import OperationTimedOut
-from butter.providers.gce.log import logger
+from butter.providers.aws.log import logger
 
 
 class SecurityGroups:

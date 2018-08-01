@@ -15,4 +15,4 @@ image:
     name: "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"
 
 initialization:
-    - path: "startup-scripts/cloud-config.yml"
+    - path: "startup-scripts/internal-service-cloud-config.yml"

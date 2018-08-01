@@ -11,7 +11,7 @@ import boto3
 from butter.util.subnet_generator import generate_subnets
 from butter.util.exceptions import (NotEnoughIPSpaceException,
                                     OperationTimedOut)
-from butter.providers.gce.log import logger
+from butter.providers.aws.log import logger
 
 
 class Subnets:

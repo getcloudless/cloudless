@@ -12,5 +12,5 @@ instead of the IP addresses.
 
 ```
 pipenv update
-pipenv run python runner.py
+pipenv run butter-test
 ```
