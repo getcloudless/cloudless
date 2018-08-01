@@ -61,37 +61,46 @@ class PathsClient:
         List all paths in a dictionary structure.
         """
         firewalls = self.driver.ex_list_firewalls()
-        fw_info = {}
 
-        def add_rule(fw_info, source, dest, rule):
-            if source not in fw_info:
-                fw_info[source] = {}
-            if dest not in fw_info[source]:
-                fw_info[source][dest] = []
-            fw_info[source][dest].append(rule)
+        def add_rule(fw_info, network, source, dest, rule):
+            # Need to come up with a better way to get the actual service name.
+            # Should probably tag the firewalls rules.
+            source_service = source.replace("%s-" % network, "")
+            dest_service = dest.replace("%s-" % network, "")
+            if source_service not in fw_info:
+                fw_info[source_service] = {}
+            if dest_service not in fw_info[source_service]:
+                fw_info[source_service][dest_service] = []
+            fw_info[source_service][dest_service].append(rule)
 
-        def handle_target(port, target, firewall):
+        def handle_target(fw_info, port, target, firewall):
             logger.debug('Found target %s in firewall', target)
             if hasattr(firewall, "source_tags") and firewall.source_tags:
                 for source_tag in firewall.source_tags:
-                    add_rule(fw_info, source_tag, target,
+                    add_rule(fw_info, firewall.network.name, source_tag, target,
                              {"protocol": "tcp", "port": port})
             if hasattr(firewall, "source_ranges") and firewall.source_ranges:
                 for source_range in firewall.source_ranges:
-                    add_rule(fw_info, source_range, target,
-                             {"protocol": "tcp", "port": port})
+                    add_rule(fw_info, firewall.network.name, source_range,
+                             target, {"protocol": "tcp", "port": port})
 
+        fw_info = {}
         for firewall in firewalls:
+            if firewall.network.name not in fw_info:
+                fw_info[firewall.network.name] = {}
+
             logger.debug('Found firewall %s', firewall)
             for rule in firewall.allowed:
                 for port in rule["ports"]:
                     logger.debug('Found allowed port %s in firewall', port)
                     if hasattr(firewall, "target_tags") and firewall.target_tags:
                         for target_tag in firewall.target_tags:
-                            handle_target(port, target_tag, firewall)
+                            handle_target(fw_info[firewall.network.name], port,
+                                          target_tag, firewall)
                     if hasattr(firewall, "target_ranges") and firewall.target_ranges:
                         for target_range in firewall.target_ranges:
-                            handle_target(port, target_range, firewall)
+                            handle_target(fw_info[firewall.network.name], port,
+                                          target_range, firewall)
         return fw_info
 
     def internet_accessible(self, network_name, subnetwork_name, port):

@@ -62,4 +62,5 @@ class NetworkClient:
         List all networks.
         """
         return {"Named": [canonicalize_network_info(network) for network
-                          in self.driver.ex_list_networks()]}
+                          in self.driver.ex_list_networks()
+                          if network.name != "default"]}

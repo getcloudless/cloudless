@@ -38,7 +38,7 @@ def run_paths_test(provider, credentials):
     client.paths.expose("unittest", "web-lb", 80)
     client.paths.add("unittest", "web-lb", "web", 80)
     client.paths.list()
-    client.paths.graph()
+    client.graph()
 
     assert client.paths.has_access("unittest", "web-lb", "web", 80)
     assert client.paths.internet_accessible("unittest", "web-lb", 80)

@@ -11,6 +11,7 @@ from butter.util import netgraph
 from butter.providers.aws import instances
 from butter.providers.aws.impl.asg import ASG
 from butter.providers.aws.log import logger
+from butter.util.exceptions import BadEnvironmentStateException
 
 
 class PathsClient:
@@ -91,7 +92,7 @@ class PathsClient:
                                               ]
                                           }]
                                           )
-
+    # pylint: disable=too-many-locals
     def list(self):
         """
         List all paths and return a dictionary structure representing a graph.
@@ -101,10 +102,11 @@ class PathsClient:
         for instance in self.instances.list():
             sg_id = self.asg.get_launch_configuration_security_group(
                 instance["Network"], instance["Id"])
-            if sg_id not in sg_to_service:
-                sg_to_service[sg_id] = [instance["Id"]]
-            else:
-                sg_to_service[sg_id].append(instance["Id"])
+            if sg_id in sg_to_service:
+                raise BadEnvironmentStateException(
+                    "Service %s and %s have same security group: %s" %
+                    (sg_to_service[sg_id], instance, sg_id))
+            sg_to_service[sg_id] = instance
         security_groups = ec2.describe_security_groups()
 
         def make_rule(source, rule):
@@ -115,21 +117,40 @@ class PathsClient:
                 "type": "ingress"
             }
 
+        def get_sg_rules(ip_permissions):
+            rules = []
+            for ip_range in ip_permissions["IpRanges"]:
+                source = ip_range.get("CidrIp", "0.0.0.0/0")
+                rules.append(make_rule(source, ip_permissions))
+            return rules
+
+        def get_cidr_rules(ip_permissions):
+            rules = []
+            for group in ip_permissions["UserIdGroupPairs"]:
+                service = sg_to_service[group["GroupId"]]
+                rules.append(make_rule(service["Id"], ip_permissions))
+            return rules
+
+        def get_network(security_group_id):
+            return sg_to_service[security_group_id]["Network"]
+
         fw_info = {}
+        network = None
         for security_group in security_groups["SecurityGroups"]:
             if security_group["GroupId"] not in sg_to_service:
                 continue
             rules = []
-            for rule in security_group["IpPermissions"]:
-                if rule["IpRanges"]:
-                    source = rule["IpRanges"][0].get("CidrIp", "0.0.0.0/0")
-                    rules.append(make_rule(source, rule))
-                if rule["UserIdGroupPairs"]:
-                    for group in rule["UserIdGroupPairs"]:
-                        for source in sg_to_service[group["GroupId"]]:
-                            rules.append(make_rule(source, rule))
-            fw_info[sg_to_service[security_group["GroupId"]][0]] = rules
-        return netgraph.firewalls_to_net(fw_info)
+            for ip_permissions in security_group["IpPermissions"]:
+                logger.debug("ip_permissions: %s", ip_permissions)
+                rules.extend(get_cidr_rules(ip_permissions))
+                rules.extend(get_sg_rules(ip_permissions))
+            network = get_network(security_group["GroupId"])
+            if network not in fw_info:
+                fw_info[network] = {}
+            service = sg_to_service[security_group["GroupId"]]
+            fw_info[network][service["Id"]] = rules
+        return {network: netgraph.firewalls_to_net(info)
+                for network, info in fw_info.items()}
 
     def internet_accessible(self, network_name, subnetwork_name, port):
         """
