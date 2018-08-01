@@ -61,37 +61,46 @@ class PathsClient:
         List all paths in a dictionary structure.
         """
         firewalls = self.driver.ex_list_firewalls()
-        fw_info = {}
 
-        def add_rule(fw_info, source, dest, rule):
-            if source not in fw_info:
-                fw_info[source] = {}
-            if dest not in fw_info[source]:
-                fw_info[source][dest] = []
-            fw_info[source][dest].append(rule)
+        def add_rule(fw_info, network, source, dest, rule):
+            # Need to come up with a better way to get the actual service name.
+            # Should probably tag the firewalls rules.
+            source_service = source.replace("%s-" % network, "")
+            dest_service = dest.replace("%s-" % network, "")
+            if source_service not in fw_info:
+                fw_info[source_service] = {}
+            if dest_service not in fw_info[source_service]:
+                fw_info[source_service][dest_service] = []
+            fw_info[source_service][dest_service].append(rule)
 
-        def handle_target(port, target, firewall):
+        def handle_target(fw_info, port, target, firewall):
             logger.debug('Found target %s in firewall', target)
             if hasattr(firewall, "source_tags") and firewall.source_tags:
                 for source_tag in firewall.source_tags:
-                    add_rule(fw_info, source_tag, target,
+                    add_rule(fw_info, firewall.network.name, source_tag, target,
                              {"protocol": "tcp", "port": port})
             if hasattr(firewall, "source_ranges") and firewall.source_ranges:
                 for source_range in firewall.source_ranges:
-                    add_rule(fw_info, source_range, target,
-                             {"protocol": "tcp", "port": port})
+                    add_rule(fw_info, firewall.network.name, source_range,
+                             target, {"protocol": "tcp", "port": port})
 
+        fw_info = {}
         for firewall in firewalls:
+            if firewall.network.name not in fw_info:
+                fw_info[firewall.network.name] = {}
+
             logger.debug('Found firewall %s', firewall)
             for rule in firewall.allowed:
                 for port in rule["ports"]:
                     logger.debug('Found allowed port %s in firewall', port)
                     if hasattr(firewall, "target_tags") and firewall.target_tags:
                         for target_tag in firewall.target_tags:
-                            handle_target(port, target_tag, firewall)
+                            handle_target(fw_info[firewall.network.name], port,
+                                          target_tag, firewall)
                     if hasattr(firewall, "target_ranges") and firewall.target_ranges:
                         for target_range in firewall.target_ranges:
-                            handle_target(port, target_range, firewall)
+                            handle_target(fw_info[firewall.network.name], port,
+                                          target_range, firewall)
         return fw_info
 
     def internet_accessible(self, network_name, subnetwork_name, port):
@@ -99,27 +108,26 @@ class PathsClient:
         Return true if the given network is internet accessible.
         """
         paths = self.list()
-        if "0.0.0.0/0" in paths:
-            target_tag = "%s-%s" % (network_name, subnetwork_name)
-            if target_tag in paths["0.0.0.0/0"]:
-                for path in paths["0.0.0.0/0"][target_tag]:
-                    if int(path["port"]) == int(port):
-                        return True
+        if network_name in paths:
+            if "0.0.0.0/0" in paths[network_name]:
+                if subnetwork_name in paths[network_name]["0.0.0.0/0"]:
+                    for path in paths[network_name]["0.0.0.0/0"][subnetwork_name]:
+                        if int(path["port"]) == int(port):
+                            return True
         return False
 
     def has_access(self, network, from_name, to_name, port):
         """
         Return true if there's a path between the services.
         """
-        target_tag = "%s-%s" % (network, to_name)
-        source_tag = "%s-%s" % (network, from_name)
-        logger.info('Looking for path from %s to %s on port %s', source_tag,
-                    target_tag, 80)
+        logger.info('Looking for path from %s to %s on port %s in network %s',
+                    from_name, to_name, 80, network)
         paths = self.list()
         logger.info('Found paths %s', paths)
-        if source_tag in paths:
-            if target_tag in paths[source_tag]:
-                for path in paths[source_tag][target_tag]:
-                    if int(path["port"]) == int(port):
-                        return True
+        if network in paths:
+            if from_name in paths[network]:
+                if to_name in paths[network][from_name]:
+                    for path in paths[network][from_name][to_name]:
+                        if int(path["port"]) == int(port):
+                            return True
         return False

@@ -106,6 +106,8 @@ class SubnetworkClient:
         subnets = self.driver.ex_list_subnetworks()
         subnets_info = {}
         for subnet in subnets:
+            if subnet.network.name == "default":
+                continue
             subnetwork_name = subnet.name.replace("%s-" % subnet.network.name,
                                                   "")
             if subnet.network.name not in subnets_info:

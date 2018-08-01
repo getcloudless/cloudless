@@ -41,3 +41,52 @@ class Client:
         self.subnetwork = subnetwork.SubnetworkClient(provider, credentials)
         self.instances = instances.InstancesClient(provider, credentials)
         self.paths = paths.PathsClient(provider, credentials)
+
+    # pylint: disable=too-many-locals
+    def graph(self):
+        """
+        Return a human readable formatted string representation of the paths
+        graph.
+
+        Right now this is designed to print a dotfile that can be consumed by
+        graphviz.  This should probably be cleaned up/replaced with a real
+        visualization but for now it's good enough to show how this should work.
+        """
+        paths_info = self.paths.list()
+        graph_string = "digraph services {\n\n"
+        instances_info = self.instances.list()
+        cluster_num = 0
+
+        for network_info in self.network.list()["Named"]:
+            path_info = paths_info.get(network_info["Name"], {})
+
+            # We need this to get nodes with no rules set up
+            connected_instances = set()
+
+            network_empty = True
+            graph_string += "subgraph cluster_%s {\n" % cluster_num
+            cluster_num = cluster_num + 1
+            graph_string += "    label = \"%s\";\n" % network_info["Name"]
+            for from_node, to_info in path_info.items():
+                connected_instances.add(from_node)
+                for to_node, rule_info, in to_info.items():
+                    connected_instances.add(to_node)
+                    for path in rule_info:
+                        network_empty = False
+                        graph_string += ("    \"%s\" -> \"%s\" [ label=\"(%s:%s)\" ];\n" %
+                                         (from_node, to_node, path["protocol"], path["port"]))
+
+            for instance in instances_info:
+                if instance["Network"] != network_info["Name"]:
+                    continue
+                if instance["Id"] not in connected_instances:
+                    network_empty = False
+                    graph_string += "    \"%s\";\n" % instance["Id"]
+
+            if network_empty:
+                # Need this becuse graphviz won't show an empty cluster
+                graph_string += "    \"Empty Network %s\";\n" % cluster_num
+
+            graph_string += "\n}\n"
+        graph_string += "\n}\n"
+        return graph_string

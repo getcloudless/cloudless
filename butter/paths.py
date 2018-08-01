@@ -66,21 +66,6 @@ class PathsClient:
         """
         return self.paths.list()
 
-    def graph(self):
-        """
-        Return a human readable formatted string representation of the paths
-        graph.
-        """
-        paths = self.list()
-        graph_string = "digraph services {\n\n"
-        for from_node, to_info in paths.items():
-            for to_node, path_info, in to_info.items():
-                for path in path_info:
-                    graph_string += ("    \"%s\" -> \"%s\" [ label=\"(%s:%s)\" ];\n" %
-                                     (from_node, to_node, path["protocol"], path["port"]))
-        graph_string += "\n}\n"
-        return graph_string
-
     def internet_accessible(self, network_name, subnetwork_name, port):
         """
         Returns true if the service described by "network_name" and
