@@ -108,27 +108,26 @@ class PathsClient:
         Return true if the given network is internet accessible.
         """
         paths = self.list()
-        if "0.0.0.0/0" in paths:
-            target_tag = "%s-%s" % (network_name, subnetwork_name)
-            if target_tag in paths["0.0.0.0/0"]:
-                for path in paths["0.0.0.0/0"][target_tag]:
-                    if int(path["port"]) == int(port):
-                        return True
+        if network_name in paths:
+            if "0.0.0.0/0" in paths[network_name]:
+                if subnetwork_name in paths[network_name]["0.0.0.0/0"]:
+                    for path in paths[network_name]["0.0.0.0/0"][subnetwork_name]:
+                        if int(path["port"]) == int(port):
+                            return True
         return False
 
     def has_access(self, network, from_name, to_name, port):
         """
         Return true if there's a path between the services.
         """
-        target_tag = "%s-%s" % (network, to_name)
-        source_tag = "%s-%s" % (network, from_name)
-        logger.info('Looking for path from %s to %s on port %s', source_tag,
-                    target_tag, 80)
+        logger.info('Looking for path from %s to %s on port %s in network %s',
+                    from_name, to_name, 80, network)
         paths = self.list()
         logger.info('Found paths %s', paths)
-        if source_tag in paths:
-            if target_tag in paths[source_tag]:
-                for path in paths[source_tag][target_tag]:
-                    if int(path["port"]) == int(port):
-                        return True
+        if network in paths:
+            if from_name in paths[network]:
+                if to_name in paths[network][from_name]:
+                    for path in paths[network][from_name][to_name]:
+                        if int(path["port"]) == int(port):
+                            return True
         return False
