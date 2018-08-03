@@ -1,13 +1,15 @@
+import ipaddress
+import os
 import pytest
 from moto import mock_ec2
 
 import butter
-import ipaddress
-import os
 
-# Get the blueprint locations relative to the test script
-blueprints_dir = os.path.join(os.path.dirname(__file__), "blueprints")
-NETWORK_BLUEPRINT = os.path.join(blueprints_dir, "network.yml")
+EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
+                                      "..",
+                                      "example-blueprints")
+NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
+                                 "network", "blueprint.yml")
 
 
 def run_network_test(provider, credentials):

@@ -1,10 +1,15 @@
 ---
-resources:
+# This file only exists to test the blueprint library.
+network:
+  subnetwork_max_instance_count: 768
+
+placement:
   availability_zones: 3
-  max_count: 768
+
+instance:
   public_ip: True
-  memory: 16GB
-  cpus: 4
+  memory: 0.5GB
+  cpus: 0.2
   gpu: false
   disks:
     - size: 8GB
@@ -15,8 +20,4 @@ image:
   name: "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"
 
 initialization:
-  - path: "startup-scripts/haproxy-cloud-config.yml"
-    vars:
-      PrivateIps:
-        required: true
-
+  - path: "startup-scripts/blueprint-test-novars.sh"

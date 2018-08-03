@@ -1,3 +1,4 @@
 ---
 # Default blueprint for test fixture network
-size: 16
+network:
+  legacy_network_size_bits: 16

@@ -1,4 +1,0 @@
----
-resources:
-    max_count: 768
-    availability_zones: 3

@@ -59,8 +59,6 @@ write_files:
             option forwardfor
             http-request set-header X-Forwarded-Port %[dst_port]
             http-request add-header X-Forwarded-Proto https if { ssl_fc }
-            option httpchk HEAD / HTTP/1.1\r\nHost:localhost
-            server web01 10.0.7.16:80 check
-            server web02 10.0.8.233:80 check
-            server web03 10.0.6.194:80 check
+            option httpchk HEAD / HTTP/1.1\r\nHost:localhost{% for PrivateIp in PrivateIps %}
+            server web0{{ loop.index }} {{ PrivateIp }}:80 check{% endfor %}
     path: /etc/haproxy/haproxy.cfg

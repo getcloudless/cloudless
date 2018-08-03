@@ -40,7 +40,7 @@ class NetworkBlueprint(Blueprint):
         prefix of 32 meaning the network has 1 address in it (so effectively nothing since that's
         usually disallowed or filled by internal services.
         """
-        return 32 - self.blueprint["size"]
+        return 32 - self.blueprint["network"]["legacy_network_size_bits"]
 
 
 class InstancesBlueprint(Blueprint):
@@ -57,13 +57,13 @@ class InstancesBlueprint(Blueprint):
         """
         Returns the maximum number of instances expected.  Used to compute subnet sizes.
         """
-        return self.blueprint["resources"]["max_count"]
+        return self.blueprint["network"]["subnetwork_max_instance_count"]
 
     def availability_zone_count(self):
         """
         Number of availability zones.  Used to determine how redundant the services should be.
         """
-        return self.blueprint["resources"].get("availability_zones", 3)
+        return self.blueprint["placement"].get("availability_zones", 3)
 
     def image(self):
         """
@@ -112,28 +112,28 @@ class InstancesBlueprint(Blueprint):
         """
         Returns whether a public IP should be added to the instances.
         """
-        return self.blueprint["resources"].get("public_ip", False)
+        return self.blueprint["instance"].get("public_ip", False)
 
     def cpus(self):
         """
         Returns the cpus to allocate for the instance.  This is required.
         """
-        return float(self.blueprint["resources"]["cpus"])
+        return float(self.blueprint["instance"]["cpus"])
 
     def gpus(self):
         """
         Whether to allocate a GPU.
         """
-        return self.blueprint["resources"].get("gpus", False)
+        return self.blueprint["instance"].get("gpus", False)
 
     def memory(self):
         """
         Returns the memory to allocate for the instance.  This is required.
         """
-        return parse_storage_size(self.blueprint["resources"]["memory"])
+        return parse_storage_size(self.blueprint["instance"]["memory"])
 
     def disks(self):
         """
         Returns the disks to allocate for the instance.  This is required.
         """
-        return self.blueprint["resources"]["disks"]
+        return self.blueprint["instance"]["disks"]
