@@ -4,11 +4,8 @@ import butter
 from butter.util.instance_fitter import get_fitting_instance
 
 
-# TODO: Find a way to consolidate these.  The main issue is that the base
-# images have different names in different providers.
-BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "blueprints")
-AWS_SERVICE_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "service.yml")
-GCE_SERVICE_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "service-ubuntu.yml")
+BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "instance_fitter_blueprints")
+SMALL_INSTANCE_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "instance-fitter-small.yml")
 LARGE_INSTANCE_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "instance-fitter-large.yml")
 
 
@@ -19,10 +16,10 @@ def run_instance_fitter_test(provider, credentials):
 
     # If no memory, cpu, or storage is passed in, find the cheapest.
     if provider == "aws":
-        assert get_fitting_instance(client.instances, AWS_SERVICE_BLUEPRINT) == "t2.small"
+        assert get_fitting_instance(client.instances, SMALL_INSTANCE_BLUEPRINT) == "t2.small"
         assert get_fitting_instance(client.instances, LARGE_INSTANCE_BLUEPRINT) == "m4.xlarge"
     if provider == "gce":
-        assert get_fitting_instance(client.instances, GCE_SERVICE_BLUEPRINT) == "n1-highcpu-4"
+        assert get_fitting_instance(client.instances, SMALL_INSTANCE_BLUEPRINT) == "n1-highcpu-4"
         assert get_fitting_instance(client.instances, LARGE_INSTANCE_BLUEPRINT) == "n1-highmem-4"
 
 @pytest.mark.aws

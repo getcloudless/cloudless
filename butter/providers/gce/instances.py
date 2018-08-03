@@ -112,10 +112,10 @@ class InstancesClient:
         """
         List all instance groups.
         """
-        logger.info('Listing instances')
+        logger.debug('Listing instances')
         instances_info = {}
         for node in self.driver.list_nodes():
-            logger.info("Node metadata: %s", node.extra["metadata"])
+            logger.debug("Node metadata: %s", node.extra["metadata"])
             metadata = node.extra["metadata"]["items"]
             network_names = [item["value"] for item in metadata
                              if item["key"] == "network"]

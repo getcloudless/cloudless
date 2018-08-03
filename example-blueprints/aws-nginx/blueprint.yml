@@ -1,0 +1,22 @@
+---
+network:
+  subnetwork_max_instance_count: 768
+
+placement:
+  availability_zones: 3
+
+instance:
+  public_ip: True
+  memory: 4GB
+  cpus: 1
+  gpu: false
+  disks:
+    - size: 8GB
+      type: standard
+      device_name: /dev/sda1
+
+image:
+  name: "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"
+
+initialization:
+  - path: "nginx-cloud-config.yml"

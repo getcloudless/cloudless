@@ -11,17 +11,18 @@ from butter.testutils.blueprint_tester import run_all
 
 @click.group()
 @click.option('--provider', type=click.Choice(["aws", "gce"]))
-@click.option('--credentials', type=str, default="")
+@click.option('--credentials_file', type=str, default="",
+              help="Credentials JSON file")
 @click.option('--blueprint_dir', type=str, default=".")
 @click.pass_context
-def cli(ctx, provider, credentials, blueprint_dir):
+def cli(ctx, provider, credentials_file, blueprint_dir):
     """
     Test utility for testing blueprints.
     """
     ctx.obj['PROVIDER'] = provider
-    if credentials:
-        with open(credentials) as credentials_file:
-            ctx.obj['CREDENTIALS'] = json.loads(credentials_file.read())
+    if credentials_file:
+        with open(credentials_file) as credentials:
+            ctx.obj['CREDENTIALS'] = json.loads(credentials.read())
     else:
         ctx.obj['CREDENTIALS'] = {}
     ctx.obj['BLUEPRINT_DIR'] = blueprint_dir

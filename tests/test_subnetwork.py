@@ -1,13 +1,16 @@
+import os
 import pytest
 from moto import mock_ec2
 
 import butter
-import os
 
-# Get the blueprint locations relative to the test script
-blueprints_dir = os.path.join(os.path.dirname(__file__), "blueprints")
-NETWORK_BLUEPRINT = os.path.join(blueprints_dir, "network.yml")
-SUBNETWORK_BLUEPRINT = os.path.join(blueprints_dir, "subnetwork.yml")
+EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
+                                      "..",
+                                      "example-blueprints")
+NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
+                                 "network", "blueprint.yml")
+SUBNETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
+                                    "subnetwork", "blueprint.yml")
 
 def run_subnetwork_test(provider, credentials):
 
@@ -32,10 +35,6 @@ def run_subnetwork_test(provider, credentials):
     assert len(client.subnetwork.discover("unittestsubnet", "public")) == expected_subnet_count
     assert len(client.subnetwork.discover("unittestsubnet", "private")) == expected_subnet_count
 
-    # Get subnet Ids
-    private_ids = [private_subnet["Id"] for private_subnet in private_subnets]
-    public_ids = [public_subnet["Id"] for public_subnet in public_subnets]
-
     # Make sure they show up when I list them
     subnet_info = client.subnetwork.list()
     assert len(subnet_info["unittestsubnet"]["public"]) == expected_subnet_count
@@ -44,12 +43,12 @@ def run_subnetwork_test(provider, credentials):
     # Now destroy them and make sure everything gets cleaned up
     client.subnetwork.destroy("unittestsubnet", "public")
     public_subnets = client.subnetwork.discover("unittestsubnet", "public")
-    assert len(public_subnets) == 0
+    assert not public_subnets
     assert client.network.discover("unittestsubnet")
 
     client.subnetwork.destroy("unittestsubnet", "private")
     private_subnets = client.subnetwork.discover("unittestsubnet", "private")
-    assert len(private_subnets) == 0
+    assert not private_subnets
     client.network.destroy("unittestsubnet")
     assert not client.network.discover("unittestsubnet")
 

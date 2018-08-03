@@ -5,15 +5,20 @@ import boto3
 from moto import mock_ec2, mock_autoscaling, mock_elb, mock_route53
 import butter
 
-# Get the blueprint locations relative to the test script
-blueprints_dir = os.path.join(os.path.dirname(__file__), "blueprints")
-NETWORK_BLUEPRINT = os.path.join(blueprints_dir, "network.yml")
-SUBNETWORK_BLUEPRINT = os.path.join(blueprints_dir, "subnetwork.yml")
+EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
+                                      "..",
+                                      "example-blueprints")
+NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
+                                 "network", "blueprint.yml")
+SUBNETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
+                                    "subnetwork", "blueprint.yml")
 
 # TODO: Find a way to consolidate these.  The main issue is that the base
 # images have different names in different providers.
-AWS_SERVICE_BLUEPRINT = os.path.join(blueprints_dir, "service.yml")
-GCE_SERVICE_BLUEPRINT = os.path.join(blueprints_dir, "service-ubuntu.yml")
+AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
+                                     "aws-nginx", "blueprint.yml")
+GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
+                                     "gce-apache", "blueprint.yml")
 
 def run_instances_test(provider, credentials):
 

@@ -11,11 +11,12 @@ import importlib
 
 from butter.testutils.log import logger
 from butter.testutils.fixture import SetupInfo
+from butter.util.exceptions import DisallowedOperationException
 
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 NETWORK_BLUEPRINT = os.path.join(SCRIPT_PATH, "network.yml")
-TEST_STATE_FILENAME = "state.json"
+TEST_STATE_FILENAME = "blueprint-test-state.json"
 
 def call_with_retries(function, retry_count, retry_delay):
     """
@@ -31,9 +32,10 @@ def call_with_retries(function, retry_count, retry_delay):
         except Exception as verify_exception:
             logger.info("Verify exception: %s", verify_exception)
             time.sleep(float(retry_delay))
-    logger.info("Exceeded max retries!  Reraising last exception")
-    # pylint: disable=misplaced-bare-raise
-    raise
+            if retry > int(retry_count):
+                logger.info("Exceeded max retries!  Reraising last exception")
+                raise
+    assert False, "Should never get here."
 
 
 def generate_unique_name(base):
@@ -41,7 +43,7 @@ def generate_unique_name(base):
     Generates a somewhat unique name given "base".
     """
     random_length = 10
-    random_string = ''.join(random.choices(string.ascii_uppercase,
+    random_string = ''.join(random.choices(string.ascii_lowercase,
                                            k=random_length))
     return "%s-%s" % (base, random_string)
 
@@ -73,6 +75,8 @@ def get_state(blueprint_dir):
     Get test state so we can run each command independently.
     """
     state_file_path = "%s/%s" % (blueprint_dir, TEST_STATE_FILENAME)
+    if not os.path.exists(state_file_path):
+        return {}
     with open(state_file_path, "r") as state_file:
         return json.loads(state_file.read())
 
@@ -81,32 +85,39 @@ def setup(client, blueprint_dir):
     Create all the boilerplate to spin up the service, and the service itself.
     """
     logger.info("Running setup to test: %s", blueprint_dir)
-    # Save the state now in case something fails
-    network_name = generate_unique_name("blueprint-tester")
-    service_name = generate_unique_name("blueprint-tester")
-    save_state({"network_name": network_name, "service_name": service_name},
-               blueprint_dir)
+    state = get_state(blueprint_dir)
+    if state:
+        raise DisallowedOperationException(
+            "Found non empty state file: %s" % state)
+    network_name = generate_unique_name("test-network")
+    service_name = generate_unique_name("test-service")
+    state = {"network_name": network_name, "service_name": service_name}
+    logger.info("Saving state: %s now in case something fails", state)
+    save_state(state, blueprint_dir)
 
-    # Create the test network
+    logger.info("Creating test network: %s", network_name)
     client.network.create(network_name, NETWORK_BLUEPRINT)
 
-    # Setup the custom environment
+    logger.info("Calling the pre service setup in test fixture")
     blueprint_tester = get_blueprint_tester(client, blueprint_dir)
-    setup_info = blueprint_tester.setup(network_name)
+    setup_info = blueprint_tester.setup_before_tested_service(network_name)
     assert isinstance(setup_info, SetupInfo)
+    state["setup_info"] = {
+        "deployment_info": setup_info.deployment_info,
+        "blueprint_vars": setup_info.blueprint_vars,
+        }
+    logger.info("Saving full state: %s", state)
+    save_state(state, blueprint_dir)
 
-    # Instantiate the actual instances for this module
+    logger.info("Creating services using the blueprint under test")
     blueprint = get_blueprint(blueprint_dir)
     instances = client.instances.create(network_name, service_name, blueprint,
                                         setup_info.blueprint_vars)
     assert instances["Instances"]
-    save_state({"network_name": network_name,
-                "service_name": service_name,
-                "setup_info": {
-                    "deployment_info": setup_info.deployment_info,
-                    "blueprint_vars": setup_info.blueprint_vars,
-                    }},
-               blueprint_dir)
+
+    logger.info("Calling the post service setup in test fixture")
+    blueprint_tester.setup_after_tested_service(network_name, service_name,
+                                                setup_info)
 
 def verify(client, blueprint_dir):
     """
@@ -127,11 +138,14 @@ def teardown(client, blueprint_dir):
     """
     logger.info("Running teardown on: %s", blueprint_dir)
     state = get_state(blueprint_dir)
+    if not state or "network_name" not in state:
+        return
     all_instances = client.instances.list()
     for instance_group in all_instances:
         if instance_group["Network"] == state["network_name"]:
             client.instances.destroy(state["network_name"], instance_group["Id"])
     client.network.destroy(state["network_name"])
+    save_state({}, blueprint_dir)
 
 def run_all(client, blueprint_dir):
     """

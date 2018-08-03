@@ -226,6 +226,10 @@ class InstancesClient:
                                                           lc_security_group)
             self.security_groups.delete_with_retries(lc_security_group,
                                                      RETRY_COUNT, RETRY_DELAY)
+        else:
+            self.security_groups.delete_by_name(vpc_id, str(asg_name),
+                                                RETRY_COUNT, RETRY_DELAY)
+
         self.subnetwork.destroy(network_name, subnetwork_name)
 
     def node_types(self):
@@ -261,8 +265,8 @@ class InstancesClient:
             # This happens in moto, this should probably figure out whether moto
             # is in use in a smarter way.
             return [{
-                "type": "t2.small",
-                "memory": 2147483648,
-                "cpus": 1
+                "type": "c4.8xlarge",
+                "memory": 9999999999999,
+                "cpus": 100
                 }]
         return node_sizes

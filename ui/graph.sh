@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROVIDER="aws"
+PROVIDER=${PROVIDER-aws}
 
 echo "Regenerating graph.dot!" 1>&2
 python graph.py "$PROVIDER" >| graph.dot

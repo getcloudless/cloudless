@@ -8,7 +8,8 @@ Implementation of some common helpers necessary to work with security groups.
 import time
 import boto3
 from botocore.exceptions import ClientError
-from butter.util.exceptions import OperationTimedOut
+from butter.util.exceptions import (OperationTimedOut,
+                                    BadEnvironmentStateException)
 from butter.providers.aws.log import logger
 
 
@@ -57,6 +58,24 @@ class SecurityGroups:
                     ec2.revoke_security_group_ingress(
                         GroupId=security_group["GroupId"],
                         IpPermissions=[rule_to_remove])
+
+    def delete_by_name(self, vpc_id, security_group_name, retries, retry_delay):
+        ec2 = boto3.client("ec2")
+        logger.info("Deleting security group %s in %s", security_group_name,
+                    vpc_id)
+        security_groups = ec2.describe_security_groups(
+            Filters=[
+                {'Name': 'vpc-id', 'Values': [vpc_id]},
+                {'Name': 'group-name', 'Values': [security_group_name]}
+                ])
+        if not security_groups["SecurityGroups"]:
+            return True
+        if len(security_groups["SecurityGroups"]) > 1:
+            raise BadEnvironmentStateException(
+                "Found multiple security groups with name %s, in vpc %s: %s" %
+                (security_group_name, vpc_id, security_groups))
+        security_group_id = security_groups["SecurityGroups"][0]["GroupId"]
+        return self.delete_with_retries(security_group_id, retries, retry_delay)
 
     def delete_with_retries(self, security_group_id, retries, retry_delay):
         ec2 = boto3.client("ec2")

@@ -5,10 +5,9 @@ from butter.util.exceptions import BlueprintException
 
 
 # Get the blueprint locations relative to the test script
-BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "blueprints")
+BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "variables_test_blueprints")
 INSTANCES_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "blueprint-test.yml")
-SERVICE_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "service.yml")
-NETWORK_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "network.yml")
+NOVARS_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "blueprint-test-novars.yml")
 OPTIONAL_SET = """# Blueprint Test
 # Only to test that the jinja2 templating is handled properly.
 # other_template_var: 
@@ -44,5 +43,5 @@ def test_blueprint():
     with pytest.raises(BlueprintException,
                        message="Expected missing value exception"):
         instances_blueprint.runtime_scripts()
-    instances_blueprint = InstancesBlueprint(SERVICE_BLUEPRINT, {})
+    instances_blueprint = InstancesBlueprint(NOVARS_BLUEPRINT, {})
     instances_blueprint.runtime_scripts()

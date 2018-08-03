@@ -1,0 +1,6 @@
+---
+network:
+  subnetwork_max_instance_count: 768
+
+placement:
+  availability_zones: 3

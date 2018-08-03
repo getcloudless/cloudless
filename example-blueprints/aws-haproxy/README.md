@@ -1,4 +1,4 @@
-# HAProxy example module
+# HAProxy Example Blueprint
 
 This is a blueprint that creates an instance running HAProxy and takes the IP
 addresses of the servers behind the load balancer as blueprint template
@@ -12,5 +12,5 @@ instead of the IP addresses.
 
 ```
 pipenv update
-pipenv run butter-test
+pipenv run butter-test --provider aws run
 ```
