@@ -23,7 +23,7 @@ class NetworkClient:
         self.driver = get_gce_driver(credentials)
 
     # pylint: disable=unused-argument
-    def create(self, name, blueprint, inventories=None):
+    def create(self, name, blueprint):
         """
         Create new network named "name" with blueprint file at "blueprint".
 

@@ -42,6 +42,11 @@ class NetworkBlueprint(Blueprint):
         """
         return 32 - self.blueprint["network"]["legacy_network_size_bits"]
 
+    def get_allowed_private_cidr(self):
+        """
+        Get the CIDR block in which we can allocate our networks.
+        """
+        return self.blueprint["network"].get("allowed_private_cidr", "10.0.0.0/8")
 
 class InstancesBlueprint(Blueprint):
     """
