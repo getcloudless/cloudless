@@ -97,14 +97,23 @@ class InstancesClient:
         logger.info('Destroying instances: %s, %s', network_name,
                     subnetwork_name)
         destroy_results = []
-        node_name = "%s-%s" % (network_name, subnetwork_name)
         for node in self.driver.list_nodes():
-            if node.name.startswith(node_name):
+            metadata = node.extra.get("metadata", {}).get("items", [])
+            node_network_name = None
+            node_subnetwork_name = None
+            for item in metadata:
+                logger.debug("Found metadata item %s for node %s", item, node)
+                if item["key"] == "network":
+                    node_network_name = item["value"]
+                if item["key"] == "subnetwork":
+                    node_subnetwork_name = item["value"]
+            if (network_name == node_network_name and
+                    subnetwork_name == node_subnetwork_name):
                 logger.info('Destroying instance: %s', node.name)
                 destroy_results.append(self.driver.destroy_node(node))
         subnetwork_destroy = self.subnetwork.destroy(network_name,
                                                      subnetwork_name)
-        self.firewalls.cleanup_orphaned_firewalls()
+        self.firewalls.delete_firewall(network_name, subnetwork_name)
         return {"Subnetwork": subnetwork_destroy,
                 "Instances": destroy_results}
 

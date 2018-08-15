@@ -149,8 +149,8 @@ tox
 To run tests against GCE and AWS, run:
 
 ```
-pytest -m "gce" --fulltrace
-pytest -m "aws" --fulltrace
+tox -e gce
+tox -e aws
 ```
 
 For GCE, you must set `BUTTER_GCE_USER_ID`, `BUTTER_GCE_CREDENTIALS_PATH`, and

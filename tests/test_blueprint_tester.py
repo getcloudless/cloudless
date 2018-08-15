@@ -1,3 +1,6 @@
+"""
+Tests for blueprint test framework.
+"""
 import os
 import pytest
 from moto import mock_ec2, mock_autoscaling
@@ -13,6 +16,9 @@ from butter.testutils.blueprint_tester import get_state
 BLUEPRINT_DIR = os.path.join(os.path.dirname(__file__), "blueprint_tester_fixture")
 
 def run_blueprint_tester_test(provider, credentials):
+    """
+    Test blueprint test framework with the given provider.
+    """
 
     # Get the client for this test
     client = butter.Client(provider, credentials)
@@ -60,4 +66,7 @@ def run_blueprint_tester_test(provider, credentials):
 @mock_autoscaling
 @pytest.mark.mock_aws
 def test_blueprint_tester_mock():
+    """
+    Test blueprint test framework against moto (mock aws).
+    """
     run_blueprint_tester_test(provider="aws", credentials={})

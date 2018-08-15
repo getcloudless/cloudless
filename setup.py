@@ -37,6 +37,7 @@ REQUIRED = [
 # What packages are required for this module to be tested?
 TESTS_REQUIRED = [
     'pytest',
+    'pytest-xdist',
     'moto',
     'tox',
     'pylint'
