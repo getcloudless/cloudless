@@ -1,3 +1,6 @@
+"""
+Test instance fitter.
+"""
 import os
 import pytest
 import butter
@@ -10,6 +13,9 @@ LARGE_INSTANCE_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "instance-fitter-large.y
 
 
 def run_instance_fitter_test(provider, credentials):
+    """
+    Test that we get the proper instance sizes for the given provider.
+    """
 
     # Get the client for this test
     client = butter.Client(provider, credentials)
@@ -24,10 +30,16 @@ def run_instance_fitter_test(provider, credentials):
 
 @pytest.mark.aws
 def test_instance_fitter_aws():
+    """
+    Test instance fitter with AWS and global configuration.
+    """
     run_instance_fitter_test(provider="aws", credentials={})
 
 @pytest.mark.gce
 def test_instance_fitter_gce():
+    """
+    Test instance fitter with GCE and below environment configuration.
+    """
     run_instance_fitter_test(provider="gce", credentials={
         "user_id": os.environ['BUTTER_GCE_USER_ID'],
         "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],

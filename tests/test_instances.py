@@ -1,9 +1,13 @@
+"""
+Test for instance management.
+"""
 import ipaddress
 import os
 import pytest
 import boto3
 from moto import mock_ec2, mock_autoscaling, mock_elb, mock_route53
 import butter
+from butter.testutils.blueprint_tester import generate_unique_name
 
 EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
                                       "..",
@@ -13,37 +17,42 @@ NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
 SUBNETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
                                     "subnetwork", "blueprint.yml")
 
-# TODO: Find a way to consolidate these.  The main issue is that the base
-# images have different names in different providers.
 AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
                                      "aws-nginx", "blueprint.yml")
 GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
                                      "gce-apache", "blueprint.yml")
 
+# pylint: disable=too-many-locals,too-many-statements
 def run_instances_test(provider, credentials):
+    """
+    Test that the instance management works against the given provider.
+    """
 
     # Get the client for this test
     client = butter.Client(provider, credentials)
 
+    # Get a somewhat unique network name
+    network_name = generate_unique_name("unittest")
+
     # Provision all the resources
-    client.network.create("unittest", blueprint=NETWORK_BLUEPRINT)
+    client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
     if provider == "aws":
-        client.instances.create("unittest", "web-lb", AWS_SERVICE_BLUEPRINT, {})
-        client.instances.create("unittest", "web", AWS_SERVICE_BLUEPRINT, {})
+        client.instances.create(network_name, "web-lb", AWS_SERVICE_BLUEPRINT, {})
+        client.instances.create(network_name, "web", AWS_SERVICE_BLUEPRINT, {})
     else:
         assert provider == "gce"
-        client.instances.create("unittest", "web-lb", GCE_SERVICE_BLUEPRINT, {})
-        client.instances.create("unittest", "web", GCE_SERVICE_BLUEPRINT, {})
+        client.instances.create(network_name, "web-lb", GCE_SERVICE_BLUEPRINT, {})
+        client.instances.create(network_name, "web", GCE_SERVICE_BLUEPRINT, {})
 
-    assert client.instances.discover("unittest", "web")["Network"] == "unittest"
-    assert client.instances.discover("unittest", "web")["Id"] == "web"
-    assert client.instances.discover("unittest", "web-lb")["Network"] == "unittest"
-    assert client.instances.discover("unittest", "web-lb")["Id"] == "web-lb"
+    assert client.instances.discover(network_name, "web")["Network"] == network_name
+    assert client.instances.discover(network_name, "web")["Id"] == "web"
+    assert client.instances.discover(network_name, "web-lb")["Network"] == network_name
+    assert client.instances.discover(network_name, "web-lb")["Id"] == "web-lb"
 
     if provider == "aws":
         # Networking
         ec2 = boto3.client("ec2")
-        dc_id = client.network.discover("unittest")["Id"]
+        dc_id = client.network.discover(network_name)["Id"]
         subnets = ec2.describe_subnets(Filters=[{
             'Name': 'vpc-id',
             'Values': [dc_id]}])
@@ -56,17 +65,17 @@ def run_instances_test(provider, credentials):
         # AutoScalingGroup
         autoscaling = boto3.client("autoscaling")
         web_asgs = autoscaling.describe_auto_scaling_groups(
-            AutoScalingGroupNames=["unittest.web"])
+            AutoScalingGroupNames=["%s.web" % network_name])
         assert len(web_asgs["AutoScalingGroups"]) == 1
         web_asg = web_asgs["AutoScalingGroups"][0]
-        assert web_asg["AutoScalingGroupName"] == "unittest.web"
-        assert web_asg["LaunchConfigurationName"] == "unittest.web"
+        assert web_asg["AutoScalingGroupName"] == "%s.web" % network_name
+        assert web_asg["LaunchConfigurationName"] == "%s.web" % network_name
         web_lb_asgs = autoscaling.describe_auto_scaling_groups(
-            AutoScalingGroupNames=["unittest.web-lb"])
+            AutoScalingGroupNames=["%s.web-lb" % network_name])
         assert len(web_lb_asgs["AutoScalingGroups"]) == 1
         web_lb_asg = web_lb_asgs["AutoScalingGroups"][0]
-        assert web_lb_asg["AutoScalingGroupName"] == "unittest.web-lb"
-        assert web_lb_asg["LaunchConfigurationName"] == "unittest.web-lb"
+        assert web_lb_asg["AutoScalingGroupName"] == "%s.web-lb" % network_name
+        assert web_lb_asg["LaunchConfigurationName"] == "%s.web-lb" % network_name
 
         # Make sure subnets don't overlap
         web_asg = web_asgs["AutoScalingGroups"][0]
@@ -106,7 +115,7 @@ def run_instances_test(provider, credentials):
         assert web_asg_vpc_id == web_lb_asg_vpc_id
 
     # Make sure they are gone when I destroy them
-    client.instances.destroy("unittest", "web-lb")
+    client.instances.destroy(network_name, "web-lb")
 
     if provider == "aws":
         # Networking
@@ -123,27 +132,27 @@ def run_instances_test(provider, credentials):
         # AutoScalingGroup
         autoscaling = boto3.client("autoscaling")
         asgs = autoscaling.describe_auto_scaling_groups(
-                AutoScalingGroupNames=["unittest.web"])
+            AutoScalingGroupNames=["%s.web" % network_name])
         assert len(asgs["AutoScalingGroups"]) == 1
         asg = asgs["AutoScalingGroups"][0]
-        assert asg["AutoScalingGroupName"] == "unittest.web"
-        assert asg["LaunchConfigurationName"] == "unittest.web"
+        assert asg["AutoScalingGroupName"] == "%s.web" % network_name
+        assert asg["LaunchConfigurationName"] == "%s.web" % network_name
 
     # Now destroy the rest
-    client.instances.destroy("unittest", "web")
+    client.instances.destroy(network_name, "web")
 
     if provider == "aws":
         # AutoScalingGroups
         autoscaling = boto3.client("autoscaling")
         asgs = autoscaling.describe_auto_scaling_groups(
-                AutoScalingGroupNames=["unittest.web"])
-        assert len(asgs["AutoScalingGroups"]) == 0
+            AutoScalingGroupNames=["%s.web" % network_name])
+        assert not asgs["AutoScalingGroups"]
         asgs = autoscaling.describe_auto_scaling_groups(
-                AutoScalingGroupNames=["unittest.web-lb"])
-        assert len(asgs["AutoScalingGroups"]) == 0
+            AutoScalingGroupNames=["%s.web-lb" % network_name])
+        assert not asgs["AutoScalingGroups"]
 
     # Clean up the VPC
-    client.network.destroy("unittest")
+    client.network.destroy(network_name)
 
 
 @mock_ec2
@@ -152,14 +161,23 @@ def run_instances_test(provider, credentials):
 @mock_route53
 @pytest.mark.mock_aws
 def test_instances_mock():
+    """
+    Run tests using the mock aws driver (moto).
+    """
     run_instances_test(provider="aws", credentials={})
 
 @pytest.mark.aws
 def test_instances_aws():
+    """
+    Run tests against real AWS (using global configuration).
+    """
     run_instances_test(provider="aws", credentials={})
 
 @pytest.mark.gce
 def test_instances_gce():
+    """
+    Run tests against real GCE (environment variables below must be set).
+    """
     run_instances_test(provider="gce", credentials={
         "user_id": os.environ['BUTTER_GCE_USER_ID'],
         "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],

@@ -1,3 +1,6 @@
+"""
+Tests for blueprint reader.
+"""
 import os
 import pytest
 from butter.util.blueprint import InstancesBlueprint
@@ -22,6 +25,9 @@ OPTIONAL_NOT_SET = """# Blueprint Test
 # optional_var: """
 
 def test_blueprint():
+    """
+    Blueprint reader tests.
+    """
     instances_blueprint = InstancesBlueprint(INSTANCES_BLUEPRINT,
                                              {"list_var": ["foo"],
                                               "other_var": ["bar"]})
