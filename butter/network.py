@@ -29,7 +29,7 @@ class NetworkClient:
         self.network = get_provider(provider).network.NetworkClient(
             credentials)
 
-    def create(self, name, blueprint, inventories=None):
+    def create(self, name, blueprint):
         """
         Create new network named "name" with blueprint file at "blueprint".
 
@@ -39,7 +39,7 @@ class NetworkClient:
 
         """
         logger.info('Creating network %s with blueprint %s', name, blueprint)
-        return self.network.create(name, blueprint, inventories)
+        return self.network.create(name, blueprint)
 
     def discover(self, name):
         """

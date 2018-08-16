@@ -11,14 +11,13 @@ import math
 
 from libcloud.common.google import ResourceNotFoundError
 
-from butter.util.blueprint import InstancesBlueprint
+from butter.util.blueprint import InstancesBlueprint, NetworkBlueprint
 from butter.util.subnet_generator import generate_subnets
 from butter.util.exceptions import NotEnoughIPSpaceException
 from butter.providers.gce.driver import get_gce_driver
 from butter.providers.gce.log import logger
 from butter.providers.gce.schemas import canonicalize_subnetwork_info
 
-DEFAULT_BASE_CIDR = "10.0.0.0/16"
 DEFAULT_REGION = "us-east1"
 
 
@@ -48,7 +47,7 @@ class SubnetworkClient:
         # In google compute engine we provision instances across availability
         # zones, not subnets.  This means we only provision one subnetwork and
         # will stripe instances across azs within that.
-        for cidr in self._carve_subnets(network_name, prefix=prefix, count=1):
+        for cidr in self._carve_subnets(network_name, blueprint, prefix=prefix, count=1):
             try:
                 full_name = "%s-%s" % (network_name, subnetwork_name)
                 subnet_info = self._gce_provision_subnet(full_name, cidr,
@@ -119,19 +118,19 @@ class SubnetworkClient:
         logger.info('Found subnetworks: %s', subnets_info)
         return subnets_info
 
-    def _carve_subnets(self, network_name, prefix=28, count=3):
+    def _carve_subnets(self, network_name, blueprint, prefix=28, count=3):
         # Get existing subnets, to make sure we don't overlap CIDR blocks
         all_subnetworks = self.driver.ex_list_subnetworks()
         existing_subnets = [subnetwork for subnetwork in all_subnetworks if
                             subnetwork.network.name == network_name]
         existing_cidrs = [subnet.cidr for subnet in existing_subnets]
 
-        # Finally, iterate the list of all subnets of the given prefix that can
-        # fit in the given VPC
-        subnets = generate_subnets(DEFAULT_BASE_CIDR, existing_cidrs, prefix, count)
+        blueprint = NetworkBlueprint(blueprint)
+        allowed_private_cidr = blueprint.get_allowed_private_cidr()
+        subnets = generate_subnets(allowed_private_cidr, existing_cidrs, prefix, count)
         if len(subnets) < count:
             raise NotEnoughIPSpaceException("Could not allocate %s subnets with "
-                                            "prefix %s in vpc %s" %
+                                            "prefix %s in network %s" %
                                             (count, prefix, network_name))
         return subnets
 

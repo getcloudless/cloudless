@@ -19,8 +19,6 @@ from butter.providers.aws.log import logger
 
 RETRY_COUNT = int(60)
 RETRY_DELAY = float(1.0)
-ALLOCATION_BLOCKS = ["10.0.0.0/8"]
-
 
 class NetworkClient:
     """
@@ -33,23 +31,16 @@ class NetworkClient:
         self.credentials = credentials
         self.internet_gateways = InternetGateways(credentials)
 
-    def create(self, name, blueprint, inventories=None):
+    def create(self, name, blueprint):
         """
         Create new network named "name" with blueprint file at "blueprint".
-
-        Inventories is a list of functions that should return lists of cidr blocks.  The created VPC
-        will not overlap those cidr blocks.
         """
         ec2 = boto3.client("ec2")
         if self.discover(name):
             raise DisallowedOperationException(
                 "Found existing VPC named: %s" % name)
         blueprint = NetworkBlueprint(blueprint)
-        exclude_cidrs = []
-        if inventories:
-            for inventory in inventories:
-                exclude_cidrs.extend(inventory())
-
+        allocation_blocks = blueprint.get_allowed_private_cidr()
         def get_cidr(prefix, address_range_includes, address_range_excludes):
             for address_range_include in address_range_includes:
                 for cidr in generate_subnets(address_range_include, address_range_excludes, prefix,
@@ -60,8 +51,7 @@ class NetworkClient:
                                             (prefix, address_range_includes,
                                              address_range_includes))
 
-        vpc = ec2.create_vpc(CidrBlock=get_cidr(blueprint.get_prefix(), ALLOCATION_BLOCKS,
-                                                exclude_cidrs))
+        vpc = ec2.create_vpc(CidrBlock=get_cidr(blueprint.get_prefix(), [allocation_blocks], []))
         vpc_id = vpc["Vpc"]["VpcId"]
         try:
             creation_retries = 0
