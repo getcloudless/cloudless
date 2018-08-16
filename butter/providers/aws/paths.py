@@ -5,13 +5,16 @@ This is a the AWS implmentation for the paths API, a high level interface to add
 routes between services, doing the conversion to security groups and firewall
 rules.
 """
+import ipaddress
 import boto3
 
 from butter.util import netgraph
 from butter.providers.aws import instances
 from butter.providers.aws.impl.asg import ASG
 from butter.providers.aws.log import logger
-from butter.util.exceptions import BadEnvironmentStateException
+from butter.util.exceptions import BadEnvironmentStateException, DisallowedOperationException
+from butter.util.public_blocks import get_public_blocks
+from butter.types.networking import Service, CidrBlock
 
 
 class PathsClient:
@@ -23,75 +26,105 @@ class PathsClient:
         self.instances = instances.InstancesClient(credentials)
         self.asg = ASG(credentials)
 
-    def expose(self, network_name, subnetwork_name, port):
+    def _extract_service_info(self, source, destination, port):
         """
-        Make the "subnetwork_name" service accessible on the internet.
+        Helper to extract the necessary information from the source and destination arguments.
         """
-        if self.internet_accessible(network_name, subnetwork_name, port):
-            logger.info("Service %s in network %s is already internet "
-                        "accessible on port: %s", subnetwork_name,
-                        network_name, port)
+
+        if (not isinstance(source, Service) and not isinstance(destination, Service) and
+                not isinstance(source, CidrBlock) and not isinstance(destination, CidrBlock)):
+            raise DisallowedOperationException(
+                "Source and destination can only be a butter.types.networking.Service object or a "
+                "butter.types.networking.CidrBlock object")
+
+        if not isinstance(destination, Service) and not isinstance(source, Service):
+            raise DisallowedOperationException(
+                "Either destination or source must be a butter.types.networking.Service object")
+
+        if (isinstance(source, Service) and isinstance(destination, Service) and
+                source.network_name != destination.network_name):
+            raise DisallowedOperationException(
+                "Destination and source must be in the same network if specified as services")
+
+        src_ip_permissions = []
+        dest_ip_permissions = []
+        src_sg_id = None
+        dest_sg_id = None
+        if isinstance(source, Service):
+            src_sg_id = self.asg.get_launch_configuration_security_group(source.network_name,
+                                                                         source.service_name)
+            src_ip_permissions.append({
+                'FromPort': port,
+                'ToPort': port,
+                'IpProtocol': 'tcp',
+                'UserIdGroupPairs': [
+                    {'GroupId': src_sg_id}
+                    ]
+                })
+        if isinstance(source, CidrBlock):
+            src_ip_permissions.append({
+                'FromPort': port,
+                'ToPort': port,
+                'IpProtocol': 'tcp',
+                'IpRanges': [{
+                    'CidrIp': str(source.cidr_block)
+                    }]
+                })
+        if isinstance(destination, Service):
+            dest_sg_id = self.asg.get_launch_configuration_security_group(destination.network_name,
+                                                                          destination.service_name)
+            dest_ip_permissions.append({
+                'FromPort': port,
+                'ToPort': port,
+                'IpProtocol': 'tcp',
+                'UserIdGroupPairs': [
+                    {'GroupId': dest_sg_id}
+                    ]
+                })
+        if isinstance(destination, CidrBlock):
+            dest_ip_permissions.append({
+                'FromPort': port,
+                'ToPort': port,
+                'IpProtocol': 'tcp',
+                'IpRanges': [{
+                    'CidrIp': str(destination.cidr_block)
+                    }]
+                })
+        return dest_sg_id, src_sg_id, dest_ip_permissions, src_ip_permissions
+
+    def add(self, source, destination, port):
+        """
+        Adds a route from "source" to "destination".
+        """
+        logger.debug("Adding path from %s to %s", source, destination)
+        if self.has_access(source, destination, port):
+            logger.info("Service %s already has access to %s on port: %s", source, destination,
+                        port)
             return True
+
+        # Currently controlling egress in AWS is not supported.  All egress is always allowed.
+        if not isinstance(destination, Service):
+            raise DisallowedOperationException(
+                "Destination must be a butter.types.networking.Service object")
+
+        dest_sg_id, _, _, src_ip_permissions = self._extract_service_info(source, destination, port)
         ec2 = boto3.client("ec2")
-        security_group_id = self.asg.get_launch_configuration_security_group(
-            network_name, subnetwork_name)
-        ec2.authorize_security_group_ingress(GroupId=security_group_id,
-                                             IpPermissions=[{
-                                                 'FromPort': port,
-                                                 'ToPort': port,
-                                                 'IpProtocol': 'tcp',
-                                                 'IpRanges': [{
-                                                     'CidrIp': '0.0.0.0/0'
-                                                 }]
-                                             }]
-                                             )
+        ec2.authorize_security_group_ingress(GroupId=dest_sg_id, IpPermissions=src_ip_permissions)
         return True
 
-    def add(self, network, from_name, to_name, port):
+    def remove(self, source, destination, port):
         """
-        Adds a route from "from_name" to "to_name".
+        Remove a route from "source" to "destination".
         """
-        if self.has_access(network, from_name, to_name, port):
-            logger.info("Service %s already has access to %s in network %s "
-                        "on port: %s", from_name, to_name,
-                        network, port)
-            return True
-        ec2 = boto3.client("ec2")
-        to_sg_id = self.asg.get_launch_configuration_security_group(network,
-                                                                    to_name)
-        from_sg_id = self.asg.get_launch_configuration_security_group(
-            network, from_name)
-        ec2.authorize_security_group_ingress(GroupId=to_sg_id,
-                                             IpPermissions=[{
-                                                 'FromPort': port,
-                                                 'ToPort': port,
-                                                 'IpProtocol': 'tcp',
-                                                 'UserIdGroupPairs': [
-                                                     {'GroupId': from_sg_id}
-                                                 ]
-                                             }]
-                                             )
-        return True
+        # Currently controlling egress in AWS is not supported.  All egress is always allowed.
+        if not isinstance(destination, Service):
+            raise DisallowedOperationException(
+                "Destination must be a butter.types.networking.Service object")
 
-    def remove(self, network, from_name, to_name, port):
-        """
-        Remove a route from "from_name" to "to_name".
-        """
         ec2 = boto3.client("ec2")
-        to_sg_id = self.asg.get_launch_configuration_security_group(network,
-                                                                    to_name)
-        from_sg_id = self.asg.get_launch_configuration_security_group(
-            network, from_name)
-        ec2.revoke_security_group_ingress(GroupId=to_sg_id,
-                                          IpPermissions=[{
-                                              'FromPort': port,
-                                              'ToPort': port,
-                                              'IpProtocol': 'tcp',
-                                              'UserIdGroupPairs': [
-                                                  {'GroupId': from_sg_id}
-                                              ]
-                                          }]
-                                          )
+        dest_sg_id, _, _, src_ip_permissions = self._extract_service_info(source, destination, port)
+        ec2.revoke_security_group_ingress(GroupId=dest_sg_id, IpPermissions=src_ip_permissions)
+
     # pylint: disable=too-many-locals
     def list(self):
         """
@@ -152,46 +185,54 @@ class PathsClient:
         return {network: netgraph.firewalls_to_net(info)
                 for network, info in fw_info.items()}
 
-    def internet_accessible(self, network_name, subnetwork_name, port):
+    def internet_accessible(self, service, port):
         """
-        Return true if the "subnetwork_name" service is accessible on the
-        internet.
+        Return true if the given service is accessible on the internet.
         """
-        ec2 = boto3.client("ec2")
-        security_group_id = self.asg.get_launch_configuration_security_group(
-            network_name, subnetwork_name)
-        security_group = ec2.describe_security_groups(
-            GroupIds=[security_group_id])
-        ip_permissions = security_group["SecurityGroups"][0]["IpPermissions"]
-        for ip_permission in ip_permissions:
-            if (ip_permission["IpRanges"] and
-                    ip_permission["FromPort"] == port):
+        for public_block in get_public_blocks():
+            if self.has_access(CidrBlock(public_block), service, port):
                 return True
         return False
 
-    def has_access(self, network, from_name, to_name, port):
+    def has_access(self, source, destination, port):
         """
-        Return true if there is a route from "from_name" to "to_name".
-
-        Note, this only checks if the security group is referenced, which is
-        what this tool implements internally.  It will not catch if you
-        explicitly added subnet CIDR blocks or if the destination service is
-        fully internet accessible based on CIDR.
-
-        See https://github.com/sverch/butter/issues/3 for details.
+        Return true if there is a route from "source" to "destination".
         """
         ec2 = boto3.client("ec2")
-        to_group_id = self.asg.get_launch_configuration_security_group(
-            network, to_name)
-        from_group_id = self.asg.get_launch_configuration_security_group(
-            network, from_name)
-        security_group = ec2.describe_security_groups(GroupIds=[to_group_id])
+        dest_sg_id, src_sg_id, _, src_ip_permissions = self._extract_service_info(
+            source, destination, port)
+        security_group = ec2.describe_security_groups(GroupIds=[dest_sg_id])
+
+        def extract_cidr_port(ip_permissions):
+            cidr_port_list = []
+            for ip_permission in ip_permissions:
+                if "IpRanges" in ip_permission:
+                    for ip_range in ip_permission["IpRanges"]:
+                        cidr_port_list.append({"port": ip_permission["FromPort"],
+                                               "cidr": ip_range["CidrIp"]})
+            return cidr_port_list
+
+        def sg_allowed(ip_permissions, sg_id, port):
+            for ip_permission in ip_permissions:
+                if (ip_permission["UserIdGroupPairs"] and
+                        ip_permission["FromPort"] == port):
+                    for pair in ip_permission["UserIdGroupPairs"]:
+                        if "GroupId" in pair and pair["GroupId"] == sg_id:
+                            return True
+            return False
+
         ip_permissions = security_group["SecurityGroups"][0]["IpPermissions"]
         logger.debug("ip_permissions: %s", ip_permissions)
-        for ip_permission in ip_permissions:
-            if (ip_permission["UserIdGroupPairs"] and
-                    ip_permission["FromPort"] == port):
-                for pair in ip_permission["UserIdGroupPairs"]:
-                    if "GroupId" in pair and pair["GroupId"] == from_group_id:
-                        return True
+        if src_sg_id and sg_allowed(ip_permissions, src_sg_id, port):
+            return True
+
+        src_cidr_port_info = extract_cidr_port(src_ip_permissions)
+        cidr_port_info = extract_cidr_port(ip_permissions)
+        for cidr_port in cidr_port_info:
+            if cidr_port["port"] != port:
+                continue
+            for src_cidr_port in src_cidr_port_info:
+                if (ipaddress.IPv4Network(src_cidr_port["cidr"]).overlaps(
+                        ipaddress.IPv4Network(cidr_port["cidr"]))):
+                    return True
         return False

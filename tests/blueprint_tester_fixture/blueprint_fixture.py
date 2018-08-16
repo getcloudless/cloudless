@@ -8,6 +8,7 @@ the HAProxy blueprint.
 import os
 from butter.testutils.blueprint_tester import generate_unique_name
 from butter.testutils.fixture import BlueprintTestInterface, SetupInfo
+from butter.types.networking import Service, CidrBlock
 
 SERVICE_BLUEPRINT = os.path.join(os.path.dirname(__file__),
                                  "../../example-blueprints/aws-nginx/blueprint.yml")
@@ -39,9 +40,11 @@ class BlueprintTest(BlueprintTestInterface):
         """
         assert setup_info.deployment_info["service_name"] == SERVICE_NAME
         internal_service_name = setup_info.deployment_info["service_name"]
-        self.client.paths.add(network_name, service_name, internal_service_name,
-                              80)
-        self.client.paths.expose(network_name, service_name, 80)
+        internal_service = Service(network_name, internal_service_name)
+        load_balancer = Service(network_name, service_name)
+        internet = CidrBlock("0.0.0.0/0")
+        self.client.paths.add(load_balancer, internal_service, 80)
+        self.client.paths.add(internet, load_balancer, 80)
 
     def verify(self, network_name, service_name, setup_info):
         """

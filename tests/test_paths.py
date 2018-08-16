@@ -41,20 +41,27 @@ def run_paths_test(provider, credentials):
         client.instances.create(network_name, "web-lb", GCE_SERVICE_BLUEPRINT)
         client.instances.create(network_name, "web", GCE_SERVICE_BLUEPRINT)
 
-    assert not client.paths.has_access(network_name, "web-lb", "web", 80)
-    assert not client.paths.internet_accessible(network_name, "web-lb", 80)
+    # Create service and CIDR block objects for the paths API
+    web = butter.types.networking.Service(network_name, "web")
+    web_lb = butter.types.networking.Service(network_name, "web-lb")
+    internet = butter.types.networking.CidrBlock("0.0.0.0/0")
 
-    # Deal with networking
-    client.paths.expose(network_name, "web-lb", 80)
-    client.paths.add(network_name, "web-lb", "web", 80)
+    assert not client.paths.has_access(web_lb, web, 80)
+    assert not client.paths.internet_accessible(web_lb, 80)
+
+    client.paths.add(web_lb, web, 80)
+    client.paths.add(internet, web_lb, 80)
     client.paths.list()
     client.graph()
 
-    assert client.paths.has_access(network_name, "web-lb", "web", 80)
-    assert client.paths.internet_accessible(network_name, "web-lb", 80)
+    assert client.paths.has_access(web_lb, web, 80)
+    assert client.paths.internet_accessible(web_lb, 80)
 
-    client.paths.remove(network_name, "web-lb", "web", 80)
-    assert not client.paths.has_access(network_name, "web-lb", "web", 80)
+    client.paths.remove(web_lb, web, 80)
+    assert not client.paths.has_access(web_lb, web, 80)
+
+    client.paths.remove(internet, web_lb, 80)
+    assert not client.paths.internet_accessible(web_lb, 80)
 
     client.instances.destroy(network_name, "web-lb")
     client.instances.destroy(network_name, "web")
