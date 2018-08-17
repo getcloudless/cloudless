@@ -93,9 +93,14 @@ client.instances.destroy("dev", "public")
 ### Paths (Firewalls)
 
 ```
-client.paths.expose("dev", "public", 80)
-client.paths.add("dev", "public", "private", 80)
+from butter.types.networking import Service, CidrBlock
+public_service = Service("dev", "public")
+private_service = Service("dev", "private")
+internet = CidrBlock("0.0.0.0/0")
+client.paths.add(public_service, private_service, 80)
+client.paths.add(internet, public_service, 443)
 client.paths.list()
+client.graph()
 ```
 
 ### Prototype UI
@@ -103,7 +108,7 @@ client.paths.list()
 Get a summary in the form of a graphviz compatible dot file by running:
 
 ```
-client.paths.graph()
+client.graph()
 ```
 
 To generate the vizualizations, run:

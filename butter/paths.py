@@ -18,47 +18,44 @@ class PathsClient:
     Usage:
 
         import butter
+        from butter.types.networking import Service, CidrBlock
         client = butter.Client(provider, credentials)
-        client.paths.expose("network", "external-service", 443)
-        client.paths.add("network", "external-service", "internal-service, 80)
-        client.paths.list()
-        client.paths.graph()
 
-    The above commands will result in the public internet having access to
-    "external-service" on port 443 and "external-service" having access to
-    "internal-service" on port 80.
+        internal_service = Service(network_name, "internal_service")
+        load_balancer = Service(network_name, "load_balancer")
+        internet = CidrBlock("0.0.0.0/0")
+        client.paths.add(load_balancer, internal_service, 80)
+        client.paths.add(internet, load_balancer, 443)
+
+        client.paths.list()
+        client.graph()
+
+    The above commands will result in the public internet having access to "load_balancer" on port
+    443 and "load_balancer" having access to "internal_service" on port 80.
     """
 
     def __init__(self, provider, credentials):
         self.paths = get_provider(provider).paths.PathsClient(credentials)
 
-    def expose(self, network_name, subnetwork_name, port):
+    def add(self, source, destination, port):
         """
-        Make the service described by "network_name" and "subnetwork_name"
-        internet accessible on the given port.
-        """
-        logger.info('Exposing service %s in network %s on port %s',
-                    subnetwork_name, network_name, port)
-        return self.paths.expose(network_name, subnetwork_name, port)
+        Make the service or cidr block described by "destination" accessible from the service or
+        cidr block described by "source" on the given port.
 
-    def add(self, network, from_name, to_name, port):
+        Either "source" or "destination" must be a service object.
         """
-        Make the service described by "network" and "to_name" accessible from
-        the service described by "network" and "from_name" on the given port.
-        """
-        logger.info('Adding path from %s to %s in network %s on port %s',
-                    from_name, to_name, network, port)
-        return self.paths.add(network, from_name, to_name, port)
+        logger.info('Adding path from %s to %s on port %s', source, destination, port)
+        return self.paths.add(source, destination, port)
 
-    def remove(self, network, from_name, to_name, port):
+    def remove(self, source, destination, port):
         """
-        Ensure the service described by "network" and "to_name" is not
-        accessible from the service described by "network" and "from_name" on
-        the given port.
+        Ensure the service or cidr block described by "destination" is not accessible from the
+        service or cidr block described by "source" on the given port.
+
+        Either "source" or "destination" must be a service object.
         """
-        logger.info('Removing path from %s to %s in network %s on port %s',
-                    from_name, to_name, network, port)
-        return self.paths.remove(network, from_name, to_name, port)
+        logger.info('Removing path from %s to %s on port %s', source, destination, port)
+        return self.paths.remove(source, destination, port)
 
     def list(self):
         """
@@ -66,21 +63,17 @@ class PathsClient:
         """
         return self.paths.list()
 
-    def internet_accessible(self, network_name, subnetwork_name, port):
+    def internet_accessible(self, service, port):
         """
-        Returns true if the service described by "network_name" and
-        "subnetwork_name" is internet accessible on the given port.
+        Returns true if the service described by "service" is internet accessible on the given port.
         """
-        return self.paths.internet_accessible(network_name, subnetwork_name,
-                                              port)
+        return self.paths.internet_accessible(service, port)
 
-    def has_access(self, network, from_name, to_name, port):
+    def has_access(self, source, destination, port):
         """
-        Returns true if the service described by "network" and "to_name" is
-        accessible from the service described by "network" and "from_name" on
-        the given port.
+        Returns true if the service or cidr block described by "destination" is accessible from the
+        service or cidr block described by "source" on the given port.
 
-        Note, this can only take service names, not CIDR blocks.  See
-        https://github.com/sverch/butter/issues/3 for details.
+        Either "source" or "destination" must be a service object.
         """
-        return self.paths.has_access(network, from_name, to_name, port)
+        return self.paths.has_access(source, destination, port)
