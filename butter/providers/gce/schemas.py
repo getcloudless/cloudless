@@ -1,48 +1,35 @@
 """
 Schemas of the results returned by various API calls for GCE.
 """
+from butter.types.common import Network, Subnetwork, Instance
 
 def canonicalize_network_info(network):
     """
     Convert what is returned from GCE into the butter standard format.
     """
-    cidr_block = network.cidr
-    if not cidr_block:
-        cidr_block = "N/A"
-    return {
-        "Name": network.name,
-        "Id": network.id,
-        "CidrBlock": cidr_block
-    }
+    return Network(name=network.name, network_id=network.id, cidr_block=network.cidr)
 
 def canonicalize_subnetwork_info(subnetwork):
     """
     Convert what is returned from GCE into the butter standard format.
     """
-    return {
-        "Id": subnetwork.id,
-        "Name": subnetwork.name,
-        "Network": subnetwork.network.name,
-        "CidrBlock": subnetwork.cidr,
-        "Region": subnetwork.region.name,
-        "AvailabilityZone": "N/A",
-    }
+    return Subnetwork(
+        subnetwork_id=subnetwork.id,
+        name=subnetwork.name,
+        cidr_block=subnetwork.cidr,
+        region=subnetwork.region.name,
+        availability_zone=None,
+        instances=[])
 
-def canonicalize_instances_info(network_name, subnetwork_name, nodes):
+def canonicalize_instance_info(node):
     """
     Convert what is returned from GCE into the butter standard format.
     """
-    return {"Id": subnetwork_name,
-            "Network": network_name,
-            "Instances": [
-                {
-                    "Id": node.uuid,
-                    "PublicIp": node.public_ips[0],
-                    "PrivateIp": node.private_ips[0],
-                    "State": node.state
-                    } for node in nodes
-                ]
-            }
+    return Instance(
+        instance_id=node.uuid,
+        public_ip=node.public_ips[0],
+        private_ip=node.private_ips[0],
+        state=node.state)
 
 def canonicalize_node_size(node):
     """

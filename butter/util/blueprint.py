@@ -48,12 +48,12 @@ class NetworkBlueprint(Blueprint):
         """
         return self.blueprint["network"].get("allowed_private_cidr", "10.0.0.0/8")
 
-class InstancesBlueprint(Blueprint):
+class ServiceBlueprint(Blueprint):
     """
-    Blueprint for instances/subnetworks.
+    Blueprint for services.
     """
     def __init__(self, blueprint_file, template_vars=None):
-        super(InstancesBlueprint, self).__init__(blueprint_file)
+        super(ServiceBlueprint, self).__init__(blueprint_file)
         self.template_vars = template_vars
         if not self.template_vars:
             self.template_vars = {}

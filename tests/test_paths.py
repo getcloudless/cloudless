@@ -3,8 +3,8 @@ Test for path management.
 """
 import os
 import pytest
-from moto import mock_ec2, mock_autoscaling, mock_elb, mock_route53
 import butter
+from butter.types.common import Path
 from butter.testutils.blueprint_tester import generate_unique_name
 
 EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
@@ -32,51 +32,46 @@ def run_paths_test(provider, credentials):
     network_name = generate_unique_name("unittest")
 
     # Provision all the resources
-    client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
-    if provider == "aws":
-        client.instances.create(network_name, "web-lb", AWS_SERVICE_BLUEPRINT)
-        client.instances.create(network_name, "web", AWS_SERVICE_BLUEPRINT)
+    test_network = client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
+    if provider in ["aws", "mock-aws"]:
+        lb_service = client.service.create(test_network, "web-lb", AWS_SERVICE_BLUEPRINT, {})
+        web_service = client.service.create(test_network, "web", AWS_SERVICE_BLUEPRINT, {})
     else:
         assert provider == "gce"
-        client.instances.create(network_name, "web-lb", GCE_SERVICE_BLUEPRINT)
-        client.instances.create(network_name, "web", GCE_SERVICE_BLUEPRINT)
+        lb_service = client.service.create(test_network, "web-lb", GCE_SERVICE_BLUEPRINT, {})
+        web_service = client.service.create(test_network, "web", GCE_SERVICE_BLUEPRINT, {})
 
-    # Create service and CIDR block objects for the paths API
-    web = butter.types.networking.Service(network_name, "web")
-    web_lb = butter.types.networking.Service(network_name, "web-lb")
-    internet = butter.types.networking.CidrBlock("0.0.0.0/0")
+    # Create CIDR block object for the paths API
+    internet = butter.paths.CidrBlock("0.0.0.0/0")
 
-    assert not client.paths.has_access(web_lb, web, 80)
-    assert not client.paths.internet_accessible(web_lb, 80)
+    assert not client.paths.has_access(lb_service, web_service, 80)
+    assert not client.paths.internet_accessible(lb_service, 80)
 
-    client.paths.add(web_lb, web, 80)
-    client.paths.add(internet, web_lb, 80)
-    client.paths.list()
+    client.paths.add(lb_service, web_service, 80)
+    client.paths.add(internet, lb_service, 80)
+    for path in client.paths.list():
+        assert isinstance(path, Path)
     client.graph()
 
-    assert client.paths.has_access(web_lb, web, 80)
-    assert client.paths.internet_accessible(web_lb, 80)
+    assert client.paths.has_access(lb_service, web_service, 80)
+    assert client.paths.internet_accessible(lb_service, 80)
 
-    client.paths.remove(web_lb, web, 80)
-    assert not client.paths.has_access(web_lb, web, 80)
+    client.paths.remove(lb_service, web_service, 80)
+    assert not client.paths.has_access(lb_service, web_service, 80)
 
-    client.paths.remove(internet, web_lb, 80)
-    assert not client.paths.internet_accessible(web_lb, 80)
+    client.paths.remove(internet, lb_service, 80)
+    assert not client.paths.internet_accessible(lb_service, 80)
 
-    client.instances.destroy(network_name, "web-lb")
-    client.instances.destroy(network_name, "web")
-    client.network.destroy(network_name)
+    client.service.destroy(lb_service)
+    client.service.destroy(web_service)
+    client.network.destroy(test_network)
 
-@mock_ec2
-@mock_elb
-@mock_autoscaling
-@mock_route53
 @pytest.mark.mock_aws
 def test_paths_mock():
     """
     Run tests using the mock aws driver (moto).
     """
-    run_paths_test(provider="aws", credentials={})
+    run_paths_test(provider="mock-aws", credentials={})
 
 @pytest.mark.aws
 def test_paths_aws():

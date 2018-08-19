@@ -3,7 +3,6 @@ Tests for blueprint test framework.
 """
 import os
 import pytest
-from moto import mock_ec2, mock_autoscaling
 import butter
 
 from butter.testutils.blueprint_tester import setup as do_setup
@@ -39,9 +38,8 @@ def run_blueprint_tester_test(provider, credentials):
     do_setup(client, BLUEPRINT_DIR)
     state = get_state(BLUEPRINT_DIR)
     assert state
-    assert client.network.discover(state["network_name"])
-    assert client.instances.discover(state["network_name"],
-                                     state["service_name"])
+    assert client.network.get(state["network_name"])
+    assert client.service.get(client.network.get(state["network_name"]), state["service_name"])
     assert state["setup_info"]
     do_teardown(client, BLUEPRINT_DIR)
     state = get_state(BLUEPRINT_DIR)
@@ -51,9 +49,8 @@ def run_blueprint_tester_test(provider, credentials):
     do_setup(client, BLUEPRINT_DIR)
     state = get_state(BLUEPRINT_DIR)
     assert state
-    assert client.network.discover(state["network_name"])
-    assert client.instances.discover(state["network_name"],
-                                     state["service_name"])
+    assert client.network.get(state["network_name"])
+    assert client.service.get(client.network.get(state["network_name"]), state["service_name"])
     assert state["setup_info"]
     do_verify(client, BLUEPRINT_DIR)
     do_verify(client, BLUEPRINT_DIR)
@@ -62,11 +59,9 @@ def run_blueprint_tester_test(provider, credentials):
     assert not state
 
 
-@mock_ec2
-@mock_autoscaling
 @pytest.mark.mock_aws
 def test_blueprint_tester_mock():
     """
     Test blueprint test framework against moto (mock aws).
     """
-    run_blueprint_tester_test(provider="aws", credentials={})
+    run_blueprint_tester_test(provider="mock-aws", credentials={})

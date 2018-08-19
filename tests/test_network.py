@@ -3,9 +3,9 @@ Tests for network management.
 """
 import os
 import pytest
-from moto import mock_ec2
 
 import butter
+from butter.types.common import Network
 from butter.testutils.blueprint_tester import generate_unique_name
 
 EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
@@ -24,34 +24,37 @@ def run_network_test(provider, credentials):
     client = butter.Client(provider, credentials)
 
     # Get somewhat unique network names
-    network1 = generate_unique_name("network1")
-    network2 = generate_unique_name("network2")
+    network1_name = generate_unique_name("network1")
+    network2_name = generate_unique_name("network2")
 
     # Create two private cloud networks
-    network1_id = client.network.create(name=network1,
-                                        blueprint=NETWORK_BLUEPRINT)["Id"]
-    network2_id = client.network.create(name=network2,
-                                        blueprint=NETWORK_BLUEPRINT)["Id"]
-    assert network2_id != network1_id
+    network1 = client.network.create(name=network1_name, blueprint=NETWORK_BLUEPRINT)
+    network2 = client.network.create(name=network2_name, blueprint=NETWORK_BLUEPRINT)
+    assert isinstance(network1, Network)
+    assert isinstance(network2, Network)
+    assert network2 != network1
+    # pylint: disable=comparison-with-itself
+    assert network1 == network1
+    # pylint: disable=comparison-with-itself
+    assert network2 == network2
 
     # Make sure we can discover them again
-    assert client.network.discover(network1)["Id"] == network1_id
-    assert client.network.discover(network2)["Id"] == network2_id
+    assert client.network.get(network1_name) == network1
+    assert client.network.get(network2_name) == network2
 
     # Destroy them and make sure they no longer exist
     client.network.destroy(network1)
     client.network.destroy(network2)
-    assert not client.network.discover(network1)
-    assert not client.network.discover(network2)
+    assert not client.network.get(network1_name)
+    assert not client.network.get(network2_name)
 
 
-@mock_ec2
 @pytest.mark.mock_aws
 def test_network_mock():
     """
     Run tests using the mock aws driver (moto).
     """
-    run_network_test(provider="aws", credentials={})
+    run_network_test(provider="mock-aws", credentials={})
 
 
 @pytest.mark.aws

@@ -1,12 +1,11 @@
 """
-Butter Network on AWS
-
-This component should allow for intuitive and transparent control over networks, which are the top
-level containers for groups of instances/services.  This is the AWS implementation.
+Butter Network on Mock AWS
 """
 import boto3
+from moto import mock_ec2
 import butter.providers.aws.impl.network
 
+@mock_ec2
 class NetworkClient:
     """
     Butter Network Client Object for AWS

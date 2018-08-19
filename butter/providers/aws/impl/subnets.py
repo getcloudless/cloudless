@@ -6,7 +6,6 @@ Implementation of some common helpers necessary to work with AWS subnets.
 """
 
 import time
-import boto3
 
 from butter.util.subnet_generator import generate_subnets
 from butter.util.exceptions import (NotEnoughIPSpaceException,
@@ -19,13 +18,14 @@ class Subnets:
     Subnets helpers class.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, driver, credentials):
+        self.driver = driver
         if credentials:
             # Currently only using the global defaults is supported
             raise NotImplementedError("Passing credentials not implemented")
 
     def carve_subnets(self, vpc_id, vpc_cidr, prefix=28, count=3):
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
 
         # Get existing subnets, to make sure we don't overlap CIDR blocks
         existing_subnets = ec2.describe_subnets(Filters=[{'Name': 'vpc-id',
@@ -43,7 +43,7 @@ class Subnets:
         return subnets
 
     def delete(self, subnet_id, retry_count, retry_delay):
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
         deletion_retries = 0
         while deletion_retries < retry_count:
             try:
@@ -73,7 +73,7 @@ class Subnets:
         """
         Provision a single subnet with a route table and the proper tags.
         """
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
         created_subnet = ec2.create_subnet(CidrBlock=subnet_cidr,
                                            AvailabilityZone=availability_zone,
                                            VpcId=dc_id)

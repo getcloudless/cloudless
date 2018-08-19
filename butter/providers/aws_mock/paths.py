@@ -6,15 +6,17 @@ routes between services, doing the conversion to security groups and firewall
 rules.
 """
 import boto3
+from moto import mock_ec2, mock_autoscaling
 import butter.providers.aws.impl.paths
 
-
+@mock_ec2
+@mock_autoscaling
 class PathsClient:
     """
     Client object to interact with paths between resources.
     """
     def __init__(self, credentials):
-        self.paths = butter.providers.aws.impl.paths.PathsClient(boto3, credentials, mock=False)
+        self.paths = butter.providers.aws.impl.paths.PathsClient(boto3, credentials, mock=True)
 
 
     def add(self, source, destination, port):

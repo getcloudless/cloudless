@@ -33,24 +33,23 @@ class NetworkClient:
         network = self.driver.ex_create_network(name, cidr=None, mode="custom")
         return canonicalize_network_info(network)
 
-    def discover(self, name):
+    def get(self, name):
         """
-        Discover a network named "name" and return some data about it.
+        Get a network named "name" and return some data about it.
         """
         try:
             network = self.driver.ex_get_network(name)
         except ResourceNotFoundError as not_found:
-            logger.info("Caught exception trying to discover network: %s",
-                        not_found)
+            logger.info("Caught exception trying to get network: %s", not_found)
             return None
         return canonicalize_network_info(network)
 
-    def destroy(self, name):
+    def destroy(self, network):
         """
-        Destroy a network named "name".
+        Destroy a network given by "network".
         """
         try:
-            network = self.driver.ex_get_network(name)
+            network = self.driver.ex_get_network(network.name)
         except ResourceNotFoundError as not_found:
             logger.info("Caught exception destroying network, ignoring: %s",
                         not_found)
@@ -61,6 +60,5 @@ class NetworkClient:
         """
         List all networks.
         """
-        return {"Named": [canonicalize_network_info(network) for network
-                          in self.driver.ex_list_networks()
-                          if network.name != "default"]}
+        return [canonicalize_network_info(network) for network in self.driver.ex_list_networks() if
+                network.name != "default"]

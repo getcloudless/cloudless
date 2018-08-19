@@ -5,8 +5,6 @@ ASG Impl
 Implementation of some common helpers necessary to work with ASGs.
 """
 
-import boto3
-
 from botocore.exceptions import ClientError
 
 from butter.util.exceptions import BadEnvironmentStateException
@@ -42,13 +40,14 @@ class ASG:
     Autoscaling groups helpers class.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, driver, credentials):
+        self.driver = driver
         if credentials:
             # Currently only using the global defaults is supported
             raise NotImplementedError("Passing credentials not implemented")
 
     def _describe_launch_configuration(self, asg_name):
-        autoscaling = boto3.client("autoscaling")
+        autoscaling = self.driver.client("autoscaling")
         launch_configurations = autoscaling.describe_launch_configurations(
             LaunchConfigurationNames=[str(asg_name)])
         if len(launch_configurations["LaunchConfigurations"]) != 1:
@@ -75,7 +74,7 @@ class ASG:
 
     # pylint: disable=invalid-name
     def destroy_auto_scaling_group_instances(self, asg_name):
-        autoscaling = boto3.client("autoscaling")
+        autoscaling = self.driver.client("autoscaling")
         try:
             autoscaling.update_auto_scaling_group(
                 AutoScalingGroupName=str(asg_name), MinSize=0,
@@ -92,7 +91,7 @@ class ASG:
                 raise client_error
 
     def destroy_auto_scaling_group(self, asg_name):
-        autoscaling = boto3.client("autoscaling")
+        autoscaling = self.driver.client("autoscaling")
         try:
             autoscaling.delete_auto_scaling_group(
                 AutoScalingGroupName=str(asg_name), ForceDelete=True)
@@ -109,7 +108,7 @@ class ASG:
                 raise client_error
 
     def destroy_launch_configuration(self, asg_name):
-        autoscaling = boto3.client("autoscaling")
+        autoscaling = self.driver.client("autoscaling")
         try:
             autoscaling.delete_launch_configuration(
                 LaunchConfigurationName=str(asg_name))

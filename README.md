@@ -3,19 +3,59 @@
 :warning: :construction: :skull: This is a proof of concept, do not use in
 production. :skull: :construction: :warning:
 
-An experimental tool that should abstract away some of the things that a person
-shouldn't have to worry about.  By doing that, it should also make it easier to
-build portable infrastructure across different cloud platforms as a side effect.
+This tool should make it easier to interact with cloud resources by doing most
+of the work that a human doesn't need to care about for you, and by being
+transparent about what it's doing.
 
 ## Installation
 
+This project depends on [Python
+3.6.0](https://www.python.org/downloads/release/python-360/) or greater.  It can
+be installed as a normal python package using pip, but an environment manager
+such as [pipenv](https://pipenv.readthedocs.io/en/latest/) is recommended.
+
+To install locally, make a dedicated directory where you want to test this out
+and run:
+
 ```
+cd butter_experimentation
 pipenv install git+https://github.com/sverch/butter.git#egg=butter
 ```
 
-## Usage
+Having a dedicated directory will allow pipenv to scope the dependencies to that
+project directory and prevent this project from installing stuff on your main
+system.
+
+## Client Setup
+
+First, you must create a client object to connect to the cloud platform that
+you'll be working with.  The client handles authentication with the cloud
+provider, so you must pass it the name of the provider and the authentication
+credentials.
+
+If you are trying this project for the first time, it's recommended that you use
+the "mock-aws" client.
 
 ### Google Compute Engine Client
+
+To use the Google Compute Engine client, you must create a service account and
+download the credentials locally.  Because this provider is implemented using
+[Apache Libcloud](https://libcloud.apache.org/), you can refer to the [Google
+Compute Engine Driver
+Setup](https://libcloud.readthedocs.io/en/latest/compute/drivers/gce.html#getting-driver-with-service-account-authentication)
+documentation in that project for more details.
+
+When you have the credentials, you can do something like this, preferably in a
+dotfile you don't commit to version control.  Note the credentials file is in
+JSON format:
+
+```
+export BUTTER_GCE_USER_ID="sverch-butter@butter-000000.iam.gserviceaccount.com"
+export BUTTER_GCE_CREDENTIALS_PATH="/home/sverch/.gce/credentials.json"
+export BUTTER_GCE_PROJECT_NAME="butter-000000"
+```
+
+Then, you can run these commands in a python shell to create a GCE client:
 
 ```
 import butter
@@ -26,84 +66,187 @@ client = butter.Client("gce", credentials={
     "project": os.environ['BUTTER_GCE_PROJECT_NAME']})
 ```
 
-See
-https://libcloud.readthedocs.io/en/latest/compute/drivers/gce.html#getting-driver-with-service-account-authentication
+### Amazon Web Services Client
+
+Currently no credentials can be passed in as arguments for the AWS provider
+(they are ignored).  However this provider is implemented with
+[Boto](http://docs.pythonboto.org/en/latest/), which looks in many other places
+for the credentials, so you can configure them in other ways.  See the [boto3
+credential setup
+documentation](https://boto3.readthedocs.io/en/latest/guide/configuration.html)
 for more details.
 
-### Amazon Web Services Client
+Once you have set up your credentials, you can run the following to create an
+AWS client:
 
 ```
 import butter
 client = butter.Client("aws", credentials={})
 ```
 
-Currently no credentials can be passed, and the client uses whatever is the
-default configuration for your environment.  See
-https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html.
+### Mock Amazon Web Services Client
 
-### Network (VPC)
-
-```
-client.network.create("dev", blueprint="example-blueprints/network/blueprint.yml")
-client.network.discover("dev")
-client.network.list()
-client.network.destroy("dev")
-```
-
-### Subnetwork (Subnets)
+The Mock AWS client is for demonstration and testing.  Since it is all running
+locally, you don't need any credentials.  Simply run:
 
 ```
-client.subnetwork.create("dev", "public", blueprint="example-blueprints/subnetwork/blueprint.yml")
-client.subnetwork.discover("dev", "public")
-client.subnetwork.list()
-client.subnetwork.destroy("dev", "public")
+import butter
+client = butter.Client("mock-aws", credentials={})
 ```
 
-### Instances (VMs)
+## Concepts
 
-The example blueprints are different for AWS and GCE because the provided OS
-images are different.  If the same base image was created for both platforms
-these wouldn't be different.
+There are only four concepts in Butter, a Blueprint, a Network, a Service, and a
+Path.
 
-#### AWS Instances
+### Blueprint
 
-```
-instances = client.instances.create("dev", "private",
-                                    blueprint="example-blueprints/aws-nginx/blueprint.yml")
-private_ips = [i["PrivateIp"] for i in instances["Instances"]]
-client.instances.create("dev", "public",
-                        blueprint="example-blueprints/aws-haproxy/blueprint.yml",
-                        template_vars={"PrivateIps": private_ips})
-client.instances.discover("dev", "public")
-client.instances.discover("dev", "private")
-client.instances.list()
-client.instances.destroy("dev", "public")
-client.instances.destroy("dev", "private")
-```
+A blueprint is a YAML file that describes how a Network or a Service should be
+configured.  This includes things like max number of instances (which
+automatically gets translated to subnetwork size) and the memory and CPU
+requirements (which automatically get translated to a virtual machine offering
+from the backing provider that can satisfy the requirements).
 
-#### GCE Instances
+Example blueprint files for Networks and Services are shown below.
+
+### Network
+
+A Network is the top level container for everything else.  A Blueprint file for
+a network might look like:
 
 ```
-client.instances.create("dev", "public", blueprint="example-blueprints/gce-apache/blueprint.yml")
-client.instances.discover("dev", "public")
-client.instances.list()
-client.instances.destroy("dev", "public")
+---
+network:
+  legacy_network_size_bits: 16
 ```
 
-### Paths (Firewalls)
+The `legacy_network_size_bits` option only matters for the AWS provider, since
+GCE lets you creates subnets directly without a top level network, but AWS does
+not.  That option tells AWS to create a top level network (VPC) of size 16,
+which will mean that the network has 2^16 unique IP addresses in it.  Note that
+everything is currently still using IPv4.
+
+Once you have your blueprint file, you can work with networks using the
+following commands:
 
 ```
-from butter.types.networking import Service, CidrBlock
-public_service = Service("dev", "public")
-private_service = Service("dev", "private")
+dev_network = client.network.create("dev", blueprint="example-blueprints/network/blueprint.yml")
+dev_network = client.network.get("dev")
+all_networks = client.network.list()
+client.network.destroy(dev_network)
+```
+
+In [ipython](https://ipython.org/), you can run `<object>?` to [get help on any
+object](https://ipython.readthedocs.io/en/stable/interactive/python-ipython-diff.html#accessing-help),
+for example `client.network.create?`.
+
+### Service
+
+A Service a logical group of instances and whatever resources are needed to
+support them (subnetworks, firewalls, etc.).
+
+This is an example of what a service blueprint might look like:
+
+```
+---
+network:
+  subnetwork_max_instance_count: 768
+
+placement:
+  availability_zones: 3
+
+instance:
+  public_ip: True
+  memory: 4GB
+  cpus: 1
+  gpu: false
+  disks:
+    - size: 8GB
+      type: standard
+      device_name: /dev/sda1
+
+image:
+  name: "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"
+
+initialization:
+  - path: "haproxy-cloud-config.yml"
+    vars:
+      PrivateIps:
+        required: true
+```
+
+The "network" section tells Butter to create subnetworks for this service big
+enough for 768 instances.
+
+The "placement" section tells Butter to ensure instances in this service are
+provisioned across three availaibility zones (which most cloud providers
+guarantee are meaningfully isolated from each other for resilience).
+
+The "instance" section describes the resource reqirements of each instance.
+Butter will automatically choose a instance type that meets these requirements.
+
+The "image" section represents the name of the image you want your instances to
+have.  In this case, we are using an image name only found in AWS by default, so
+this example will only work there.  See `example-blueprints/gce-apache` for a
+GCE example blueprint.
+
+The "initialization" section describes startup scripts that you want to run when
+the instance boots.  You may also pass in variables, which will get passed to
+the given file as [jinja2](http://jinja.pocoo.org/) template arguments.  This is
+a good place to specify environment specific configuration, so your base image
+can stay the same across environments.
+
+Once you have the blueprint, the example below shows how you could use it.
+These examples create a group of private instances and then create some HAProxy
+instances in front of those instances to balance load.  Note that many commands
+take `dev_network` as the first argument.  That's the same network object
+returned by the commands shown above.
+
+```
+internal_service = client.service.create(dev_network, "private", blueprint="example-blueprints/aws-nginx/blueprint.yml")
+private_ips = [instance.private_ip for subnetwork in internal_service.subnetworks for instance in subnetwork.instances]
+load_balancer_service = client.service.create(dev_network, "public", blueprint="example-blueprints/aws-haproxy/blueprint.yml", template_vars={"PrivateIps": private_ips})
+internal_service = client.service.get(dev_network, "public")
+load_balancer_service client.service.get(dev_network, "private")
+client.service.list()
+client.service.destroy(internal_service)
+client.service.destroy(load_balancer_service)
+```
+
+There is another example blueprint that works with GCE if you created the GCE
+client above:
+
+```
+client.instances.create(dev_nework, "public", blueprint="example-blueprints/gce-apache/blueprint.yml")
+```
+
+### Path
+
+The Path is how you tell Butter that two services should be able to communicate.
+No blueprint is needed for this, but you need to have the service objects you
+created earlier.  This example adds a path from the load balancer to the
+internal service on port 80 and makes the load balancer internet accessible on
+port 443:
+
+```
+from butter.types.networking import CidrBlock
 internet = CidrBlock("0.0.0.0/0")
-client.paths.add(public_service, private_service, 80)
-client.paths.add(internet, public_service, 443)
-client.paths.list()
-client.graph()
+client.paths.add(load_balancer_service, internal_service, 80)
+client.paths.add(internet, load_balancer_service, 443)
 ```
 
-### Prototype UI
+You can check whether things have access to other things or print out all paths
+with the following functions:
+
+```
+client.paths.has_access(load_balancer_service, internal_service, 80)
+client.paths.internet_accessible(load_balancer_service, 443)
+client.paths.internet_accessible(internal_service, 443)
+client.paths.list()
+print(client.graph())
+```
+
+## Visualization
 
 Get a summary in the form of a graphviz compatible dot file by running:
 
@@ -117,11 +260,12 @@ To generate the vizualizations, run:
 cd ui && env PROVIDER=<provider> bash graph.sh
 ```
 
-And open `ui/graph.html` in a browser.
+And open `ui/graph.html` in a browser.  Note this won't work for the `mock-aws`
+provider since it will be running in a different process.
 
-### Blueprint Tester
+## Blueprint Tester
 
-This project provides a framework to help test that blueprint files work as
+This project also provides a framework to help test that blueprint files work as
 expected.
 
 Example (butter must be installed):

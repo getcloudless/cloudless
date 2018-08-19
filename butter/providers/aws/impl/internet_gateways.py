@@ -5,15 +5,14 @@ Internet Gateway Impl
 Implementation of some common helpers necessary to work with Internet Gateways.
 """
 
-import boto3
-
 
 class InternetGateways:
     """
     Internet Gateways helpers class.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, driver, credentials):
+        self.driver = driver
         if credentials:
             # Currently only using the global defaults is supported
             raise NotImplementedError("Passing credentials not implemented")
@@ -23,7 +22,7 @@ class InternetGateways:
         Returns the number of routes that go through the given internet gateway
         in the given VPC.
         """
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
         count = 0
         route_tables = ec2.describe_route_tables(Filters=[{'Name': 'vpc-id',
                                                            'Values':
@@ -38,7 +37,7 @@ class InternetGateways:
         """
         Get the internet gateway for the VPC, creating it if necessary.
         """
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
         igw = ec2.describe_internet_gateways(Filters=[{'Name':
                                                        'attachment.vpc-id',
                                                        'Values': [vpc_id]}])

@@ -9,11 +9,10 @@ it might go away.
 """
 import math
 import time
-import boto3
 
-from butter.util.blueprint import InstancesBlueprint
+from butter.util.blueprint import ServiceBlueprint
 from butter.util.exceptions import BadEnvironmentStateException
-from butter.providers.aws import network
+import butter.providers.aws.impl.network
 from butter.providers.aws.impl.internet_gateways import InternetGateways
 from butter.providers.aws.impl.subnets import Subnets
 from butter.providers.aws.impl.availability_zones import AvailabilityZones
@@ -29,51 +28,40 @@ class SubnetworkClient:
     Client object to manage subnetworks.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, driver, credentials, mock=False):
+        self.driver = driver
         self.credentials = credentials
-        self.network = network.NetworkClient(credentials)
-        self.internet_gateways = InternetGateways(credentials)
-        self.subnets = Subnets(credentials)
-        self.availability_zones = AvailabilityZones(credentials)
+        self.network = butter.providers.aws.impl.network.NetworkClient(driver, credentials, mock)
+        self.internet_gateways = InternetGateways(driver, credentials)
+        self.subnets = Subnets(driver, credentials)
+        self.availability_zones = AvailabilityZones(driver, credentials, mock)
 
-    def create(self, network_name, subnetwork_name, blueprint):
+    def create(self, network, subnetwork_name, blueprint):
         """
         Provision the subnets with AWS.
-
-        This actually has a few steps.
-
-        1. Get ID of VPC to provision subnets in, or create if nonexistent.
-        2. Create subnets across availability zones.
         """
-        # 1. Get ID ov VPC to provision subnets in.
-        dc_info = self.network.discover(network_name)
-        if not dc_info:
-            raise BadEnvironmentStateException("Network %s not found" %
-                                               network_name)
-
-        # 2. Create subnets across availability zones.
+        # 1. Create subnets across availability zones.
         subnets_info = []
-        instances_blueprint = InstancesBlueprint(blueprint)
+        instances_blueprint = ServiceBlueprint(blueprint)
         az_count = instances_blueprint.availability_zone_count()
         max_count = instances_blueprint.max_count()
         prefix = 32 - int(math.log(max_count / az_count, 2))
-        cidr_az_list = zip(self.subnets.carve_subnets(dc_info["Id"],
-                                                      dc_info["CidrBlock"],
+        cidr_az_list = zip(self.subnets.carve_subnets(network.network_id, network.cidr_block,
                                                       prefix, az_count),
                            self.availability_zones.get_availability_zones())
         for subnet_cidr, availability_zone in cidr_az_list:
             subnet_info = canonicalize_subnetwork_info(
-                self.subnets.create(subnetwork_name, subnet_cidr,
-                                    availability_zone, dc_info["Id"],
-                                    RETRY_COUNT, RETRY_DELAY))
+                None,
+                self.subnets.create(subnetwork_name, subnet_cidr, availability_zone,
+                                    network.network_id, RETRY_COUNT, RETRY_DELAY), [])
             subnets_info.append(subnet_info)
 
-        # 3. Make sure we have a route to the internet.
-        self._make_internet_routable(network_name, subnetwork_name)
+        # 2. Make sure we have a route to the internet.
+        self._make_internet_routable(network, subnetwork_name)
 
         return subnets_info
 
-    def _make_internet_routable(self, network_name, subnetwork_name):
+    def _make_internet_routable(self, network, subnetwork_name):
         """
         Create an internet gateway for this network and add routes to it for
         all subnets.
@@ -84,17 +72,14 @@ class SubnetworkClient:
         2. Create and attach internet gateway only if it doesn't exist.
         4. Add route to it from all subnets.
         """
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
 
-        # 1. Discover current VPC.
-        vpc_id = self.network.discover(network_name)["Id"]
+        # 1. Get the internet gateway for this VPC.
+        igw_id = self.internet_gateways.get_internet_gateway(network.network_id)
 
-        # 2. Get the internet gateway for this VPC.
-        igw_id = self.internet_gateways.get_internet_gateway(vpc_id)
-
-        # 3. Add route to it from all subnets.
-        subnet_ids = [subnet_info["Id"] for subnet_info
-                      in self.discover(network_name, subnetwork_name)]
+        # 2. Add route to it from all subnets.
+        subnet_ids = [subnet_info.subnetwork_id for subnet_info
+                      in self.get(network, subnetwork_name)]
         for subnet_id in subnet_ids:
             subnet_filter = {'Name': 'association.subnet-id',
                              'Values': [subnet_id]}
@@ -107,20 +92,20 @@ class SubnetworkClient:
                              GatewayId=igw_id,
                              DestinationCidrBlock="0.0.0.0/0")
 
-    def discover(self, network_name, subnetwork_name):
+    def get(self, network, subnetwork_name):
         """
-        Discover a subnetwork group named "network_name" and "subnetwork_name".
+        Get a subnetwork group in "network" named "subnetwork_name".
         """
-        ec2 = boto3.client("ec2")
-        dc_id = self.network.discover(network_name)["Id"]
+        ec2 = self.driver.client("ec2")
+        dc_id = network.network_id
         subnets = ec2.describe_subnets(Filters=[{'Name': "vpc-id",
                                                  'Values': [dc_id]},
                                                 {'Name': "tag:Name",
                                                  'Values': [subnetwork_name]}])
-        return [canonicalize_subnetwork_info(subnet)
+        return [canonicalize_subnetwork_info(None, subnet, [])
                 for subnet in subnets["Subnets"]]
 
-    def destroy(self, network_name, subnetwork_name):
+    def destroy(self, network, subnetwork_name):
         """
         Destroy all networks represented by this object.  Also destroys the
         underlying VPC if it's empty.
@@ -134,12 +119,12 @@ class SubnetworkClient:
         3. Delete all subnets.
         4. Wait until subnets are deleted.
         """
-        ec2 = boto3.client("ec2")
-        subnet_ids = [subnet_info["Id"] for subnet_info
-                      in self.discover(network_name, subnetwork_name)]
+        ec2 = self.driver.client("ec2")
+        subnet_ids = [subnet_info.subnetwork_id for subnet_info
+                      in self.get(network, subnetwork_name)]
 
         # 1. Discover the current VPC.
-        dc_id = self.network.discover(network_name)["Id"]
+        dc_id = network.network_id
 
         # 2. Destroy route tables.
         def delete_route_table(route_table):
@@ -193,12 +178,11 @@ class SubnetworkClient:
             retries = retries + 1
             time.sleep(1)
 
-    # pylint: disable=no-self-use
     def list(self):
         """
         Return a list of all subnetworks.
         """
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
 
         def get_name(tagged_resource):
             if "Tags" not in tagged_resource:
@@ -219,5 +203,5 @@ class SubnetworkClient:
             if subnet_name not in subnet_info[vpc_name]:
                 subnet_info[vpc_name][subnet_name] = []
             subnet_info[vpc_name][subnet_name].append(
-                canonicalize_subnetwork_info(subnet))
+                canonicalize_subnetwork_info(None, subnet, []))
         return subnet_info
