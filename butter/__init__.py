@@ -106,6 +106,10 @@ class Client:
         cluster_id = 0
         for network_info in networks_info:
 
+            # Skip networks with no name for now
+            if not network_info.name:
+                continue
+
             # Each network is a "cluster" in graphviz terms
             graph_string = start_cluster(graph_string, cluster_id, network_info.name)
             cluster_id += 1

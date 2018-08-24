@@ -96,7 +96,14 @@ client = butter.Client("mock-aws", credentials={})
 
 ## Architecture
 
-There are only three objects in Butter: A Network, a Service, and a Path.
+There are only three objects in Butter: A Network, a Service, and a Path.  This
+is an example that shows a Network `dev`, a `public_load_balancer` Service, an
+`internal_service` Service, a Path from the internet to `public_load_balancer`
+on port 443 and a Path from `public_load_balancer` to `internal_service` on port
+80.  See the [visualization](#visualization) section for how to generate this
+graph.
+
+![Butter Simple Service Example](docs/images/example.svg)
 
 ### Network
 
