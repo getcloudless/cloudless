@@ -17,7 +17,7 @@ such as [pipenv](https://pipenv.readthedocs.io/en/latest/) is recommended.
 To install locally, make a dedicated directory where you want to test this out
 and run:
 
-```
+```shell
 cd butter_experimentation
 pipenv install git+https://github.com/sverch/butter.git#egg=butter
 ```
@@ -49,7 +49,7 @@ When you have the credentials, you can do something like this, preferably in a
 dotfile you don't commit to version control.  Note the credentials file is in
 JSON format:
 
-```
+```shell
 export BUTTER_GCE_USER_ID="sverch-butter@butter-000000.iam.gserviceaccount.com"
 export BUTTER_GCE_CREDENTIALS_PATH="/home/sverch/.gce/credentials.json"
 export BUTTER_GCE_PROJECT_NAME="butter-000000"
@@ -57,7 +57,7 @@ export BUTTER_GCE_PROJECT_NAME="butter-000000"
 
 Then, you can run these commands in a python shell to create a GCE client:
 
-```
+```python
 import butter
 import os
 client = butter.Client("gce", credentials={
@@ -79,7 +79,7 @@ for more details.
 Once you have set up your credentials, you can run the following to create an
 AWS client:
 
-```
+```python
 import butter
 client = butter.Client("aws", credentials={})
 ```
@@ -89,7 +89,7 @@ client = butter.Client("aws", credentials={})
 The Mock AWS client is for demonstration and testing.  Since it is all running
 locally, you don't need any credentials.  Simply run:
 
-```
+```python
 import butter
 client = butter.Client("mock-aws", credentials={})
 ```
@@ -114,7 +114,7 @@ Example blueprint files for Networks and Services are shown below.
 A Network is the top level container for everything else.  A Blueprint file for
 a network might look like:
 
-```
+```yaml
 ---
 network:
   legacy_network_size_bits: 16
@@ -129,7 +129,7 @@ everything is currently still using IPv4.
 Once you have your blueprint file, you can work with networks using the
 following commands:
 
-```
+```python
 dev_network = client.network.create("dev", blueprint="example-blueprints/network/blueprint.yml")
 dev_network = client.network.get("dev")
 all_networks = client.network.list()
@@ -147,7 +147,7 @@ support them (subnetworks, firewalls, etc.).
 
 This is an example of what a service blueprint might look like:
 
-```
+```yaml
 ---
 network:
   subnetwork_max_instance_count: 768
@@ -202,7 +202,7 @@ instances in front of those instances to balance load.  Note that many commands
 take `dev_network` as the first argument.  That's the same network object
 returned by the commands shown above.
 
-```
+```python
 internal_service = client.service.create(dev_network, "private", blueprint="example-blueprints/aws-nginx/blueprint.yml")
 private_ips = [instance.private_ip for subnetwork in internal_service.subnetworks for instance in subnetwork.instances]
 load_balancer_service = client.service.create(dev_network, "public", blueprint="example-blueprints/aws-haproxy/blueprint.yml", template_vars={"PrivateIps": private_ips})
@@ -216,7 +216,7 @@ client.service.destroy(load_balancer_service)
 There is another example blueprint that works with GCE if you created the GCE
 client above:
 
-```
+```python
 client.instances.create(dev_nework, "public", blueprint="example-blueprints/gce-apache/blueprint.yml")
 ```
 
@@ -228,7 +228,7 @@ created earlier.  This example adds a path from the load balancer to the
 internal service on port 80 and makes the load balancer internet accessible on
 port 443:
 
-```
+```python
 from butter.types.networking import CidrBlock
 internet = CidrBlock("0.0.0.0/0")
 client.paths.add(load_balancer_service, internal_service, 80)
@@ -238,7 +238,7 @@ client.paths.add(internet, load_balancer_service, 443)
 You can check whether things have access to other things or print out all paths
 with the following functions:
 
-```
+```python
 client.paths.has_access(load_balancer_service, internal_service, 80)
 client.paths.internet_accessible(load_balancer_service, 443)
 client.paths.internet_accessible(internal_service, 443)
@@ -250,13 +250,13 @@ print(client.graph())
 
 Get a summary in the form of a graphviz compatible dot file by running:
 
-```
+```python
 client.graph()
 ```
 
 To generate the vizualizations, run:
 
-```
+```shell
 cd ui && env PROVIDER=<provider> bash graph.sh
 ```
 
@@ -270,7 +270,7 @@ expected.
 
 Example (butter must be installed):
 
-```
+```shell
 butter-test --provider aws --blueprint_dir example-blueprints/haproxy run
 ```
 
@@ -290,14 +290,14 @@ See [example-blueprints](example-blueprints) for all examples.
 
 To run the local tests run:
 
-```
+```shell
 pipenv install --dev
 tox
 ```
 
 To run tests against GCE and AWS, run:
 
-```
+```shell
 tox -e gce
 tox -e aws
 ```
