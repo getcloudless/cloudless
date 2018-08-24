@@ -7,7 +7,7 @@ command.  A Blueprint file for a network with the defaults set might look like:
 ---
 network:
   legacy_network_size_bits: 16
-  allowed_private_cidr", "10.0.0.0/8"
+  allowed_private_cidr: "10.0.0.0/8"
 ```
 
 The `legacy_network_size_bits` option only matters for the AWS provider, since
