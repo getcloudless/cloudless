@@ -40,8 +40,11 @@ class NetworkClient:
         if self.get(name):
             raise DisallowedOperationException(
                 "Found existing VPC named: %s" % name)
-        blueprint = NetworkBlueprint(blueprint)
-        allocation_blocks = blueprint.get_allowed_private_cidr()
+        if blueprint:
+            network_blueprint = NetworkBlueprint(blueprint)
+        else:
+            network_blueprint = NetworkBlueprint(None, "")
+        allocation_blocks = network_blueprint.get_allowed_private_cidr()
         def get_cidr(prefix, address_range_includes, address_range_excludes):
             for address_range_include in address_range_includes:
                 for cidr in generate_subnets(address_range_include, address_range_excludes, prefix,
@@ -52,7 +55,8 @@ class NetworkClient:
                                             (prefix, address_range_includes,
                                              address_range_includes))
 
-        vpc = ec2.create_vpc(CidrBlock=get_cidr(blueprint.get_prefix(), [allocation_blocks], []))
+        vpc = ec2.create_vpc(CidrBlock=get_cidr(
+            network_blueprint.get_prefix(), [allocation_blocks], []))
         vpc_id = vpc["Vpc"]["VpcId"]
         try:
             creation_retries = 0

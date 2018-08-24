@@ -31,7 +31,7 @@ class NetworkClient:
         self.network = get_provider(provider).network.NetworkClient(
             credentials)
 
-    def create(self, name, blueprint):
+    def create(self, name, blueprint=None):
         """
         Create new network named "name" with blueprint file at "blueprint".
 

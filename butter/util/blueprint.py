@@ -19,15 +19,25 @@ class Blueprint:
     Base blueprint object
     """
 
-    def __init__(self, blueprint_file):
-        with open(blueprint_file, 'r') as stream:
+    def __init__(self, blueprint_file=None, blueprint_yaml=None):
+        if blueprint_file:
+            with open(blueprint_file, 'r') as stream:
+                try:
+                    self.blueprint = yaml.load(stream)
+                except yaml.YAMLError as exc:
+                    logger.error("Error parsing blueprint: %s", exc)
+                    raise exc
+            self.blueprint_path = os.path.dirname(blueprint_file)
+        else:
             try:
-                self.blueprint = yaml.load(stream)
+                self.blueprint = yaml.load(blueprint_yaml)
             except yaml.YAMLError as exc:
                 logger.error("Error parsing blueprint: %s", exc)
                 raise exc
-        self.blueprint_path = os.path.dirname(blueprint_file)
+            self.blueprint_path = None
         self.blueprint_filename = blueprint_file
+        if not self.blueprint:
+            self.blueprint = {}
 
 
 class NetworkBlueprint(Blueprint):
@@ -40,13 +50,13 @@ class NetworkBlueprint(Blueprint):
         prefix of 32 meaning the network has 1 address in it (so effectively nothing since that's
         usually disallowed or filled by internal services.
         """
-        return 32 - self.blueprint["network"]["legacy_network_size_bits"]
+        return 32 - self.blueprint.get("network", {}).get("legacy_network_size_bits", 16)
 
     def get_allowed_private_cidr(self):
         """
         Get the CIDR block in which we can allocate our networks.
         """
-        return self.blueprint["network"].get("allowed_private_cidr", "10.0.0.0/8")
+        return self.blueprint.get("network", {}).get("allowed_private_cidr", "10.0.0.0/8")
 
 class ServiceBlueprint(Blueprint):
     """

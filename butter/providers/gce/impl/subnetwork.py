@@ -124,8 +124,11 @@ class SubnetworkClient:
                             subnetwork.network.name == network_name]
         existing_cidrs = [subnet.cidr for subnet in existing_subnets]
 
-        blueprint = NetworkBlueprint(blueprint)
-        allowed_private_cidr = blueprint.get_allowed_private_cidr()
+        if blueprint:
+            network_blueprint = NetworkBlueprint(blueprint)
+        else:
+            network_blueprint = NetworkBlueprint(None, "")
+        allowed_private_cidr = network_blueprint.get_allowed_private_cidr()
         subnets = generate_subnets(allowed_private_cidr, existing_cidrs, prefix, count)
         if len(subnets) < count:
             raise NotEnoughIPSpaceException("Could not allocate %s subnets with "

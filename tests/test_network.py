@@ -29,7 +29,7 @@ def run_network_test(provider, credentials):
 
     # Create two private cloud networks
     network1 = client.network.create(name=network1_name, blueprint=NETWORK_BLUEPRINT)
-    network2 = client.network.create(name=network2_name, blueprint=NETWORK_BLUEPRINT)
+    network2 = client.network.create(name=network2_name)
     assert isinstance(network1, Network)
     assert isinstance(network2, Network)
     assert network2 != network1

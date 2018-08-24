@@ -94,47 +94,36 @@ import butter
 client = butter.Client("mock-aws", credentials={})
 ```
 
-## Concepts
+## Architecture
 
-There are only four concepts in Butter, a Blueprint, a Network, a Service, and a
-Path.
-
-### Blueprint
-
-A blueprint is a YAML file that describes how a Network or a Service should be
-configured.  This includes things like max number of instances (which
-automatically gets translated to subnetwork size) and the memory and CPU
-requirements (which automatically get translated to a virtual machine offering
-from the backing provider that can satisfy the requirements).
-
-Example blueprint files for Networks and Services are shown below.
+There are only three objects in Butter: A Network, a Service, and a Path.
 
 ### Network
 
-A Network is the top level container for everything else.  A Blueprint file for
-a network might look like:
-
-```yaml
----
-network:
-  legacy_network_size_bits: 16
-```
-
-The `legacy_network_size_bits` option only matters for the AWS provider, since
-GCE lets you creates subnets directly without a top level network, but AWS does
-not.  That option tells AWS to create a top level network (VPC) of size 16,
-which will mean that the network has 2^16 unique IP addresses in it.  Note that
-everything is currently still using IPv4.
-
-Once you have your blueprint file, you can work with networks using the
-following commands:
+A Network is the top level container for everything else.  To create a new
+network, run:
 
 ```python
-dev_network = client.network.create("dev", blueprint="example-blueprints/network/blueprint.yml")
+dev_network = client.network.create("dev")
+```
+
+This will return the "Network" object that describes the network that was
+created.  You can retrieve an existing network or list all existing networks by
+running:
+
+```python
 dev_network = client.network.get("dev")
 all_networks = client.network.list()
+```
+
+Finally, to destroy a network:
+
+```python
 client.network.destroy(dev_network)
 ```
+
+Create should use sane defaults, but if you need to do something special see
+[docs/network-configuration.md](docs/network-configuration.md).
 
 In [ipython](https://ipython.org/), you can run `<object>?` to [get help on any
 object](https://ipython.readthedocs.io/en/stable/interactive/python-ipython-diff.html#accessing-help),
@@ -145,7 +134,9 @@ for example `client.network.create?`.
 A Service a logical group of instances and whatever resources are needed to
 support them (subnetworks, firewalls, etc.).
 
-This is an example of what a service blueprint might look like:
+To create a Service, you must first define a configuration file called a
+"blueprint" that specifies how the service should be configured.  This is an
+example of what a Service blueprint might look like:
 
 ```yaml
 ---
@@ -200,7 +191,7 @@ Once you have the blueprint, the example below shows how you could use it.
 These examples create a group of private instances and then create some HAProxy
 instances in front of those instances to balance load.  Note that many commands
 take `dev_network` as the first argument.  That's the same network object
-returned by the commands shown above.
+returned by the network commands shown above.
 
 ```python
 internal_service = client.service.create(dev_network, "private",
