@@ -205,7 +205,7 @@ returned by the commands shown above.
 ```python
 internal_service = client.service.create(dev_network, "private",
                                          blueprint="example-blueprints/aws-nginx/blueprint.yml")
-private_ips = [instance.private_ip for subnetwork in internal_service.subnetworks for instance in subnetwork.instances]
+private_ips = [instance.private_ip for instance in client.service.get_instances(internal_service)]
 load_balancer_service = client.service.create(dev_network, "public",
                                               blueprint="example-blueprints/aws-haproxy/blueprint.yml",
                                               template_vars={"PrivateIps": private_ips})

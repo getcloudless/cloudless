@@ -57,6 +57,7 @@ def run_instances_test(provider, credentials):
             assert subnetwork.instances
             instances.extend(subnetwork.instances)
         assert len(instances) == count
+        assert instances == client.service.get_instances(service)
 
     validate_service(test_network, lb_service, 3)
     validate_service(test_network, web_service, 6)

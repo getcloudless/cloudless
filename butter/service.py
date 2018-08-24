@@ -56,6 +56,16 @@ class ServiceClient:
                 "Network argument to get must be of type butter.types.common.Network")
         return self.service.get(network, service_name)
 
+    # pylint: disable=no-self-use
+    def get_instances(self, service):
+        """
+        Helper to return the list of instances given a service object.
+        """
+        if not isinstance(service, Service):
+            raise DisallowedOperationException(
+                "Service argument to get_instances must be of type butter.types.common.Service")
+        return [i for s in service.subnetworks for i in s.instances]
+
     def destroy(self, service):
         """
         Destroy a service described by the "service" object.
