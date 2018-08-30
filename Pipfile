@@ -3,15 +3,8 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-[dev-packages]
-pytest = "*"
-tox = "*"
-moto = "*"
-pylint = "*"
-
 [packages]
 "e1839a8" = {path = ".", editable = true}
-pytest-xdist = "*"
 
 [requires]
 python_version = "3.6"
