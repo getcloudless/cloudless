@@ -28,7 +28,6 @@ REQUIRED = [
     # This pytest dependency is only for the module tester.  Perhaps this should
     # be a separate module eventually.
     'pytest',
-    'pylint',
     'attr',
     'click',
     'apache-libcloud',
