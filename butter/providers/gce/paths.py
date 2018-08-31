@@ -8,9 +8,11 @@ import ipaddress
 from libcloud.common.google import ResourceNotFoundError
 from butter.providers.gce.driver import get_gce_driver
 from butter.providers.gce.log import logger
-from butter.types.networking import Service, CidrBlock
-from butter.util.exceptions import DisallowedOperationException
+from butter.types.networking import CidrBlock
+from butter.util.exceptions import DisallowedOperationException, BadEnvironmentStateException
 from butter.util.public_blocks import get_public_blocks
+from butter.providers.gce.service import ServiceClient
+from butter.types.common import Path, Subnetwork, Service
 
 
 class PathsClient:
@@ -21,20 +23,7 @@ class PathsClient:
     def __init__(self, credentials):
         self.credentials = credentials
         self.driver = get_gce_driver(credentials)
-
-    def expose(self, network_name, subnetwork_name, port):
-        """
-        Makes a service internet accessible on a given port.
-        """
-        logger.info('Exposing service %s in network %s on port %s',
-                    subnetwork_name, network_name, port)
-        rules = [{"IPProtocol": "tcp", "ports": [port]}]
-        firewall_name = "bu-%s-%s-%s" % (network_name, subnetwork_name, port)
-        target_tag = "%s-%s" % (network_name, subnetwork_name)
-        return self.driver.ex_create_firewall(firewall_name, allowed=rules,
-                                              network=network_name,
-                                              source_ranges=["0.0.0.0/0"],
-                                              target_tags=[target_tag])
+        self.service = ServiceClient(credentials)
 
     # pylint: disable=no-self-use
     def _validate_args(self, source, destination):
@@ -49,7 +38,7 @@ class PathsClient:
                 "Either destination or source must be a butter.types.networking.Service object")
 
         if (isinstance(source, Service) and isinstance(destination, Service) and
-                source.network_name != destination.network_name):
+                source.network != destination.network):
             raise DisallowedOperationException(
                 "Destination and source must be in the same network if specified as services")
 
@@ -63,11 +52,11 @@ class PathsClient:
         src_ranges = []
         dest_ranges = []
         if isinstance(source, Service):
-            src_tags.append("%s-%s" % (source.network_name, source.service_name))
+            src_tags.append("%s-%s" % (source.network.name, source.name))
         if isinstance(source, CidrBlock):
             src_ranges.append(str(source.cidr_block))
         if isinstance(destination, Service):
-            dest_tags.append("%s-%s" % (destination.network_name, destination.service_name))
+            dest_tags.append("%s-%s" % (destination.network.name, destination.name))
         if isinstance(destination, CidrBlock):
             dest_ranges.append(str(destination.cidr_block))
         return src_tags, dest_tags, src_ranges, dest_ranges
@@ -77,10 +66,10 @@ class PathsClient:
         Add path between two services on a given port.
         """
         logger.info('Adding path from %s to %s on port %s', source, destination, port)
-        rules = [{"IPProtocol": "tcp", "ports": [port]}]
+        rules = [{"IPProtocol": "tcp", "ports": [int(port)]}]
         src_tags, dest_tags, src_ranges, _ = self._extract_service_info(
             source, destination)
-        firewall_name = "bu-%s-%s-%s" % (destination.network_name, destination.service_name, port)
+        firewall_name = "bu-%s-%s-%s" % (destination.network.name, destination.name, port)
         try:
             firewall = self.driver.ex_get_firewall(firewall_name)
             if isinstance(source, CidrBlock):
@@ -91,17 +80,18 @@ class PathsClient:
             if isinstance(source, Service):
                 if not firewall.source_tags:
                     firewall.source_tags = []
-                source_tag = "%s-%s" % (source.network_name, source.service_name)
+                source_tag = "%s-%s" % (source.network.name, source.name)
                 firewall.source_tags.append(source_tag)
                 logger.info(firewall.source_tags)
-            return self.driver.ex_update_firewall(firewall)
+            firewall = self.driver.ex_update_firewall(firewall)
         except ResourceNotFoundError:
             logger.info("Firewall %s not found, creating.", firewall_name)
-            return self.driver.ex_create_firewall(firewall_name, allowed=rules,
-                                                  network=destination.network_name,
-                                                  source_ranges=src_ranges,
-                                                  source_tags=src_tags,
-                                                  target_tags=dest_tags)
+            firewall = self.driver.ex_create_firewall(firewall_name, allowed=rules,
+                                                      network=destination.network.name,
+                                                      source_ranges=src_ranges,
+                                                      source_tags=src_tags,
+                                                      target_tags=dest_tags)
+        return Path(destination.network, source, destination, "tcp", port)
 
     def remove(self, source, destination, port):
         """
@@ -110,7 +100,7 @@ class PathsClient:
         logger.info('Removing path from %s to %s on port %s',
                     source, destination, port)
 
-        firewall_name = "bu-%s-%s-%s" % (destination.network_name, destination.service_name, port)
+        firewall_name = "bu-%s-%s-%s" % (destination.network.name, destination.name, port)
 
         def remove_from_ranges(to_remove, address_ranges):
             logger.info("Removing %s from %s", to_remove, address_ranges)
@@ -136,7 +126,7 @@ class PathsClient:
                 firewall.source_ranges = remove_from_ranges(source.cidr_block,
                                                             firewall.source_ranges)
             else:
-                source_tag = "%s-%s" % (source.network_name, source.service_name)
+                source_tag = "%s-%s" % (source.network.name, source.name)
                 if firewall.source_tags:
                     firewall.source_tags = [tag for tag in firewall.source_tags
                                             if tag != source_tag]
@@ -155,53 +145,93 @@ class PathsClient:
         """
         firewalls = self.driver.ex_list_firewalls()
 
-        def add_rule(fw_info, network, source, dest, rule):
-            # Need to come up with a better way to get the actual service name.
-            # Should probably tag the firewalls rules.
-            source_service = source.replace("%s-" % network, "")
-            dest_service = dest.replace("%s-" % network, "")
-            if source_service not in fw_info:
-                fw_info[source_service] = {}
-            if dest_service not in fw_info[source_service]:
-                fw_info[source_service][dest_service] = []
-            fw_info[source_service][dest_service].append(rule)
+        tag_to_service = {}
+        for service in self.service.list():
+            service_tag = "%s-%s" % (service.network.name, service.name)
+            if service_tag in tag_to_service:
+                raise BadEnvironmentStateException(
+                    "Service %s and %s have same service tag: %s" %
+                    (tag_to_service[service_tag], service, service_tag))
+            tag_to_service[service_tag] = service
 
-        def handle_target(fw_info, port, target, firewall):
-            logger.debug('Found target %s in firewall', target)
-            if hasattr(firewall, "source_tags") and firewall.source_tags:
-                for source_tag in firewall.source_tags:
-                    add_rule(fw_info, firewall.network.name, source_tag, target,
-                             {"protocol": "tcp", "port": port})
-            if hasattr(firewall, "source_ranges") and firewall.source_ranges:
-                for source_range in firewall.source_ranges:
-                    add_rule(fw_info, firewall.network.name, source_range,
-                             target, {"protocol": "tcp", "port": port})
-
-        fw_info = {}
-        for firewall in firewalls:
-            if firewall.network.name not in fw_info:
-                fw_info[firewall.network.name] = {}
-
-            logger.debug('Found firewall %s', firewall)
+        def make_paths(destination, source, firewall):
+            paths = []
             for rule in firewall.allowed:
                 for port in rule["ports"]:
-                    logger.debug('Found allowed port %s in firewall', port)
-                    if hasattr(firewall, "target_tags") and firewall.target_tags:
-                        for target_tag in firewall.target_tags:
-                            handle_target(fw_info[firewall.network.name], port,
-                                          target_tag, firewall)
-                    if hasattr(firewall, "target_ranges") and firewall.target_ranges:
-                        for target_range in firewall.target_ranges:
-                            handle_target(fw_info[firewall.network.name], port,
-                                          target_range, firewall)
-        return fw_info
+                    paths.append(Path(destination.network, source, destination, "tcp", port))
+            return paths
+
+        def handle_sources(tag_to_service, destination, firewall):
+            paths = []
+            if hasattr(firewall, "source_tags") and firewall.source_tags:
+                for source_tag in firewall.source_tags:
+                    if source_tag in tag_to_service:
+                        paths.extend(make_paths(destination, tag_to_service[source_tag], firewall))
+            if hasattr(firewall, "source_ranges") and firewall.source_ranges:
+                subnets = []
+                for source_range in firewall.source_ranges:
+                    subnets.append(Subnetwork(subnetwork_id=None, name=None,
+                                              cidr_block=source_range, region=None,
+                                              availability_zone=None, instances=[]))
+                # We treat an explicit CIDR block as a special case of a service with no name.
+                if subnets:
+                    source = Service(network=None, name=None, subnetworks=subnets)
+                    paths.extend(make_paths(destination, source, firewall))
+            return paths
+
+        def handle_targets(tag_to_service, firewall):
+            paths = []
+            if hasattr(firewall, "target_tags") and firewall.target_tags:
+                for target_tag in firewall.target_tags:
+                    if target_tag in tag_to_service:
+                        paths.extend(handle_sources(tag_to_service, tag_to_service[target_tag],
+                                                    firewall))
+            if hasattr(firewall, "target_ranges") and firewall.target_ranges:
+                raise BadEnvironmentStateException(
+                    "Found target ranges %s in firewall %s but they are not supported" %
+                    (firewall.target_ranges, firewall))
+            return paths
+
+        paths = []
+        for firewall in firewalls:
+            paths.extend(handle_targets(tag_to_service, firewall))
+        return paths
 
     def internet_accessible(self, service, port):
         """
         Return true if the given network is internet accessible.
         """
+        paths = self.list()
         for public_block in get_public_blocks():
-            if self.has_access(CidrBlock(public_block), service, port):
+            source = CidrBlock(public_block)
+            self._validate_args(source, service)
+            if self._has_access(paths, source, service, port):
+                return True
+        return False
+
+    def _has_access(self, paths, source, destination, port):
+        def cidr_block_access(path, source, destination, port):
+            cidr_block = str(source.cidr_block)
+            for subnet in path.source.subnetworks:
+                if (ipaddress.IPv4Network(subnet.cidr_block).overlaps(
+                        ipaddress.IPv4Network(cidr_block)) and
+                        path.destination == destination and
+                        int(path.port) == port and
+                        path.protocol == "tcp"):
+                    return True
+            return False
+
+        def service_access(path, source, destination, port):
+            if (path.source == source and path.destination == destination and int(path.port) == port
+                    and path.protocol == "tcp"):
+                return True
+            return False
+
+        for path in paths:
+            if (isinstance(source, Service) and service_access(path, source, destination, port)):
+                return True
+            if (isinstance(source, CidrBlock) and cidr_block_access(path, source, destination,
+                                                                    port)):
                 return True
         return False
 
@@ -213,42 +243,4 @@ class PathsClient:
         self._validate_args(source, destination)
         paths = self.list()
         logger.info('Found paths %s', paths)
-
-        def cidr_block_access(source, network_name, destination_name, paths):
-            cidr_block = str(source.cidr_block)
-            for allowed_cidr, destination_info in paths[network_name].items():
-
-                try:
-                    ipaddress.IPv4Network(allowed_cidr)
-                except ipaddress.AddressValueError as address_value_error:
-                    logger.debug('Cannot parse source as CIDR block: %s', address_value_error)
-                    continue
-
-                if (ipaddress.IPv4Network(cidr_block).overlaps(
-                        ipaddress.IPv4Network(allowed_cidr))):
-                    if destination_name in destination_info:
-                        for path in destination_info[destination_name]:
-                            if int(path["port"]) == int(port):
-                                return True
-            return False
-
-        def service_access(source, network_name, destination_name, paths):
-            source_name = source.service_name
-            if source_name in paths[network_name]:
-                if destination_name in paths[network_name][source_name]:
-                    for path in paths[network_name][source_name][destination_name]:
-                        if int(path["port"]) == int(port):
-                            return True
-            return False
-
-
-        destination_name = destination.service_name
-        network_name = destination.network_name
-        if network_name in paths:
-            if (isinstance(source, Service) and
-                    service_access(source, network_name, destination_name, paths)):
-                return True
-            if (isinstance(source, CidrBlock) and
-                    cidr_block_access(source, network_name, destination_name, paths)):
-                return True
-        return False
+        return self._has_access(paths, source, destination, port)

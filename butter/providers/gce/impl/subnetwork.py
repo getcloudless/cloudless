@@ -11,7 +11,7 @@ import math
 
 from libcloud.common.google import ResourceNotFoundError
 
-from butter.util.blueprint import InstancesBlueprint, NetworkBlueprint
+from butter.util.blueprint import ServiceBlueprint, NetworkBlueprint
 from butter.util.subnet_generator import generate_subnets
 from butter.util.exceptions import NotEnoughIPSpaceException
 from butter.providers.gce.driver import get_gce_driver
@@ -40,7 +40,7 @@ class SubnetworkClient:
 
         # Provision subnets across zones
         subnets_info = []
-        instances_blueprint = InstancesBlueprint(blueprint)
+        instances_blueprint = ServiceBlueprint(blueprint)
         max_count = instances_blueprint.max_count()
         prefix = 32 - int(math.log(max_count, 2))
         region = DEFAULT_REGION
@@ -58,16 +58,15 @@ class SubnetworkClient:
             subnets_info.append(subnet_info)
         return subnets_info
 
-    def discover(self, network_name, subnetwork_name):
+    def get(self, network, subnetwork_name):
         """
-        Discover a group of subnetworks in "network_name" named "subnetwork_name".
+        Get a group of subnetworks in "network" named "subnetwork_name".
         """
-        logger.info('Discovering subnetwork %s, %s', network_name,
-                    subnetwork_name)
-        full_name = "%s-%s" % (network_name, subnetwork_name)
+        logger.info('Discovering subnetwork %s, %s', network.name, subnetwork_name)
+        full_name = "%s-%s" % (network.name, subnetwork_name)
         all_subnetworks = self.driver.ex_list_subnetworks()
         subnets = [sn for sn in all_subnetworks if
-                   sn.network.name == network_name and
+                   sn.network.name == network.name and
                    sn.name == full_name]
         return [canonicalize_subnetwork_info(sn) for sn in subnets]
 
@@ -125,8 +124,11 @@ class SubnetworkClient:
                             subnetwork.network.name == network_name]
         existing_cidrs = [subnet.cidr for subnet in existing_subnets]
 
-        blueprint = NetworkBlueprint(blueprint)
-        allowed_private_cidr = blueprint.get_allowed_private_cidr()
+        if blueprint:
+            network_blueprint = NetworkBlueprint(blueprint)
+        else:
+            network_blueprint = NetworkBlueprint(None, "")
+        allowed_private_cidr = network_blueprint.get_allowed_private_cidr()
         subnets = generate_subnets(allowed_private_cidr, existing_cidrs, prefix, count)
         if len(subnets) < count:
             raise NotEnoughIPSpaceException("Could not allocate %s subnets with "

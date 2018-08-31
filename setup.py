@@ -22,7 +22,7 @@ NAME = 'butter'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'boto3',
+    'boto3==1.7.77',
     'PyYaml',
     'jinja2',
     # This pytest dependency is only for the module tester.  Perhaps this should
@@ -31,14 +31,15 @@ REQUIRED = [
     'attr',
     'click',
     'apache-libcloud',
-    'pycryptodome'
+    'pycryptodome',
+    # Even though moto is for testing, need it for the "mock-aws" provider.
+    'moto==1.3.4',
 ]
 
 # What packages are required for this module to be tested?
 TESTS_REQUIRED = [
     'pytest',
     'pytest-xdist',
-    'moto',
     'tox',
     'pylint'
 ]

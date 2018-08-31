@@ -6,7 +6,6 @@ Implementation of some common helpers necessary to work with security groups.
 """
 
 import time
-import boto3
 from botocore.exceptions import ClientError
 from butter.util.exceptions import (OperationTimedOut,
                                     BadEnvironmentStateException)
@@ -18,13 +17,14 @@ class SecurityGroups:
     Security Groups helpers class.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, driver, credentials):
+        self.driver = driver
         if credentials:
             # Currently only using the global defaults is supported
             raise NotImplementedError("Passing credentials not implemented")
 
     def create(self, name, vpc_id):
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
         group = ec2.create_security_group(VpcId=vpc_id, GroupName=name,
                                           Description=name)
         return group["GroupId"]
@@ -34,7 +34,7 @@ class SecurityGroups:
         Removes all rules referencing the given security group in the given
         VPC, so it can be safely deleted.
         """
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
         logger.info("Deleting rules referencing %s in %s", security_group_id,
                     vpc_id)
         security_groups = ec2.describe_security_groups(
@@ -60,7 +60,7 @@ class SecurityGroups:
                         IpPermissions=[rule_to_remove])
 
     def delete_by_name(self, vpc_id, security_group_name, retries, retry_delay):
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
         logger.info("Deleting security group %s in %s", security_group_name,
                     vpc_id)
         security_groups = ec2.describe_security_groups(
@@ -78,7 +78,7 @@ class SecurityGroups:
         return self.delete_with_retries(security_group_id, retries, retry_delay)
 
     def delete_with_retries(self, security_group_id, retries, retry_delay):
-        ec2 = boto3.client("ec2")
+        ec2 = self.driver.client("ec2")
 
         def attempt_delete_security_group(security_group_id):
             try:

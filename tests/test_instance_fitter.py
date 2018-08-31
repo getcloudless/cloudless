@@ -22,11 +22,11 @@ def run_instance_fitter_test(provider, credentials):
 
     # If no memory, cpu, or storage is passed in, find the cheapest.
     if provider == "aws":
-        assert get_fitting_instance(client.instances, SMALL_INSTANCE_BLUEPRINT) == "t2.small"
-        assert get_fitting_instance(client.instances, LARGE_INSTANCE_BLUEPRINT) == "m4.xlarge"
+        assert get_fitting_instance(client.service, SMALL_INSTANCE_BLUEPRINT) == "t2.small"
+        assert get_fitting_instance(client.service, LARGE_INSTANCE_BLUEPRINT) == "m4.xlarge"
     if provider == "gce":
-        assert get_fitting_instance(client.instances, SMALL_INSTANCE_BLUEPRINT) == "n1-highcpu-4"
-        assert get_fitting_instance(client.instances, LARGE_INSTANCE_BLUEPRINT) == "n1-highmem-4"
+        assert get_fitting_instance(client.service, SMALL_INSTANCE_BLUEPRINT) == "n1-highcpu-4"
+        assert get_fitting_instance(client.service, LARGE_INSTANCE_BLUEPRINT) == "n1-highmem-4"
 
 @pytest.mark.aws
 def test_instance_fitter_aws():

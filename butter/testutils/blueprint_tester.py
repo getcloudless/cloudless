@@ -96,11 +96,11 @@ def setup(client, blueprint_dir):
     save_state(state, blueprint_dir)
 
     logger.info("Creating test network: %s", network_name)
-    client.network.create(network_name, NETWORK_BLUEPRINT)
+    network = client.network.create(network_name, NETWORK_BLUEPRINT)
 
     logger.info("Calling the pre service setup in test fixture")
     blueprint_tester = get_blueprint_tester(client, blueprint_dir)
-    setup_info = blueprint_tester.setup_before_tested_service(network_name)
+    setup_info = blueprint_tester.setup_before_tested_service(network)
     assert isinstance(setup_info, SetupInfo)
     state["setup_info"] = {
         "deployment_info": setup_info.deployment_info,
@@ -111,13 +111,13 @@ def setup(client, blueprint_dir):
 
     logger.info("Creating services using the blueprint under test")
     blueprint = get_blueprint(blueprint_dir)
-    instances = client.instances.create(network_name, service_name, blueprint,
-                                        setup_info.blueprint_vars)
-    assert instances["Instances"]
+    service = client.service.create(network, service_name, blueprint, setup_info.blueprint_vars)
+    assert service.subnetworks
+    for subnetwork in service.subnetworks:
+        assert subnetwork.instances
 
     logger.info("Calling the post service setup in test fixture")
-    blueprint_tester.setup_after_tested_service(network_name, service_name,
-                                                setup_info)
+    blueprint_tester.setup_after_tested_service(network, service, setup_info)
 
 def verify(client, blueprint_dir):
     """
@@ -128,8 +128,9 @@ def verify(client, blueprint_dir):
     blueprint_tester = get_blueprint_tester(client, blueprint_dir)
     setup_info = SetupInfo(state["setup_info"]["deployment_info"],
                            state["setup_info"]["blueprint_vars"])
-    blueprint_tester.verify(state["network_name"], state["service_name"],
-                            setup_info)
+    network = client.network.get(state["network_name"])
+    service = client.service.get(network, state["service_name"])
+    blueprint_tester.verify(network, service, setup_info)
     logger.info("Verify successful!")
 
 def teardown(client, blueprint_dir):
@@ -140,11 +141,13 @@ def teardown(client, blueprint_dir):
     state = get_state(blueprint_dir)
     if not state or "network_name" not in state:
         return
-    all_instances = client.instances.list()
-    for instance_group in all_instances:
-        if instance_group["Network"] == state["network_name"]:
-            client.instances.destroy(state["network_name"], instance_group["Id"])
-    client.network.destroy(state["network_name"])
+    all_services = client.service.list()
+    for service in all_services:
+        if service.network.name == state["network_name"]:
+            client.service.destroy(service)
+    network = client.network.get(state["network_name"])
+    if network:
+        client.network.destroy(network)
     save_state({}, blueprint_dir)
 
 def run_all(client, blueprint_dir):

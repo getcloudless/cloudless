@@ -1,7 +1,7 @@
 """
 Helper to return a fitting instance given the provided resource requirements.
 """
-from butter.util.blueprint import InstancesBlueprint
+from butter.util.blueprint import ServiceBlueprint
 from butter.util.storage_size_parser import parse_storage_size
 from butter.util.log import logger
 
@@ -11,7 +11,7 @@ def get_fitting_instance(instances_client, blueprint):
     Finds the cheapest instance that satisfies the requirements specified in
     the given blueprint.
     """
-    instances_blueprint = InstancesBlueprint(blueprint)
+    instances_blueprint = ServiceBlueprint(blueprint)
 
     # Raise exceptions for anything not supported
     if len(instances_blueprint.disks()) > 1:
