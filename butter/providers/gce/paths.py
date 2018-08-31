@@ -66,7 +66,7 @@ class PathsClient:
         Add path between two services on a given port.
         """
         logger.info('Adding path from %s to %s on port %s', source, destination, port)
-        rules = [{"IPProtocol": "tcp", "ports": [port]}]
+        rules = [{"IPProtocol": "tcp", "ports": [int(port)]}]
         src_tags, dest_tags, src_ranges, _ = self._extract_service_info(
             source, destination)
         firewall_name = "bu-%s-%s-%s" % (destination.network.name, destination.name, port)

@@ -69,7 +69,7 @@ class ServiceClient:
         image = get_image(instances_blueprint.image())
         instance_type = get_fitting_instance(self, blueprint)
         for availability_zone, instance_num in zip(itertools.cycle(availability_zones),
-                                                   range(0, instance_count - 1)):
+                                                   range(0, instance_count)):
             full_subnetwork_name = "%s-%s" % (network.name, service_name)
             instance_name = "%s-%s" % (full_subnetwork_name, instance_num)
             metadata = [
@@ -104,7 +104,7 @@ class ServiceClient:
         # 3. Group Services By Subnet
         for subnet_info in subnetworks:
             for instance in instances:
-                if (ipaddress.IPv4Network(subnet_info.cidr_block).overlaps(
+                if (instance.private_ip and ipaddress.IPv4Network(subnet_info.cidr_block).overlaps(
                         ipaddress.IPv4Network(instance.private_ip))):
                     subnet_info.instances.append(instance)
 
