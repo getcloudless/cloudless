@@ -31,14 +31,15 @@ REQUIRED = [
     'attr',
     'click',
     'apache-libcloud',
-    'pycryptodome'
+    'pycryptodome',
+    # Even though moto is for testing, need it for the "mock-aws" provider.
+    'moto==1.3.4',
 ]
 
 # What packages are required for this module to be tested?
 TESTS_REQUIRED = [
     'pytest',
     'pytest-xdist',
-    'moto',
     'tox',
     'pylint'
 ]
