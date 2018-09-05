@@ -3,9 +3,9 @@ Test for path management.
 """
 import os
 import pytest
-import butter
-from butter.types.common import Path
-from butter.testutils.blueprint_tester import generate_unique_name
+import cloudless
+from cloudless.types.common import Path
+from cloudless.testutils.blueprint_tester import generate_unique_name
 
 EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
                                       "..",
@@ -26,7 +26,7 @@ def run_paths_test(provider, credentials):
     """
 
     # Get the client for this test
-    client = butter.Client(provider, credentials)
+    client = cloudless.Client(provider, credentials)
 
     # Get a somewhat unique network name
     network_name = generate_unique_name("unittest")
@@ -42,7 +42,7 @@ def run_paths_test(provider, credentials):
         web_service = client.service.create(test_network, "web", GCE_SERVICE_BLUEPRINT, {})
 
     # Create CIDR block object for the paths API
-    internet = butter.paths.CidrBlock("0.0.0.0/0")
+    internet = cloudless.paths.CidrBlock("0.0.0.0/0")
 
     assert not client.paths.has_access(lb_service, web_service, 80)
     assert not client.paths.internet_accessible(lb_service, 80)

@@ -3,13 +3,13 @@ Tests for blueprint test framework.
 """
 import os
 import pytest
-import butter
+import cloudless
 
-from butter.testutils.blueprint_tester import setup as do_setup
-from butter.testutils.blueprint_tester import verify as do_verify
-from butter.testutils.blueprint_tester import teardown as do_teardown
-from butter.testutils.blueprint_tester import run_all
-from butter.testutils.blueprint_tester import get_state
+from cloudless.testutils.blueprint_tester import setup as do_setup
+from cloudless.testutils.blueprint_tester import verify as do_verify
+from cloudless.testutils.blueprint_tester import teardown as do_teardown
+from cloudless.testutils.blueprint_tester import run_all
+from cloudless.testutils.blueprint_tester import get_state
 
 # Get the blueprint locations relative to the test script
 BLUEPRINT_DIR = os.path.join(os.path.dirname(__file__), "blueprint_tester_fixture")
@@ -20,7 +20,7 @@ def run_blueprint_tester_test(provider, credentials):
     """
 
     # Get the client for this test
-    client = butter.Client(provider, credentials)
+    client = cloudless.Client(provider, credentials)
 
     # First make sure we have no state if we teardown
     do_teardown(client, BLUEPRINT_DIR)

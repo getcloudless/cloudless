@@ -8,5 +8,5 @@ Since the image name in the blueprint is an GCE image, this only runs on GCE.
 
 ```
 pipenv update
-pipenv run butter-test --provider gce run
+pipenv run cloudless-test --provider gce run
 ```

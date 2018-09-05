@@ -6,9 +6,9 @@ those IP addresses back to the test runner so the test runner can pass them to
 the HAProxy blueprint.
 """
 import os
-from butter.testutils.blueprint_tester import generate_unique_name
-from butter.testutils.fixture import BlueprintTestInterface, SetupInfo
-from butter.types.networking import CidrBlock
+from cloudless.testutils.blueprint_tester import generate_unique_name
+from cloudless.testutils.fixture import BlueprintTestInterface, SetupInfo
+from cloudless.types.networking import CidrBlock
 
 SERVICE_BLUEPRINT = os.path.join(os.path.dirname(__file__),
                                  "../../example-blueprints/aws-nginx/blueprint.yml")

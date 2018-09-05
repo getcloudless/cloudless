@@ -1,4 +1,4 @@
-# Butter
+# Cloudless
 
 :warning: :construction: :skull: This is a proof of concept, do not use in
 production. :skull: :construction: :warning:
@@ -18,8 +18,8 @@ To install locally, make a dedicated directory where you want to test this out
 and run:
 
 ```shell
-cd butter_experimentation
-pipenv install git+https://github.com/sverch/butter.git#egg=butter
+cd cloudless_experimentation
+pipenv install git+https://github.com/sverch/cloudless.git#egg=cloudless
 ```
 
 Having a dedicated directory will allow pipenv to scope the dependencies to that
@@ -50,17 +50,17 @@ dotfile you don't commit to version control.  Note the credentials file is in
 JSON format:
 
 ```shell
-export BUTTER_GCE_USER_ID="sverch-butter@butter-000000.iam.gserviceaccount.com"
+export BUTTER_GCE_USER_ID="sverch-cloudless@cloudless-000000.iam.gserviceaccount.com"
 export BUTTER_GCE_CREDENTIALS_PATH="/home/sverch/.gce/credentials.json"
-export BUTTER_GCE_PROJECT_NAME="butter-000000"
+export BUTTER_GCE_PROJECT_NAME="cloudless-000000"
 ```
 
 Then, you can run these commands in a python shell to create a GCE client:
 
 ```python
-import butter
+import cloudless
 import os
-client = butter.Client("gce", credentials={
+client = cloudless.Client("gce", credentials={
     "user_id": os.environ['BUTTER_GCE_USER_ID'],
     "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
     "project": os.environ['BUTTER_GCE_PROJECT_NAME']})
@@ -80,8 +80,8 @@ Once you have set up your credentials, you can run the following to create an
 AWS client:
 
 ```python
-import butter
-client = butter.Client("aws", credentials={})
+import cloudless
+client = cloudless.Client("aws", credentials={})
 ```
 
 ### Mock Amazon Web Services Client
@@ -90,20 +90,20 @@ The Mock AWS client is for demonstration and testing.  Since it is all running
 locally, you don't need any credentials.  Simply run:
 
 ```python
-import butter
-client = butter.Client("mock-aws", credentials={})
+import cloudless
+client = cloudless.Client("mock-aws", credentials={})
 ```
 
 ## Architecture
 
-There are only three objects in Butter: A Network, a Service, and a Path.  This
+There are only three objects in Cloudless: A Network, a Service, and a Path.  This
 is an example that shows a Network `dev`, a `public_load_balancer` Service, an
 `internal_service` Service, a Path from the internet to `public_load_balancer`
 on port 443, and a Path from `public_load_balancer` to `internal_service` on
 port 80.  See the [visualization](#visualization) section for how to generate
 this graph.
 
-![Butter Simple Service Example](docs/images/example.svg)
+![Cloudless Simple Service Example](docs/images/example.svg)
 
 ### Network
 
@@ -173,15 +173,15 @@ initialization:
         required: true
 ```
 
-The "network" section tells Butter to create subnetworks for this service big
+The "network" section tells Cloudless to create subnetworks for this service big
 enough for 768 instances.
 
-The "placement" section tells Butter to ensure instances in this service are
+The "placement" section tells Cloudless to ensure instances in this service are
 provisioned across three availaibility zones (which most cloud providers
 guarantee are meaningfully isolated from each other for resilience).
 
 The "instance" section describes the resource reqirements of each instance.
-Butter will automatically choose a instance type that meets these requirements.
+Cloudless will automatically choose a instance type that meets these requirements.
 
 The "image" section represents the name of the image you want your instances to
 have.  In this case, we are using an image name only found in AWS by default, so
@@ -223,14 +223,14 @@ client.instances.create(dev_nework, "public", blueprint="example-blueprints/gce-
 
 ### Path
 
-The Path is how you tell Butter that two services should be able to communicate.
+The Path is how you tell Cloudless that two services should be able to communicate.
 No blueprint is needed for this, but you need to have the service objects you
 created earlier.  This example adds a path from the load balancer to the
 internal service on port 80 and makes the load balancer internet accessible on
 port 443:
 
 ```python
-from butter.types.networking import CidrBlock
+from cloudless.types.networking import CidrBlock
 internet = CidrBlock("0.0.0.0/0")
 client.paths.add(load_balancer_service, internal_service, 80)
 client.paths.add(internet, load_balancer_service, 443)
@@ -269,17 +269,17 @@ provider since it will be running in a different process.
 This project also provides a framework to help test that blueprint files work as
 expected.
 
-Example (butter must be installed):
+Example (cloudless must be installed):
 
 ```shell
-butter-test --provider aws --blueprint_dir example-blueprints/haproxy run
+cloudless-test --provider aws --blueprint_dir example-blueprints/haproxy run
 ```
 
-Run `butter-test` with no arguments for usage.
+Run `cloudless-test` with no arguments for usage.
 
 This runner tries to import `blueprint_fixture.BlueprintTest` from the root of
 your blueprint directory.  This must be a class that inherits from
-`butter.testutils.fixture.BlueprintTestInterface` and implements all the
+`cloudless.testutils.fixture.BlueprintTestInterface` and implements all the
 required methods.  See the documentation on that class for usage details.
 
 The runner expects the blueprint file that you are testing to be name

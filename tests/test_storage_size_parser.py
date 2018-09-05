@@ -4,7 +4,7 @@ Test storage size parser.
 This was a helper to convert a size string to bytes.
 """
 import pytest
-from butter.util.storage_size_parser import parse_storage_size
+from cloudless.util.storage_size_parser import parse_storage_size
 
 
 def test_storage_size_parser():

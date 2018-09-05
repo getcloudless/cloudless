@@ -1,7 +1,7 @@
 """
 Test conversions between different firewall representations.
 """
-from butter.util import netgraph
+from cloudless.util import netgraph
 
 NET = {
     "0": {

@@ -5,9 +5,9 @@ This fixture doesn't do any setup, but verifies that the created service is
 running default nginx.
 """
 import requests
-from butter.testutils.blueprint_tester import call_with_retries
-from butter.testutils.fixture import BlueprintTestInterface, SetupInfo
-from butter.types.networking import CidrBlock
+from cloudless.testutils.blueprint_tester import call_with_retries
+from cloudless.testutils.fixture import BlueprintTestInterface, SetupInfo
+from cloudless.types.networking import CidrBlock
 
 RETRY_DELAY = float(10.0)
 RETRY_COUNT = int(6)

@@ -8,5 +8,5 @@ Since the image name in the blueprint is an AWS image, this only runs on AWS.
 
 ```
 pipenv update
-pipenv run butter-test --provider aws run
+pipenv run cloudless-test --provider aws run
 ```

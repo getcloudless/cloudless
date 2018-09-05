@@ -3,8 +3,8 @@ Test instance fitter.
 """
 import os
 import pytest
-import butter
-from butter.util.instance_fitter import get_fitting_instance
+import cloudless
+from cloudless.util.instance_fitter import get_fitting_instance
 
 
 BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "instance_fitter_blueprints")
@@ -18,7 +18,7 @@ def run_instance_fitter_test(provider, credentials):
     """
 
     # Get the client for this test
-    client = butter.Client(provider, credentials)
+    client = cloudless.Client(provider, credentials)
 
     # If no memory, cpu, or storage is passed in, find the cheapest.
     if provider == "aws":

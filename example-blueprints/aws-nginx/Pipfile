@@ -1,2 +1,2 @@
 [packages]
-butter = {git = "https://github.com/sverch/butter", ref = "master", editable = true}
+cloudless = {git = "https://github.com/sverch/cloudless", ref = "master", editable = true}

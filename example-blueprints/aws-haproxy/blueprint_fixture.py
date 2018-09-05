@@ -7,10 +7,10 @@ the HAProxy blueprint.
 """
 import os
 import requests
-from butter.testutils.blueprint_tester import (generate_unique_name,
+from cloudless.testutils.blueprint_tester import (generate_unique_name,
                                                call_with_retries)
-from butter.testutils.fixture import BlueprintTestInterface, SetupInfo
-from butter.types.networking import CidrBlock
+from cloudless.testutils.fixture import BlueprintTestInterface, SetupInfo
+from cloudless.types.networking import CidrBlock
 
 SERVICE_BLUEPRINT = os.path.join(os.path.dirname(__file__),
                                  "../aws-nginx/blueprint.yml")

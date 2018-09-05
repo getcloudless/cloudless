@@ -6,9 +6,9 @@ import os
 import pytest
 import boto3
 from moto import mock_ec2, mock_autoscaling, mock_elb, mock_route53
-import butter
-from butter.types.common import Service
-from butter.testutils.blueprint_tester import generate_unique_name
+import cloudless
+from cloudless.types.common import Service
+from cloudless.testutils.blueprint_tester import generate_unique_name
 
 EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
                                       "..",
@@ -30,7 +30,7 @@ def run_instances_test(provider, credentials):
     """
 
     # Get the client for this test
-    client = butter.Client(provider, credentials)
+    client = cloudless.Client(provider, credentials)
 
     # Get a somewhat unique network name
     network_name = generate_unique_name("unittest")

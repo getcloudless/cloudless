@@ -1,7 +1,7 @@
 """
 Test helper to carve subnets out of a CIDR,
 """
-from butter.util.subnet_generator import generate_subnets
+from cloudless.util.subnet_generator import generate_subnets
 
 
 def test_generate_subnets():
