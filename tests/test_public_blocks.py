@@ -2,14 +2,14 @@
 Test library to get public CIDRs.
 """
 import ipaddress
-import butter.util.public_blocks
+import cloudless.util.public_blocks
 
 def test_public_blocks():
     """
     Test that the logic that tells us whether something is internet accessible is correct.
     """
     public_address_overlap = False
-    public_blocks = butter.util.public_blocks.get_public_blocks()
+    public_blocks = cloudless.util.public_blocks.get_public_blocks()
     assert public_blocks
     for block in public_blocks:
         assert not ipaddress.IPv4Network("172.16.0.0/12").overlaps(block)

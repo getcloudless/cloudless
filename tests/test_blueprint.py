@@ -3,8 +3,8 @@ Tests for blueprint reader.
 """
 import os
 import pytest
-from butter.util.blueprint import ServiceBlueprint
-from butter.util.exceptions import BlueprintException
+from cloudless.util.blueprint import ServiceBlueprint
+from cloudless.util.exceptions import BlueprintException
 
 
 # Get the blueprint locations relative to the test script

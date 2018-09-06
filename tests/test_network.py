@@ -4,9 +4,9 @@ Tests for network management.
 import os
 import pytest
 
-import butter
-from butter.types.common import Network
-from butter.testutils.blueprint_tester import generate_unique_name
+import cloudless
+from cloudless.types.common import Network
+from cloudless.testutils.blueprint_tester import generate_unique_name
 
 EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
                                       "..",
@@ -21,7 +21,7 @@ def run_network_test(provider, credentials):
     """
 
     # Get the client for this test
-    client = butter.Client(provider, credentials)
+    client = cloudless.Client(provider, credentials)
 
     # Get somewhat unique network names
     network1_name = generate_unique_name("network1")

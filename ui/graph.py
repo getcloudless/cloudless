@@ -2,16 +2,16 @@
 
 import os
 import sys
-import butter
+import cloudless
 
 def print_graph(provider):
     """
     Print a graph of all services for provider.
     """
     if provider == "aws":
-        client = butter.Client("aws", {})
+        client = cloudless.Client("aws", {})
     elif provider == "gce":
-        client = butter.Client("gce", {
+        client = cloudless.Client("gce", {
             "user_id": os.environ['BUTTER_GCE_USER_ID'],
             "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
             "project": os.environ['BUTTER_GCE_PROJECT_NAME']})

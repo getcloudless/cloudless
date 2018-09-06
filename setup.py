@@ -18,7 +18,7 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Used for looking up "<NAME>/__version__.py
-NAME = 'butter'
+NAME = 'cloudless'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -135,7 +135,7 @@ setup(
     # py_modules=['mypackage'],
 
     entry_points={
-        'console_scripts': ['butter-test=butter.testutils.cli:main'],
+        'console_scripts': ['cloudless-test=cloudless.testutils.cli:main'],
     },
     install_requires=REQUIRED,
     tests_require=TESTS_REQUIRED,
