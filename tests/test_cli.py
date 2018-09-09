@@ -1,17 +1,23 @@
 """
 Test the cloudless command line interface.
 """
+import traceback
+from unittest.mock import patch
 from click.testing import CliRunner
 from cloudless.cli import get_cldls
 
-def test_init_subcommand():
+# Need to patch this so the test doesn't mess up our real configuration.
+# pylint:disable=unused-argument
+@patch('cloudless.profile.FileConfigSource')
+def test_init_subcommand(mock_instance):
     """
     Test that the subcommand to initialize our credentials works.
     """
     runner = CliRunner()
-    result = runner.invoke(get_cldls(), ['init'])
+    result = runner.invoke(get_cldls(), ['init', '--provider', 'mock-aws'])
     assert result.output == ('Debug mode is off\nProfile is default\n'
-                             'TODO: Initialize profile: default\n')
+                             'Setting provider for profile "default" to "mock-aws"\n')
+    traceback.print_exception(*result.exc_info)
     assert result.exception is None
     assert result.exit_code == 0
 
