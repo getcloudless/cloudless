@@ -36,6 +36,13 @@ def test_network_subcommand():
     assert result.exception is None
     assert result.exit_code == 0
 
+    result = runner.invoke(get_cldls(), ['network', 'ls'])
+    assert result.output == ('Debug mode is off\nProfile is default\n'
+                             'Network group with profile: default\n'
+                             'Network group list with profile: default\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
     result = runner.invoke(get_cldls(), ['network', 'get', 'foobar'])
     assert result.output == ('Debug mode is off\nProfile is default\n'
                              'Network group with profile: default\n'
@@ -68,6 +75,13 @@ def test_service_subcommand():
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['service', 'list'])
+    assert result.output == ('Debug mode is off\nProfile is default\n'
+                             'service group with profile: default\n'
+                             'service group list with profile: default\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['service', 'ls'])
     assert result.output == ('Debug mode is off\nProfile is default\n'
                              'service group with profile: default\n'
                              'service group list with profile: default\n')
@@ -129,6 +143,13 @@ def test_paths_subcommand():
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['paths', 'list'])
+    assert result.output == ('Debug mode is off\nProfile is default\n'
+                             'paths group with profile: default\n'
+                             'paths group list with profile: default\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['paths', 'ls'])
     assert result.output == ('Debug mode is off\nProfile is default\n'
                              'paths group with profile: default\n'
                              'paths group list with profile: default\n')
@@ -205,6 +226,14 @@ def test_image_subcommand():
     assert result.exception is None
     assert result.exit_code == 0
 
+    result = runner.invoke(get_cldls(), ['image', 'ls', 'configuration.yml'])
+    assert result.output == ('Debug mode is off\nProfile is default\n'
+                             'image group with profile: default\n'
+                             'image group list with profile: default'
+                             ', configuration: configuration.yml\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
 def test_blueprint_subcommand():
     """
     Test that the subcommand to work with blueprints works.
@@ -244,6 +273,14 @@ def test_blueprint_subcommand():
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['blueprint', 'list', 'configuration.yml'])
+    assert result.output == ('Debug mode is off\nProfile is default\n'
+                             'blueprint group with profile: default\n'
+                             'blueprint group list with profile: default'
+                             ', configuration: configuration.yml\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['blueprint', 'ls', 'configuration.yml'])
     assert result.output == ('Debug mode is off\nProfile is default\n'
                              'blueprint group with profile: default\n'
                              'blueprint group list with profile: default'

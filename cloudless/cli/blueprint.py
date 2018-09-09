@@ -2,12 +2,13 @@
 Cloudless blueprint command line interface.
 """
 import click
+from cloudless.cli.utils import AliasedGroup
 
 def add_blueprint_group(cldls):
     """
     Add commands for the blueprint command group.
     """
-    @cldls.group(name='blueprint')
+    @cldls.group(name='blueprint', cls=AliasedGroup)
     @click.option('--dev/--no-dev', default=False, help="Development mode.")
     @click.pass_context
     def blueprint_group(ctx, dev):

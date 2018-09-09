@@ -2,12 +2,13 @@
 Cloudless paths command line interface.
 """
 import click
+from cloudless.cli.utils import AliasedGroup
 
 def add_paths_group(cldls):
     """
     Add commands for the paths command group.
     """
-    @cldls.group(name='paths')
+    @cldls.group(name='paths', cls=AliasedGroup)
     @click.pass_context
     def paths_group(ctx):
         """

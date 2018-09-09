@@ -30,3 +30,16 @@ class NaturalOrderGroup(click.Group):
         were added.
         """
         return self.commands.keys()
+
+
+class AliasedGroup(click.Group):
+    """
+    Handles command aliases.  See: http://click.pocoo.org/5/advanced/#command-aliases
+    """
+    def get_command(self, ctx, cmd_name):
+        """
+        Get the command, currently only aliases "ls" to "list".
+        """
+        if cmd_name == "ls":
+            cmd_name = "list"
+        return click.Group.get_command(self, ctx, cmd_name)

@@ -2,12 +2,13 @@
 Cloudless network command line interface.
 """
 import click
+from cloudless.cli.utils import AliasedGroup
 
 def add_network_group(cldls):
     """
     Add commands for the network command group.
     """
-    @cldls.group(name='network')
+    @cldls.group(name='network', cls=AliasedGroup)
     @click.pass_context
     def network_group(ctx):
         """

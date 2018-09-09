@@ -2,12 +2,13 @@
 Cloudless service command line interface.
 """
 import click
+from cloudless.cli.utils import AliasedGroup
 
 def add_service_group(cldls):
     """
     Add commands for the service command group.
     """
-    @cldls.group(name='service')
+    @cldls.group(name='service', cls=AliasedGroup)
     @click.pass_context
     def service_group(ctx):
         """

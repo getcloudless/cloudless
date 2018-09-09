@@ -2,12 +2,13 @@
 Cloudless image command line interface.
 """
 import click
+from cloudless.cli.utils import AliasedGroup
 
 def add_image_group(cldls):
     """
     Add commands for the image command group.
     """
-    @cldls.group(name='image')
+    @cldls.group(name='image', cls=AliasedGroup)
     @click.option('--dev/--no-dev', default=False, help="Development mode.")
     @click.pass_context
     def image_group(ctx, dev):
