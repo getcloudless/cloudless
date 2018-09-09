@@ -26,7 +26,8 @@ def canonicalize_instance_info(instance):
     return Instance(instance_id=instance["InstanceId"],
                     private_ip=instance.get("PrivateIpAddress", "N/A"),
                     public_ip=instance.get("PublicIpAddress", "N/A"),
-                    state=instance["State"]["Name"])
+                    state=instance["State"]["Name"],
+                    availability_zone=instance["Placement"]["AvailabilityZone"])
 
 def canonicalize_node_size(node):
     """

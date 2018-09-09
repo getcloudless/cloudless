@@ -11,28 +11,64 @@ about what it's doing.
 ## Installation
 
 This project depends on [Python
-3.6.0](https://www.python.org/downloads/release/python-360/) or greater.  It can
-be installed as a normal python package using pip, but an environment manager
-such as [pipenv](https://pipenv.readthedocs.io/en/latest/) is recommended.
-
-To install locally, make a dedicated directory where you want to test this out
-and run:
+3.6.0](https://www.python.org/downloads/release/python-360/) or greater.  To
+install, run:
 
 ```shell
-cd cloudless_experimentation
-pipenv install cloudless
+pip3 install cloudless
 ```
 
-Having a dedicated directory will allow pipenv to scope the dependencies to that
-project directory and prevent this project from installing stuff on your main
-system.
+## Quick Start
 
-## Client Setup
+These examples show how to quickly create a simple service that is accessible on
+port 80 in Google Compute Engine and in Amazon Web Services.  Run any command
+with `--help` for more usage.
 
-First, you must create a client object to connect to the cloud platform that
-you'll be working with.  The client handles authentication with the cloud
-provider, so you must pass it the name of the provider and the authentication
-credentials.
+### Google Compute Engine
+
+To set up the Google Compute Engine client, you must first create your Google
+Compute Engine account and navigate to
+[https://console.cloud.google.com/iam-admin/serviceaccounts](https://console.cloud.google.com/iam-admin/serviceaccounts).
+There you can select your project and create a service account.  Remember the
+service account email and create a key for this service account.  Download and
+save this key on your local machine, remembering the path.
+
+You will also need the project ID (not the project name).  Go to
+[https://console.cloud.google.com/iam-admin/settings/project](https://console.cloud.google.com/iam-admin/settings/project)
+and select your project to find your project ID.
+
+```
+cldls init --provider gce
+cldls network create example-blueprints/network/blueprint.yml
+cldls service create mynet myservice example-blueprints/gce-apache/blueprint.yml
+cldls paths allow_external mynet myservice 0.0.0.0/0 80
+cldls service get mynet myservice
+# Navigate to the "public_ip" of each instance in a browser to see the service.
+```
+
+### Amazon Web Services
+
+To set up the Amazon Web Services client, follow the steps at
+[https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
+to configure the aws cli.  Currently, cloudless only uses the "default" aws
+profile that is configured in this way.  After you set up a default profile that
+works with the AWS cli, everything in cloudless should work.
+
+```
+cldls init --provider aws
+cldls network create mynet example-blueprints/network/blueprint.yml
+cldls service create mynet myservice example-blueprints/aws-nginx/blueprint.yml
+cldls paths allow_external mynet myservice 0.0.0.0/0 80
+cldls service get mynet myservice
+# Navigate to the "public_ip" of each instance in a browser to see the service.
+```
+
+## Client Setup In Python API
+
+In the Python API, you must create a client object to connect to the cloud
+platform that you'll be working with.  The client handles authentication with
+the cloud provider, so you must pass it the name of the provider and the
+authentication credentials.
 
 If you are trying this project for the first time, it's recommended that you use
 the "mock-aws" client.
