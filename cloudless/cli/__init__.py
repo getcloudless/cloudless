@@ -2,6 +2,7 @@
 Cloudless command line interface.
 """
 from collections import OrderedDict
+import os
 import click
 from click_repl import register_repl
 from cloudless.cli.init import add_init_group
@@ -19,18 +20,26 @@ def get_cldls():
     """
     @click.group(name='cldls', cls=NaturalOrderGroup)
     @click.option('--debug/--no-debug', default=False)
-    @click.option('--profile', help="The profile to use.", default="default", show_default=True)
+    @click.option('--profile', help="The profile to use.")
     @click.pass_context
     def cldls(ctx, debug, profile):
         """
         The cloudless command line.  Use this to interact with networks and services deployed with
         cloudless, and to run the testing framework.
+
+        If the "profile" option is not set, the value of "CLOUDLESS_PROFILE" will be used.  If
+        neither option is set, the default profile is "default".
         """
         if not ctx.obj:
             ctx.obj = {}
         click.echo('Debug mode is %s' % ('on' if debug else 'off'))
-        click.echo('Profile is %s' % (profile))
-        ctx.obj['PROFILE'] = profile
+        if profile:
+            ctx.obj['PROFILE'] = profile
+        elif "CLOUDLESS_PROFILE" in os.environ:
+            ctx.obj['PROFILE'] = os.environ["CLOUDLESS_PROFILE"]
+        else:
+            ctx.obj['PROFILE'] = "default"
+        click.echo('Profile is %s' % (ctx.obj['PROFILE']))
 
     add_init_group(cldls)
     add_network_group(cldls)
