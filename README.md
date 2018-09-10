@@ -19,8 +19,13 @@ and run:
 
 ```shell
 cd cloudless_experimentation
-pipenv install git+https://github.com/sverch/cloudless.git#egg=cloudless
+pipenv install botocore==1.10.84
+pipenv install cloudless
 ```
+
+You need to explicitly install that version of botocore right now because of
+https://github.com/getcloudless/cloudless/issues/4, but that is actually a bug
+in version 0.0.0 of cloudless.
 
 Having a dedicated directory will allow pipenv to scope the dependencies to that
 project directory and prevent this project from installing stuff on your main

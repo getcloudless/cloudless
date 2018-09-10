@@ -77,6 +77,11 @@ class UploadCommand(Command):
 
     description = 'Build and publish the package.'
     user_options = []
+    user_options = [
+        # The format is (long option, short option, description).
+        ('use-test-index=', None,
+         'Whether to use the test index.  Default is true, set to false to upload to real index.'),
+    ]
 
     @staticmethod
     def status(message):
@@ -87,7 +92,8 @@ class UploadCommand(Command):
         """
         Unused/noop
         """
-        pass
+        # pylint:disable=use-test-index
+        self.use_test_index = "true"
 
     def finalize_options(self):
         """
@@ -110,7 +116,11 @@ class UploadCommand(Command):
             sys.executable))
 
         self.status('Uploading the package to PyPI via Twine…')
-        os.system('twine upload dist/*')
+        if self.use_test_index == "false":
+            os.system('twine upload dist/*')
+        else:
+            self.status('Using test index.  Run with "--use-test-index false" to use real pypi.')
+            os.system('twine upload --repository-url https://test.pypi.org/legacy/ dist/*')
 
         self.status('Pushing git tags…')
         os.system('git tag v{0}'.format(about['__version__']))
