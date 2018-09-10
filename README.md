@@ -4,6 +4,10 @@ Cloudless makes it easier to interact with cloud resources by doing most of the
 work that a human doesn't need to care about for you, and by being transparent
 about what it's doing.
 
+- [Homepage](https://getcloudless.com)
+- [Documentation](https://getcloudless.com)
+- [Github](https://github.com/getcloudless/cloudless)
+
 ## Installation
 
 This project depends on [Python
