@@ -22,26 +22,27 @@ NAME = 'cloudless'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'boto3==1.7.77',
-    'PyYaml',
-    'jinja2',
+    'boto3>=1.7.77,<1.8.0',
+    'botocore>=1.10.84,<1.11.0',
+    'PyYaml>=3.13,<4.0',
+    'jinja2>=2.10,<3.0',
     # This pytest dependency is only for the module tester.  Perhaps this should
     # be a separate module eventually.
-    'pytest',
-    'attr',
-    'click',
-    'apache-libcloud',
-    'pycryptodome',
+    'pytest>=3.8.0,<3.9.0',
+    'attr>=0.3.1,<0.4.0',
+    'click>=6.7,<7.0',
+    'apache-libcloud>=2.3.0,<2.4.0',
+    'pycryptodome>=3.6.6,<3.7.0',
     # Even though moto is for testing, need it for the "mock-aws" provider.
-    'moto==1.3.4',
+    'moto>=1.3.5,<1.4.0',
 ]
 
 # What packages are required for this module to be tested?
 TESTS_REQUIRED = [
-    'pytest',
-    'pytest-xdist',
-    'tox',
-    'pylint'
+    'pytest>=3.8.0,<3.9.0',
+    'pytest-xdist>=1.23.0,<1.24.0',
+    'tox>=3.2.1,<3.3.0',
+    'pylint>=2.1.1,<2.2.0'
 ]
 
 # What packages are optional?
@@ -92,7 +93,7 @@ class UploadCommand(Command):
         """
         Unused/noop
         """
-        # pylint:disable=use-test-index
+        # pylint:disable=attribute-defined-outside-init
         self.use_test_index = "true"
 
     def finalize_options(self):
@@ -118,13 +119,14 @@ class UploadCommand(Command):
         self.status('Uploading the package to PyPI via Twine…')
         if self.use_test_index == "false":
             os.system('twine upload dist/*')
+
+            # Only push git tags when uploading to real pypi
+            self.status('Pushing git tags…')
+            os.system('git tag v{0}'.format(about['__version__']))
+            os.system('git push --tags')
         else:
             self.status('Using test index.  Run with "--use-test-index false" to use real pypi.')
             os.system('twine upload --repository-url https://test.pypi.org/legacy/ dist/*')
-
-        self.status('Pushing git tags…')
-        os.system('git tag v{0}'.format(about['__version__']))
-        os.system('git push --tags')
 
         sys.exit()
 
