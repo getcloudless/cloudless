@@ -1,11 +1,8 @@
 # Cloudless
 
-:warning: :construction: :skull: This is a proof of concept, do not use in
-production. :skull: :construction: :warning:
-
-This tool should make it easier to interact with cloud resources by doing most
-of the work that a human doesn't need to care about for you, and by being
-transparent about what it's doing.
+Cloudless makes it easier to interact with cloud resources by doing most of the
+work that a human doesn't need to care about for you, and by being transparent
+about what it's doing.
 
 ## Installation
 

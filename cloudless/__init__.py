@@ -1,37 +1,46 @@
 """
-Cloudless
-
-This is a python library to provide a basic set of easy to use primitive
-operations that can work with many different cloud providers.
+Cloudless is a python library to provide a basic set of easy to use primitive operations that can
+work with many different cloud providers.
 
 These primitives are:
 
-    - Create a "Network" (also known as VPC, Network, Environment).  e.g. "dev".
-    - Create a "Service" within that network.  e.g. "apache-public".
-    - Easily control network connections and firewalls.
+- Create a "Network" (also known as VPC, Network, Environment).  e.g. "dev".
+- Create a "Service" within that network.  e.g. "apache-public".
+- Easily control network connections and firewalls using "Paths".
 
 The goal is to provide an intuitive abstraction that is powerful enough to build
 on, so that building other layers on top is easy and anything built on it is
 automatically cross cloud.
+
+The main entry point to this module is through the `cloudless.Client` object, and all calls that
+interact with a backing cloud provider go through this object.
 """
 from cloudless import network, service, paths
+from cloudless.providers import PROVIDERS_MAP
 
 
 # pylint: disable=too-few-public-methods
 class Client:
     """
-    Cloudless Client Object
+    Top Level Cloudless Client.
 
-    This is the object through which all calls are made.
+    This is the object through which all calls to the backing service provider are made.
 
-    Usage:
+    Most functionality is stored in the subclasses that are attached to this client.  Currently they
+    are `cloudless.NetworkClient`, `cloudless.ServiceClient`, and `cloudless.PathsClient`.  See the
+    documentation on those sub-components for more usage details.
+
+    To use:
 
         import cloudless
         client = cloudless.Client(provider, credentials)
-        client.network.*
-        client.paths.*
+        client.network?
+        client.service?
+        client.paths?
 
-    See the documentation on those sub-components for more details.
+    Where "provider" is the backing service provider, and "credentials" is a hash containing
+    whatever credentials are required by the chosen provider.  See the supported providers list for
+    details.
     """
 
     def __init__(self, provider, credentials):
@@ -42,8 +51,10 @@ class Client:
     # pylint: disable=too-many-locals
     def graph(self):
         """
-        Return a human readable formatted string representation of the paths
-        graph.
+        Return a [DOT](https://graphviz.gitlab.io/_pages/doc/info/lang.html) formatted graph string
+        containing all resources on the current provider.
+
+        This string can be passed to a program like graphviz to generate a graph visualization.
         """
 
         def start_graph():

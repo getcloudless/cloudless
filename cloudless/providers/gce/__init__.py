@@ -1,6 +1,7 @@
 """
-GCE Provider
+The GCE Provider will provision resources using Google Compute Engine.
 
-This module implements support for using GCE as a backing provider.
+You should not use this directly, but instead pass in the string "gce" as the "provider" in the top
+level `cloudless.Client` object.
 """
 from cloudless.providers.gce import (network, service, paths)
