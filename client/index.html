@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Client - Cloudless Documentation</title>
+  <title>Core API - Cloudless Documentation</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../css/theme.css" type="text/css" />
@@ -17,7 +17,7 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Client";
+    var mkdocs_page_name = "Core API";
     var mkdocs_page_input_path = "client.md";
     var mkdocs_page_url = null;
   </script>
@@ -55,7 +55,7 @@
           
             <li class="toctree-l1 current">
 		
-    <a class="current" href="./">Client</a>
+    <a class="current" href="./">Core API</a>
     <ul class="subnav">
             
     <li class="toctree-l2"><a href="#cloudless">cloudless</a></li>
@@ -78,25 +78,12 @@
           
             <li class="toctree-l1">
 		
-    <span class="caption-text">Providers</span>
-    <ul class="subnav">
-                <li class="">
-                    
+    <a class="" href="../objects/">Object Types</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
     <a class="" href="../providers/">Providers</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../providers/mock_aws/">Mock Amazon Web Services</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../providers/aws/">Amazon Web Services</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../providers/gce/">Google Compute Engine</a>
-                </li>
-    </ul>
 	    </li>
           
         </ul>
@@ -121,7 +108,7 @@
     
       
     
-    <li>Client</li>
+    <li>Core API</li>
     <li class="wy-breadcrumbs-aside">
       
     </li>
@@ -132,42 +119,52 @@
             <div class="section">
               
                 <h1 id="cloudless">cloudless</h1>
-<p>Cloudless</p>
-<p>This is a python library to provide a basic set of easy to use primitive
-operations that can work with many different cloud providers.</p>
+<p>Cloudless is a python library to provide a basic set of easy to use primitive operations that can
+work with many different cloud providers.</p>
 <p>These primitives are:</p>
-<pre><code>- Create a "Network" (also known as VPC, Network, Environment).  e.g. "dev".
-- Create a "Service" within that network.  e.g. "apache-public".
-- Easily control network connections and firewalls.
-</code></pre>
+<ul>
+<li>Create a "Network" (also known as VPC, Network, Environment).  e.g. "dev".</li>
+<li>Create a "Service" within that network.  e.g. "apache-public".</li>
+<li>Easily control network connections and firewalls using "Paths".</li>
+</ul>
 <p>The goal is to provide an intuitive abstraction that is powerful enough to build
 on, so that building other layers on top is easy and anything built on it is
 automatically cross cloud.</p>
+<p>The main entry point to this module is through the <code>cloudless.Client</code> object, and all calls that
+interact with a backing cloud provider go through this object.</p>
 <h2 id="client">Client</h2>
 <pre><code class="python">Client(self, provider, credentials)
 </code></pre>
 
-<p>Cloudless Client Object</p>
-<p>This is the object through which all calls are made.</p>
-<p>Usage:</p>
+<p>Top Level Cloudless Client.</p>
+<p>This is the object through which all calls to the backing service provider are made.</p>
+<p>Most functionality is stored in the subclasses that are attached to this client.  Currently they
+are <code>cloudless.NetworkClient</code>, <code>cloudless.ServiceClient</code>, and <code>cloudless.PathsClient</code>.  See the
+documentation on those sub-components for more usage details.</p>
+<p>To use:</p>
 <pre><code>import cloudless
 client = cloudless.Client(provider, credentials)
-client.network.*
-client.paths.*
+client.network?
+client.service?
+client.paths?
 </code></pre>
-<p>See the documentation on those sub-components for more details.</p>
+<p>Where "provider" is the backing service provider, and "credentials" is a hash containing
+whatever credentials are required by the chosen provider.  See the supported providers list for
+details.</p>
 <h3 id="graph">graph</h3>
 <pre><code class="python">Client.graph(self)
 </code></pre>
 
-<p>Return a human readable formatted string representation of the paths
-graph.</p>
+<p>Return a <a href="https://graphviz.gitlab.io/_pages/doc/info/lang.html">DOT</a> formatted graph string
+containing all resources on the current provider.</p>
+<p>This string can be passed to a program like graphviz to generate a graph visualization.</p>
 <h2 id="networkclient">NetworkClient</h2>
 <pre><code class="python">NetworkClient(self, provider, credentials)
 </code></pre>
 
-<p>Cloudless Network Client Object</p>
-<p>This is the object through which all network related calls are made.</p>
+<p>Cloudless Network Client.</p>
+<p>This is the object through which all network related calls are made.  The objects returned by
+these commands are of type <code>cloudless.types.common.Network</code>.</p>
 <p>Usage:</p>
 <pre><code>import cloudless
 client = cloudless.Client(provider, credentials)
@@ -213,8 +210,12 @@ client.network.destroy(client.network.get("network"))
 <pre><code class="python">ServiceClient(self, provider, credentials)
 </code></pre>
 
-<p>Cloudless Service Client Object</p>
-<p>This is the object through which all service related calls are made.</p>
+<p>Cloudless Service Client.</p>
+<p>This is the object through which all service related calls are made.  The objects returned by
+these commands are of type <code>cloudless.types.common.Service</code> which contain objects of type
+<code>cloudless.types.common.Subnetwork</code>, which themselves contain lists of
+<code>cloudless.types.common.Instance</code>.  This is because the service is the logical grouping, but
+behind the scenes they are groups of instances deployed in private subnetworks.</p>
 <p>Usage:</p>
 <pre><code>import cloudless
 client = cloudless.Client(provider, credentials)
@@ -232,43 +233,72 @@ client.service.destroy(myservice)
 <p>Create a service in "network" named "service_name" with blueprint file at "blueprint".</p>
 <p>"template_vars" are passed to the initialization scripts as jinja2
 variables.</p>
+<p>Example:</p>
+<pre><code>example_network = client.network.create("example")
+example_service = client.service.create(network=example_network,
+                                        name="example_service",
+                                        blueprint="example-blueprint.yml")
+</code></pre>
 <h3 id="get_1">get</h3>
 <pre><code class="python">ServiceClient.get(self, network, service_name)
 </code></pre>
 
 <p>Get a service in "network" named "service_name".</p>
+<p>Example:</p>
+<pre><code>example_service = client.service.get(network=client.network.get("example"),
+                                     name="example_service")
+</code></pre>
 <h3 id="get_instances">get_instances</h3>
 <pre><code class="python">ServiceClient.get_instances(self, service)
 </code></pre>
 
 <p>Helper to return the list of instances given a service object.</p>
+<p>Example:</p>
+<pre><code>example_service = client.service.get(network=client.network.get("example"),
+                                     name="example_service")
+instances = client.service.get_instances(example_service)
+</code></pre>
 <h3 id="destroy_1">destroy</h3>
 <pre><code class="python">ServiceClient.destroy(self, service)
 </code></pre>
 
 <p>Destroy a service described by the "service" object.</p>
+<p>Example:</p>
+<pre><code>example_service = client.service.get(network=client.network.get("example"),
+                                     name="example_service")
+client.service.destroy(example_service)
+</code></pre>
 <h3 id="list_1">list</h3>
 <pre><code class="python">ServiceClient.list(self)
 </code></pre>
 
 <p>List all services.</p>
+<p>Example:</p>
+<pre><code>client.service.list()
+</code></pre>
 <h3 id="node_types">node_types</h3>
 <pre><code class="python">ServiceClient.node_types(self)
 </code></pre>
 
 <p>Get mapping of node types to the resources.</p>
+<p>Example:</p>
+<pre><code>client.service.node_types()
+</code></pre>
 <h2 id="pathsclient">PathsClient</h2>
 <pre><code class="python">PathsClient(self, provider, credentials)
 </code></pre>
 
-<p>Cloudless Paths Client Object</p>
-<p>This is the object through which all path related calls are made.</p>
+<p>Cloudless Paths Client.</p>
+<p>This is the object through which all path related calls are made.  The objects returned by these
+commands are of type <code>cloudless.types.common.Path</code> which contain objects of type
+<code>cloudless.types.common.Service</code> and <code>cloudless.types.networking.CidrBlock</code> depending on whether
+the path is internally or externally facing.</p>
 <p>Usage:</p>
 <pre><code>import cloudless
 client = cloudless.Client(provider, credentials)
 internal_service = client.service.get(network, "internal_service")
 load_balancer = client.service.get(network, "load_balancer")
-internet = CidrBlock("0.0.0.0/0")
+internet = cloudless.types.networking.CidrBlock("0.0.0.0/0")
 client.paths.add(load_balancer, internal_service, 80)
 client.paths.add(internet, load_balancer, 443)
 client.paths.list()
@@ -283,6 +313,13 @@ client.graph()
 <p>Make the service or cidr block described by "destination" accessible from the service or
 cidr block described by "source" on the given port.</p>
 <p>Either "source" or "destination" must be a service object.</p>
+<p>Example:</p>
+<pre><code>service1 = client.service.get(network=client.network.get("example"), name="service1")
+service2 = client.service.get(network=client.network.get("example"), name="service2")
+internet = cloudless.types.networking.CidrBlock("0.0.0.0/0")
+client.paths.add(service1, service2, 443)
+client.paths.add(internet, service1, 80)
+</code></pre>
 <h3 id="remove">remove</h3>
 <pre><code class="python">PathsClient.remove(self, source, destination, port)
 </code></pre>
@@ -290,16 +327,30 @@ cidr block described by "source" on the given port.</p>
 <p>Ensure the service or cidr block described by "destination" is not accessible from the
 service or cidr block described by "source" on the given port.</p>
 <p>Either "source" or "destination" must be a service object.</p>
+<p>Example:</p>
+<pre><code>service1 = client.service.get(network=client.network.get("example"), name="service1")
+service2 = client.service.get(network=client.network.get("example"), name="service2")
+internet = cloudless.types.networking.CidrBlock("0.0.0.0/0")
+client.paths.remove(service1, service2, 443)
+client.paths.remove(internet, service1, 80)
+</code></pre>
 <h3 id="list_2">list</h3>
 <pre><code class="python">PathsClient.list(self)
 </code></pre>
 
 <p>List all paths and return a dictionary structure representing a graph.</p>
+<p>Example:</p>
+<pre><code>client.paths.list()
+</code></pre>
 <h3 id="internet_accessible">internet_accessible</h3>
 <pre><code class="python">PathsClient.internet_accessible(self, service, port)
 </code></pre>
 
 <p>Returns true if the service described by "service" is internet accessible on the given port.</p>
+<p>Example:</p>
+<pre><code>service1 = client.service.get(network=client.network.get("example"), name="service1")
+client.paths.internet_accessible(service1, 443)
+</code></pre>
 <h3 id="has_access">has_access</h3>
 <pre><code class="python">PathsClient.has_access(self, source, destination, port)
 </code></pre>
@@ -307,6 +358,13 @@ service or cidr block described by "source" on the given port.</p>
 <p>Returns true if the service or cidr block described by "destination" is accessible from the
 service or cidr block described by "source" on the given port.</p>
 <p>Either "source" or "destination" must be a service object.</p>
+<p>Example:</p>
+<pre><code>service1 = client.service.get(network=client.network.get("example"), name="service1")
+service2 = client.service.get(network=client.network.get("example"), name="service2")
+internet = cloudless.types.networking.CidrBlock("0.0.0.0/0")
+client.paths.has_access(service1, service2, 443)
+client.paths.has_access(internet, service1, 80)
+</code></pre>
               
             </div>
           </div>
@@ -314,7 +372,7 @@ service or cidr block described by "source" on the given port.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../providers/" class="btn btn-neutral float-right" title="Providers">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../objects/" class="btn btn-neutral float-right" title="Object Types">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
         <a href=".." class="btn btn-neutral" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
@@ -346,7 +404,7 @@ service or cidr block described by "source" on the given port.</p>
         <span><a href=".." style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../providers/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../objects/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>

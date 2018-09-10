@@ -77,30 +77,17 @@
           
             <li class="toctree-l1">
 		
-    <a class="" href="client/">Client</a>
+    <a class="" href="client/">Core API</a>
 	    </li>
           
             <li class="toctree-l1">
 		
-    <span class="caption-text">Providers</span>
-    <ul class="subnav">
-                <li class="">
-                    
+    <a class="" href="objects/">Object Types</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
     <a class="" href="providers/">Providers</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="providers/mock_aws/">Mock Amazon Web Services</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="providers/aws/">Amazon Web Services</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="providers/gce/">Google Compute Engine</a>
-                </li>
-    </ul>
 	    </li>
           
         </ul>
@@ -136,11 +123,9 @@
             <div class="section">
               
                 <h1 id="cloudless">Cloudless</h1>
-<p>:warning: :construction: :skull: This is a proof of concept, do not use in
-production. :skull: :construction: :warning:</p>
-<p>This tool should make it easier to interact with cloud resources by doing most
-of the work that a human doesn't need to care about for you, and by being
-transparent about what it's doing.</p>
+<p>Cloudless makes it easier to interact with cloud resources by doing most of the
+work that a human doesn't need to care about for you, and by being transparent
+about what it's doing.</p>
 <h2 id="installation">Installation</h2>
 <p>This project depends on <a href="https://www.python.org/downloads/release/python-360/">Python
 3.6.0</a> or greater.  It can
@@ -149,7 +134,7 @@ such as <a href="https://pipenv.readthedocs.io/en/latest/">pipenv</a> is recomme
 <p>To install locally, make a dedicated directory where you want to test this out
 and run:</p>
 <pre><code class="shell">cd cloudless_experimentation
-pipenv install git+https://github.com/sverch/cloudless.git#egg=cloudless
+pipenv install cloudless
 </code></pre>
 
 <p>Having a dedicated directory will allow pipenv to scope the dependencies to that
@@ -233,7 +218,7 @@ all_networks = client.network.list()
 </code></pre>
 
 <p>Create should use sane defaults, but if you need to do something special see
-<a href="docs/network-configuration.md">docs/network-configuration.md</a>.</p>
+<a href="docs/network-configuration/">docs/network-configuration.md</a>.</p>
 <p>In <a href="https://ipython.org/">ipython</a>, you can run <code>&lt;object&gt;?</code> to <a href="https://ipython.readthedocs.io/en/stable/interactive/python-ipython-diff.html#accessing-help">get help on any
 object</a>,
 for example <code>client.network.create?</code>.</p>
@@ -376,7 +361,7 @@ tox -e aws
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="client/" class="btn btn-neutral float-right" title="Client">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="client/" class="btn btn-neutral float-right" title="Core API">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
     </div>
@@ -417,5 +402,5 @@ tox -e aws
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2018-09-10 14:53:48
+Build Date UTC : 2018-09-10 17:03:27
 -->

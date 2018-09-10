@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../../img/favicon.ico">
-  <title>Google Compute Engine - Cloudless Documentation</title>
+  <title>cloudless.providers.gce - Cloudless Documentation</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
@@ -17,7 +17,7 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Google Compute Engine";
+    var mkdocs_page_name = "cloudless.providers.gce";
     var mkdocs_page_input_path = "providers/gce.md";
     var mkdocs_page_url = null;
   </script>
@@ -55,36 +55,17 @@
           
             <li class="toctree-l1">
 		
-    <a class="" href="../../client/">Client</a>
+    <a class="" href="../../client/">Core API</a>
 	    </li>
           
             <li class="toctree-l1">
 		
-    <span class="caption-text">Providers</span>
-    <ul class="subnav">
-                <li class="">
-                    
+    <a class="" href="../../objects/">Object Types</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
     <a class="" href="../">Providers</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../mock_aws/">Mock Amazon Web Services</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../aws/">Amazon Web Services</a>
-                </li>
-                <li class=" current">
-                    
-    <a class="current" href="./">Google Compute Engine</a>
-    <ul class="subnav">
-            
-    <li class="toctree-l3"><a href="#cloudlessprovidersgce">cloudless.providers.gce</a></li>
-    
-
-    </ul>
-                </li>
-    </ul>
 	    </li>
           
         </ul>
@@ -108,12 +89,8 @@
     <li><a href="../..">Docs</a> &raquo;</li>
     
       
-        
-          <li>Providers &raquo;</li>
-        
-      
     
-    <li>Google Compute Engine</li>
+    <li>cloudless.providers.gce</li>
     <li class="wy-breadcrumbs-aside">
       
     </li>
@@ -126,17 +103,12 @@
                 <h1 id="cloudlessprovidersgce">cloudless.providers.gce</h1>
 <p>GCE Provider</p>
 <p>This module implements support for using GCE as a backing provider.</p>
+<p>You should not use this directly, but instead pass in the string "aws" as the "provider" in the top
+level <code>cloudless.Client</code> object.</p>
               
             </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-      
-        <a href="../aws/" class="btn btn-neutral" title="Amazon Web Services"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>
@@ -159,8 +131,6 @@
   <div class="rst-versions" role="note" style="cursor: pointer">
     <span class="rst-current-version" data-toggle="rst-current-version">
       
-      
-        <span><a href="../aws/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
     </span>

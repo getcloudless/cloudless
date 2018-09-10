@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../../img/favicon.ico">
-  <title>cloudless.providers.aws - Cloudless Documentation</title>
+  <title>Network Configuration - Cloudless Documentation</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
@@ -17,8 +17,8 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "cloudless.providers.aws";
-    var mkdocs_page_input_path = "providers/aws.md";
+    var mkdocs_page_name = "Network Configuration";
+    var mkdocs_page_input_path = "docs/network-configuration.md";
     var mkdocs_page_url = null;
   </script>
   
@@ -65,7 +65,7 @@
           
             <li class="toctree-l1">
 		
-    <a class="" href="../">Providers</a>
+    <a class="" href="../../providers/">Providers</a>
 	    </li>
           
         </ul>
@@ -90,7 +90,7 @@
     
       
     
-    <li>cloudless.providers.aws</li>
+    <li>Network Configuration</li>
     <li class="wy-breadcrumbs-aside">
       
     </li>
@@ -100,11 +100,25 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="cloudlessprovidersaws">cloudless.providers.aws</h1>
-<p>AWS Provider</p>
-<p>This module implements support for using AWS as a backing provider.</p>
-<p>You should not use this directly, but instead pass in the string "aws" as the "provider" in the top
-level <code>cloudless.Client</code> object.</p>
+                <h1 id="network-configuration">Network Configuration</h1>
+<p>A network can be configured by passing a "blueprint" argument to the create
+command.  A Blueprint file for a network with the defaults set might look like:</p>
+<pre><code class="yaml">---
+network:
+  legacy_network_size_bits: 16
+  allowed_private_cidr: &quot;10.0.0.0/8&quot;
+</code></pre>
+
+<p>The <code>legacy_network_size_bits</code> option only matters for the AWS provider, since
+GCE lets you creates subnets directly without a top level network, but AWS does
+not.  That option tells AWS to create a top level network (VPC) of size 16,
+which will mean that the network has 2^16 unique IP addresses in it.  Note that
+everything is currently still using IPv4.</p>
+<p>The <code>allowed_private_cidr</code> is useful if you might peer networks and don't want
+the private ranges to overlap.  For AWS you must set this on the network
+creation call, but since GCE doesn't allocate any networks until subnetworks are
+created you must set this block in the service blueprint for GCE to honor your
+allowed ranges.</p>
               
             </div>
           </div>

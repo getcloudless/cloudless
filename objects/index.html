@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Providers - Cloudless Documentation</title>
+  <title>Object Types - Cloudless Documentation</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../css/theme.css" type="text/css" />
@@ -17,8 +17,8 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Providers";
-    var mkdocs_page_input_path = "providers.md";
+    var mkdocs_page_name = "Object Types";
+    var mkdocs_page_input_path = "objects.md";
     var mkdocs_page_url = null;
   </script>
   
@@ -58,29 +58,32 @@
     <a class="" href="../client/">Core API</a>
 	    </li>
           
-            <li class="toctree-l1">
-		
-    <a class="" href="../objects/">Object Types</a>
-	    </li>
-          
             <li class="toctree-l1 current">
 		
-    <a class="current" href="./">Providers</a>
+    <a class="current" href="./">Object Types</a>
     <ul class="subnav">
             
-    <li class="toctree-l2"><a href="#cloudlessproviders">cloudless.providers</a></li>
+    <li class="toctree-l2"><a href="#network">Network</a></li>
     
 
-    <li class="toctree-l2"><a href="#cloudlessprovidersaws_mock">cloudless.providers.aws_mock</a></li>
+    <li class="toctree-l2"><a href="#service">Service</a></li>
     
 
-    <li class="toctree-l2"><a href="#cloudlessprovidersgce">cloudless.providers.gce</a></li>
+    <li class="toctree-l2"><a href="#subnetwork">Subnetwork</a></li>
     
 
-    <li class="toctree-l2"><a href="#cloudlessprovidersaws">cloudless.providers.aws</a></li>
+    <li class="toctree-l2"><a href="#instance">Instance</a></li>
+    
+
+    <li class="toctree-l2"><a href="#path">Path</a></li>
     
 
     </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../providers/">Providers</a>
 	    </li>
           
         </ul>
@@ -105,7 +108,7 @@
     
       
     
-    <li>Providers</li>
+    <li>Object Types</li>
     <li class="wy-breadcrumbs-aside">
       
     </li>
@@ -115,36 +118,31 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="cloudlessproviders">cloudless.providers</h1>
-<p>These providers are what actually provide the resources that cloudless manages.  Changing the
-provider should change where things are provisioned, but not change anything about the usage of the
-core API.</p>
-<p>The currently supported providers are "gce" for Google Compute Engine, "aws" for Amazon Web
-Services, and "mock-aws" for Mock Amazon Web Services.</p>
-<p>Mock AWS is useful for trying cloudless locally without provisioning any resources.</p>
-<p>Example usage:</p>
-<pre><code>import cloudless
-mock_aws = cloudless.client(provider="mock-aws", credentials={})
-mock_aws.network.create(name="example", blueprint="blueprint.yml")
-mock_aws.network.list()
+                <h1 id="network">Network</h1>
+<pre><code class="python">Network(self, name:str, network_id:str, cidr_block:str=None, region:str=None) -&gt; None
 </code></pre>
-<p>This creates a network named example using the "mock-aws" client.  This doesn't actually create the
-network, but cloudless will think it exists for the duration of the session so the
-<code>mock_aws.network.list()</code> command will show it.</p>
-<h1 id="cloudlessprovidersaws_mock">cloudless.providers.aws_mock</h1>
-<p>The Mock AWS provider will provision resources using a library called <code>moto</code>, which is a mock client
-for Amazon Web Services.  This means that no resources will get provisioned, but cloudless will see
-what you create for the duration of your session.</p>
-<p>You should not use this directly, but instead pass in the string "mock-aws" as the "provider" in the
-top level <code>cloudless.Client</code> object.</p>
-<h1 id="cloudlessprovidersgce">cloudless.providers.gce</h1>
-<p>The GCE Provider will provision resources using Google Compute Engine.</p>
-<p>You should not use this directly, but instead pass in the string "gce" as the "provider" in the top
-level <code>cloudless.Client</code> object.</p>
-<h1 id="cloudlessprovidersaws">cloudless.providers.aws</h1>
-<p>The AWS provider will provision resources using Amazon Web Services.</p>
-<p>You should not use this directly, but instead pass in the string "aws" as the "provider" in the top
-level <code>cloudless.Client</code> object.</p>
+
+<p>Simple container to hold network information.</p>
+<h1 id="service">Service</h1>
+<pre><code class="python">Service(self, network:cloudless.types.common.Network, name:str, subnetworks:list) -&gt; None
+</code></pre>
+
+<p>Simple container to hold service information.</p>
+<h1 id="subnetwork">Subnetwork</h1>
+<pre><code class="python">Subnetwork(self, subnetwork_id:str, name:str, cidr_block:str, region:str, availability_zone:str, instances:list) -&gt; None
+</code></pre>
+
+<p>Simple container to hold subnetwork information.</p>
+<h1 id="instance">Instance</h1>
+<pre><code class="python">Instance(self, instance_id:str, public_ip:str, private_ip:str, state:str) -&gt; None
+</code></pre>
+
+<p>Simple container to hold instance information.</p>
+<h1 id="path">Path</h1>
+<pre><code class="python">Path(self, network:cloudless.types.common.Network, source, destination, protocol:str, port:int) -&gt; None
+</code></pre>
+
+<p>Simple container to hold path information.</p>
               
             </div>
           </div>
@@ -152,8 +150,10 @@ level <code>cloudless.Client</code> object.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="../providers/" class="btn btn-neutral float-right" title="Providers">Next <span class="icon icon-circle-arrow-right"></span></a>
       
-        <a href="../objects/" class="btn btn-neutral" title="Object Types"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+        <a href="../client/" class="btn btn-neutral" title="Core API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -179,8 +179,10 @@ level <code>cloudless.Client</code> object.</p>
     <span class="rst-current-version" data-toggle="rst-current-version">
       
       
-        <span><a href="../objects/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../client/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
+      
+        <span style="margin-left: 15px"><a href="../providers/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>
