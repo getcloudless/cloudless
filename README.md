@@ -5,7 +5,7 @@ work that a human doesn't need to care about for you, and by being transparent
 about what it's doing.
 
 - [Homepage](https://getcloudless.com)
-- [Documentation](https://getcloudless.com)
+- [Documentation](https://docs.getcloudless.com)
 - [Github](https://github.com/getcloudless/cloudless)
 
 ## Installation
