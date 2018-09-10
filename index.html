@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="None">
+  
+  <link rel="shortcut icon" href="img/favicon.ico">
+  <title>Home - Cloudless Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Home";
+    var mkdocs_page_input_path = "index.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="js/jquery-2.1.1.min.js" defer></script>
+  <script src="js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="." class="icon icon-home"> Cloudless Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1 current">
+		
+    <a class="current" href=".">Home</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l2"><a href="#cloudless">Cloudless</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#installation">Installation</a></li>
+        
+            <li><a class="toctree-l3" href="#client-setup">Client Setup</a></li>
+        
+            <li><a class="toctree-l3" href="#architecture">Architecture</a></li>
+        
+            <li><a class="toctree-l3" href="#visualization">Visualization</a></li>
+        
+            <li><a class="toctree-l3" href="#blueprint-tester">Blueprint Tester</a></li>
+        
+            <li><a class="toctree-l3" href="#testing">Testing</a></li>
+        
+        </ul>
+    
+
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="client/">Client</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Providers</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="providers/">Providers</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="providers/mock_aws/">Mock Amazon Web Services</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="providers/aws/">Amazon Web Services</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="providers/gce/">Google Compute Engine</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href=".">Cloudless Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Home</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="cloudless">Cloudless</h1>
+<p>:warning: :construction: :skull: This is a proof of concept, do not use in
+production. :skull: :construction: :warning:</p>
+<p>This tool should make it easier to interact with cloud resources by doing most
+of the work that a human doesn't need to care about for you, and by being
+transparent about what it's doing.</p>
+<h2 id="installation">Installation</h2>
+<p>This project depends on <a href="https://www.python.org/downloads/release/python-360/">Python
+3.6.0</a> or greater.  It can
+be installed as a normal python package using pip, but an environment manager
+such as <a href="https://pipenv.readthedocs.io/en/latest/">pipenv</a> is recommended.</p>
+<p>To install locally, make a dedicated directory where you want to test this out
+and run:</p>
+<pre><code class="shell">cd cloudless_experimentation
+pipenv install git+https://github.com/sverch/cloudless.git#egg=cloudless
+</code></pre>
+
+<p>Having a dedicated directory will allow pipenv to scope the dependencies to that
+project directory and prevent this project from installing stuff on your main
+system.</p>
+<h2 id="client-setup">Client Setup</h2>
+<p>First, you must create a client object to connect to the cloud platform that
+you'll be working with.  The client handles authentication with the cloud
+provider, so you must pass it the name of the provider and the authentication
+credentials.</p>
+<p>If you are trying this project for the first time, it's recommended that you use
+the "mock-aws" client.</p>
+<h3 id="google-compute-engine-client">Google Compute Engine Client</h3>
+<p>To use the Google Compute Engine client, you must create a service account and
+download the credentials locally.  Because this provider is implemented using
+<a href="https://libcloud.apache.org/">Apache Libcloud</a>, you can refer to the <a href="https://libcloud.readthedocs.io/en/latest/compute/drivers/gce.html#getting-driver-with-service-account-authentication">Google
+Compute Engine Driver
+Setup</a>
+documentation in that project for more details.</p>
+<p>When you have the credentials, you can do something like this, preferably in a
+dotfile you don't commit to version control.  Note the credentials file is in
+JSON format:</p>
+<pre><code class="shell">export BUTTER_GCE_USER_ID=&quot;sverch-cloudless@cloudless-000000.iam.gserviceaccount.com&quot;
+export BUTTER_GCE_CREDENTIALS_PATH=&quot;/home/sverch/.gce/credentials.json&quot;
+export BUTTER_GCE_PROJECT_NAME=&quot;cloudless-000000&quot;
+</code></pre>
+
+<p>Then, you can run these commands in a python shell to create a GCE client:</p>
+<pre><code class="python">import cloudless
+import os
+client = cloudless.Client(&quot;gce&quot;, credentials={
+    &quot;user_id&quot;: os.environ['BUTTER_GCE_USER_ID'],
+    &quot;key&quot;: os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
+    &quot;project&quot;: os.environ['BUTTER_GCE_PROJECT_NAME']})
+</code></pre>
+
+<h3 id="amazon-web-services-client">Amazon Web Services Client</h3>
+<p>Currently no credentials can be passed in as arguments for the AWS provider
+(they are ignored).  However this provider is implemented with
+<a href="http://docs.pythonboto.org/en/latest/">Boto</a>, which looks in many other places
+for the credentials, so you can configure them in other ways.  See the <a href="https://boto3.readthedocs.io/en/latest/guide/configuration.html">boto3
+credential setup
+documentation</a>
+for more details.</p>
+<p>Once you have set up your credentials, you can run the following to create an
+AWS client:</p>
+<pre><code class="python">import cloudless
+client = cloudless.Client(&quot;aws&quot;, credentials={})
+</code></pre>
+
+<h3 id="mock-amazon-web-services-client">Mock Amazon Web Services Client</h3>
+<p>The Mock AWS client is for demonstration and testing.  Since it is all running
+locally, you don't need any credentials.  Simply run:</p>
+<pre><code class="python">import cloudless
+client = cloudless.Client(&quot;mock-aws&quot;, credentials={})
+</code></pre>
+
+<h2 id="architecture">Architecture</h2>
+<p>There are only three objects in Cloudless: A Network, a Service, and a Path.  This
+is an example that shows a Network <code>dev</code>, a <code>public_load_balancer</code> Service, an
+<code>internal_service</code> Service, a Path from the internet to <code>public_load_balancer</code>
+on port 443, and a Path from <code>public_load_balancer</code> to <code>internal_service</code> on
+port 80.  See the <a href="#visualization">visualization</a> section for how to generate
+this graph.</p>
+<p><img alt="Cloudless Simple Service Example" src="docs/images/example.svg" /></p>
+<h3 id="network">Network</h3>
+<p>A Network is the top level container for everything else.  To create a new
+network, run:</p>
+<pre><code class="python">dev_network = client.network.create(&quot;dev&quot;)
+</code></pre>
+
+<p>This will return the "Network" object that describes the network that was
+created.  You can retrieve an existing network or list all existing networks by
+running:</p>
+<pre><code class="python">dev_network = client.network.get(&quot;dev&quot;)
+all_networks = client.network.list()
+</code></pre>
+
+<p>Finally, to destroy a network:</p>
+<pre><code class="python">client.network.destroy(dev_network)
+</code></pre>
+
+<p>Create should use sane defaults, but if you need to do something special see
+<a href="docs/network-configuration.md">docs/network-configuration.md</a>.</p>
+<p>In <a href="https://ipython.org/">ipython</a>, you can run <code>&lt;object&gt;?</code> to <a href="https://ipython.readthedocs.io/en/stable/interactive/python-ipython-diff.html#accessing-help">get help on any
+object</a>,
+for example <code>client.network.create?</code>.</p>
+<h3 id="service">Service</h3>
+<p>A Service a logical group of instances and whatever resources are needed to
+support them (subnetworks, firewalls, etc.).</p>
+<p>To create a Service, you must first define a configuration file called a
+"blueprint" that specifies how the service should be configured.  This is an
+example of what a Service blueprint might look like:</p>
+<pre><code class="yaml">---
+network:
+  subnetwork_max_instance_count: 768
+
+placement:
+  availability_zones: 3
+
+instance:
+  public_ip: True
+  memory: 4GB
+  cpus: 1
+  gpu: false
+  disks:
+    - size: 8GB
+      type: standard
+      device_name: /dev/sda1
+
+image:
+  name: &quot;ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*&quot;
+
+initialization:
+  - path: &quot;haproxy-cloud-config.yml&quot;
+    vars:
+      PrivateIps:
+        required: true
+</code></pre>
+
+<p>The "network" section tells Cloudless to create subnetworks for this service big
+enough for 768 instances.</p>
+<p>The "placement" section tells Cloudless to ensure instances in this service are
+provisioned across three availaibility zones (which most cloud providers
+guarantee are meaningfully isolated from each other for resilience).</p>
+<p>The "instance" section describes the resource reqirements of each instance.
+Cloudless will automatically choose a instance type that meets these requirements.</p>
+<p>The "image" section represents the name of the image you want your instances to
+have.  In this case, we are using an image name only found in AWS by default, so
+this example will only work there.  See <code>example-blueprints/gce-apache</code> for a
+GCE example blueprint.</p>
+<p>The "initialization" section describes startup scripts that you want to run when
+the instance boots.  You may also pass in variables, which will get passed to
+the given file as <a href="http://jinja.pocoo.org/">jinja2</a> template arguments.  This is
+a good place to specify environment specific configuration, so your base image
+can stay the same across environments.</p>
+<p>Once you have the blueprint, the example below shows how you could use it.
+These examples create a group of private instances and then create some HAProxy
+instances in front of those instances to balance load.  Note that many commands
+take <code>dev_network</code> as the first argument.  That's the same network object
+returned by the network commands shown above.</p>
+<pre><code class="python">internal_service = client.service.create(dev_network, &quot;private&quot;,
+                                         blueprint=&quot;example-blueprints/aws-nginx/blueprint.yml&quot;)
+private_ips = [instance.private_ip for instance in client.service.get_instances(internal_service)]
+load_balancer_service = client.service.create(dev_network, &quot;public&quot;,
+                                              blueprint=&quot;example-blueprints/aws-haproxy/blueprint.yml&quot;,
+                                              template_vars={&quot;PrivateIps&quot;: private_ips})
+internal_service = client.service.get(dev_network, &quot;public&quot;)
+load_balancer_service client.service.get(dev_network, &quot;private&quot;)
+client.service.list()
+client.service.destroy(internal_service)
+client.service.destroy(load_balancer_service)
+</code></pre>
+
+<p>There is another example blueprint that works with GCE if you created the GCE
+client above:</p>
+<pre><code class="python">client.instances.create(dev_nework, &quot;public&quot;, blueprint=&quot;example-blueprints/gce-apache/blueprint.yml&quot;)
+</code></pre>
+
+<h3 id="path">Path</h3>
+<p>The Path is how you tell Cloudless that two services should be able to communicate.
+No blueprint is needed for this, but you need to have the service objects you
+created earlier.  This example adds a path from the load balancer to the
+internal service on port 80 and makes the load balancer internet accessible on
+port 443:</p>
+<pre><code class="python">from cloudless.types.networking import CidrBlock
+internet = CidrBlock(&quot;0.0.0.0/0&quot;)
+client.paths.add(load_balancer_service, internal_service, 80)
+client.paths.add(internet, load_balancer_service, 443)
+</code></pre>
+
+<p>You can check whether things have access to other things or print out all paths
+with the following functions:</p>
+<pre><code class="python">client.paths.has_access(load_balancer_service, internal_service, 80)
+client.paths.internet_accessible(load_balancer_service, 443)
+client.paths.internet_accessible(internal_service, 443)
+client.paths.list()
+print(client.graph())
+</code></pre>
+
+<h2 id="visualization">Visualization</h2>
+<p>Get a summary in the form of a graphviz compatible dot file by running:</p>
+<pre><code class="python">client.graph()
+</code></pre>
+
+<p>To generate the vizualizations, run:</p>
+<pre><code class="shell">cd ui &amp;&amp; env PROVIDER=&lt;provider&gt; bash graph.sh
+</code></pre>
+
+<p>And open <code>ui/graph.html</code> in a browser.  Note this won't work for the <code>mock-aws</code>
+provider since it will be running in a different process.</p>
+<h2 id="blueprint-tester">Blueprint Tester</h2>
+<p>This project also provides a framework to help test that blueprint files work as
+expected.</p>
+<p>Example (cloudless must be installed):</p>
+<pre><code class="shell">cloudless-test --provider aws --blueprint_dir example-blueprints/haproxy run
+</code></pre>
+
+<p>Run <code>cloudless-test</code> with no arguments for usage.</p>
+<p>This runner tries to import <code>blueprint_fixture.BlueprintTest</code> from the root of
+your blueprint directory.  This must be a class that inherits from
+<code>cloudless.testutils.fixture.BlueprintTestInterface</code> and implements all the
+required methods.  See the documentation on that class for usage details.</p>
+<p>The runner expects the blueprint file that you are testing to be name
+<code>blueprint.yml</code> in the blueprint directory.</p>
+<p>See <a href="example-blueprints">example-blueprints</a> for all examples.</p>
+<h2 id="testing">Testing</h2>
+<p>To run the local tests run:</p>
+<pre><code class="shell">pipenv install --dev
+tox
+</code></pre>
+
+<p>To run tests against GCE and AWS, run:</p>
+<pre><code class="shell">tox -e gce
+tox -e aws
+</code></pre>
+
+<p>For GCE, you must set <code>BUTTER_GCE_USER_ID</code>, <code>BUTTER_GCE_CREDENTIALS_PATH</code>, and
+<code>BUTTER_GCE_PROJECT_NAME</code> as described above.</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="client/" class="btn btn-neutral float-right" title="Client">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+      
+        <span style="margin-left: 15px"><a href="client/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '.';</script>
+    <script src="js/theme.js" defer></script>
+      <script src="search/main.js" defer></script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.0.4
+Build Date UTC : 2018-09-10 14:53:48
+-->
