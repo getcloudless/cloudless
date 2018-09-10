@@ -2,7 +2,7 @@
 Cloudless Package Information
 """
 __title__ = 'cloudless'
-__description__ = 'The clouldless infrastructure project.'
+__description__ = 'The cloudless infrastructure project.'
 __url__ = 'https://github.com/sverch/cloudless'
 __version__ = '0.0.1'
 __author__ = 'Shaun Verch'
