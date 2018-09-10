@@ -12,9 +12,13 @@ from cloudless.util.exceptions import DisallowedOperationException
 
 class ServiceClient:
     """
-    Cloudless Service Client Object
+    Cloudless Service Client.
 
-    This is the object through which all service related calls are made.
+    This is the object through which all service related calls are made.  The objects returned by
+    these commands are of type `cloudless.types.common.Service` which contain objects of type
+    `cloudless.types.common.Subnetwork`, which themselves contain lists of
+    `cloudless.types.common.Instance`.  This is because the service is the logical grouping, but
+    behind the scenes they are groups of instances deployed in private subnetworks.
 
     Usage:
 
@@ -38,6 +42,14 @@ class ServiceClient:
 
         "template_vars" are passed to the initialization scripts as jinja2
         variables.
+
+        Example:
+
+            example_network = client.network.create("example")
+            example_service = client.service.create(network=example_network,
+                                                    name="example_service",
+                                                    blueprint="example-blueprint.yml")
+
         """
         logger.info('Creating service %s in network %s with blueprint %s, template_vars %s, '
                     'and count %s', service_name, network, blueprint, template_vars, count)
@@ -49,6 +61,12 @@ class ServiceClient:
     def get(self, network, service_name):
         """
         Get a service in "network" named "service_name".
+
+        Example:
+
+            example_service = client.service.get(network=client.network.get("example"),
+                                                 name="example_service")
+
         """
         logger.info('Discovering service %s in network %s', service_name, network)
         if not isinstance(network, Network):
@@ -60,6 +78,13 @@ class ServiceClient:
     def get_instances(self, service):
         """
         Helper to return the list of instances given a service object.
+
+        Example:
+
+            example_service = client.service.get(network=client.network.get("example"),
+                                                 name="example_service")
+            instances = client.service.get_instances(example_service)
+
         """
         if not isinstance(service, Service):
             raise DisallowedOperationException(
@@ -69,6 +94,13 @@ class ServiceClient:
     def destroy(self, service):
         """
         Destroy a service described by the "service" object.
+
+        Example:
+
+            example_service = client.service.get(network=client.network.get("example"),
+                                                 name="example_service")
+            client.service.destroy(example_service)
+
         """
         logger.info('Destroying service %s', service)
         if not isinstance(service, Service):
@@ -79,6 +111,11 @@ class ServiceClient:
     def list(self):
         """
         List all services.
+
+        Example:
+
+            client.service.list()
+
         """
         logger.info('Listing services')
         return self.service.list()
@@ -86,6 +123,11 @@ class ServiceClient:
     def node_types(self):
         """
         Get mapping of node types to the resources.
+
+        Example:
+
+            client.service.node_types()
+
         """
         logger.info('Listing node types')
         return self.service.node_types()

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b39e1ed73bc7955d81bd4161155ace326571c572c57a7a70ae814196e2dab672"
+            "sha256": "9b29d2eb8102b52fe606f7316786bbd38a832190916775819f45fde5f148b36c"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -340,6 +340,10 @@
                 "sha256:fbd0def77da8edd5293e5e3b534763861e1c3f4f645ef3602f718fd709536a77"
             ],
             "version": "==3.6.6"
+        },
+        "pydoc-markdown": {
+            "git": "https://github.com/sverch/pydoc-markdown.git",
+            "ref": "26ca46e37c7d9e0ac62093734c1da52adb6e2f2e"
         },
         "pytest": {
             "hashes": [

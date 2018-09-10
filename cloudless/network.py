@@ -12,9 +12,10 @@ from cloudless.util.exceptions import DisallowedOperationException
 
 class NetworkClient:
     """
-    Cloudless Network Client Object
+    Cloudless Network Client.
 
-    This is the object through which all network related calls are made.
+    This is the object through which all network related calls are made.  The objects returned by
+    these commands are of type `cloudless.types.common.Network`.
 
     Usage:
 
