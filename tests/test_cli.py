@@ -13,7 +13,8 @@ NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.y
 AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
 
 # Make sure we don't leak this from the environment.
-del os.environ['CLOUDLESS_PROFILE']
+if 'CLOUDLESS_PROFILE' in os.environ:
+    del os.environ['CLOUDLESS_PROFILE']
 
 # See https://kalnytskyi.com/howto/assert-str-matches-regex-in-pytest/
 # pylint:disable=invalid-name
