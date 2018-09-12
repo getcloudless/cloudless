@@ -11,7 +11,6 @@ from cloudless.providers import get_provider
 # pylint: disable=unused-import
 from cloudless.types.networking import CidrBlock
 
-
 class PathsClient:
     """
     Cloudless Paths Client.

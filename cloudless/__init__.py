@@ -15,6 +15,7 @@ automatically cross cloud.
 The main entry point to this module is through the `cloudless.Client` object, and all calls that
 interact with a backing cloud provider go through this object.
 """
+import logging
 import lazy_import
 # Lazily import these so the import and command line is fast unless we are actually creating a
 # client.
@@ -22,6 +23,29 @@ import lazy_import
 network = lazy_import.lazy_module("cloudless.network")
 service = lazy_import.lazy_module("cloudless.service")
 paths = lazy_import.lazy_module("cloudless.paths")
+
+
+def set_level(level):
+    """
+    Set log level for this module.
+    """
+    logging.basicConfig()
+    logger = logging.getLogger(__name__) # pylint: disable=locally-disabled, invalid-name
+    logger.setLevel(level)
+
+def set_global_level(level):
+    """
+    Sets the log level of everything besides this module.
+    """
+    # The botocore logger doesn't seem to be affected by the root logger configuration, and outputs
+    # noisy info messages, so explicitly get that as well.
+    botocore_logger = logging.getLogger("botocore")
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+    botocore_logger.setLevel(level)
+
+set_level(logging.INFO)
+set_global_level(logging.INFO)
 
 # pylint: disable=too-few-public-methods
 class Client:

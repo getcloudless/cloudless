@@ -1,10 +1,6 @@
 """
-Logging configuration for this module.  Import it with:
-
-    from <module_name>.logging import logger
-
+Logging setup for this module.
 """
 import logging
-
-logger = logging.getLogger(__name__) # pylint: disable=locally-disabled, invalid-name
-logger.setLevel(logging.INFO)
+# pylint:disable=invalid-name
+logger = logging.getLogger(".".join(__name__.split(".")[:-1]))
