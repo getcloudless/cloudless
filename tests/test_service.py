@@ -15,9 +15,6 @@ EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
                                       "example-blueprints")
 NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
                                  "network", "blueprint.yml")
-SUBNETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                    "subnetwork", "blueprint.yml")
-
 AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
                                      "aws-nginx", "blueprint.yml")
 GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,

@@ -10,6 +10,7 @@ import cloudless.profile
 
 EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "..", "example-blueprints")
 NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.yml")
+AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
 
 # See https://kalnytskyi.com/howto/assert-str-matches-regex-in-pytest/
 # pylint:disable=invalid-name
@@ -54,7 +55,6 @@ def test_network_subcommand(mock_config_source):
     runner = CliRunner()
 
     result = runner.invoke(get_cldls(), ['network', 'create', 'foobar', NETWORK_BLUEPRINT])
-    assert result.exception is None
     assert result.output == ('Network group with provider: mock-aws\n'
                              'Created network: foobar\n')
     assert result.exception is None
@@ -95,38 +95,81 @@ def test_service_subcommand(mock_config_source):
     """
     Test that the subcommand to work with services works.
     """
+    # Do some mock weirdness to make sure our commands get the right values for the default profile.
+    mock_config_source = mock_config_source.return_value
+    mock_config_source.load.return_value = {"default": {"provider": "mock-aws"}}
+    result = cloudless.profile.load_profile("default")
+    assert result == {"provider": "mock-aws"}
+
     runner = CliRunner()
 
-    result = runner.invoke(get_cldls(), ['service', 'create', 'foo', 'bar', 'test-blueprint.yml'])
-    assert result.output == ('service group with profile: default\n'
-                             'service group create with profile: default'
-                             ', network: foo, name: bar, blueprint: test-blueprint.yml\n')
+    # Create the network that I'll deploy into
+    result = runner.invoke(get_cldls(), ['network', 'create', 'foo', NETWORK_BLUEPRINT])
+    assert result.output == ('Network group with provider: mock-aws\n'
+                             'Created network: foo\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['service', 'create', 'foo', 'bar', AWS_SERVICE_BLUEPRINT])
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Created service: bar in network: foo\n')
     assert result.exception is None
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['service', 'list'])
-    assert result.output == ('service group with profile: default\n'
-                             'service group list with profile: default\n')
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Network: foo, Service: bar\n')
     assert result.exception is None
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['service', 'ls'])
-    assert result.output == ('service group with profile: default\n'
-                             'service group list with profile: default\n')
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Network: foo, Service: bar\n')
     assert result.exception is None
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['service', 'get', 'foo', 'bar'])
-    assert result.output == ('service group with profile: default\n'
-                             'service group get with profile: default'
-                             ', network: foo, name: bar\n')
+    assert result.output == (pytest_regex(
+        r'Service group with provider: mock-aws\n'
+        r'Name: bar\n'
+        r'Network Name: foo.*\n'
+        r'Network Id: vpc-.*\n'
+        r'Network Block: 10.0.0.0/16\n'
+        r'Network Region: us-east-1\n'
+        r'    Subnetwork Name: None\n.*'
+        r'    Subnetwork Id: subnet-.*\n'
+        r'    Subnetwork Block: 10.0.0.0/24\n'
+        r'    Subnetwork Region: us-east-1\n.*'
+        r'    Subnetwork Availability_zone: us-east-1a\n'
+        r'        Instance Id: i-.*\n'
+        r'        Instance Public IP: .*\..*\..*\..*\n'
+        r'        Instance Private IP: 10\..*\..*\..*\n'
+        r'        Instance State: running\n'
+        r'    Subnetwork Name: None\n'
+        r'    Subnetwork Id: subnet-.*\n'
+        r'    Subnetwork Block: 10.0.1.0/24\n'
+        r'    Subnetwork Region: us-east-1\n'
+        r'    Subnetwork Availability_zone: us-east-1b\n'
+        r'        Instance Id: i-.*\n'
+        r'        Instance Public IP: .*\..*\..*\..*\n'
+        r'        Instance Private IP: 10\..*\..*\..*\n'
+        r'        Instance State: running\n'
+        r'    Subnetwork Name: None\n'
+        r'    Subnetwork Id: subnet-.*\n'
+        r'    Subnetwork Block: 10.0.2.0/24\n'
+        r'    Subnetwork Region: us-east-1\n'
+        r'    Subnetwork Availability_zone: us-east-1c\n'
+        r'        Instance Id: i-.*\n'
+        r'        Instance Public IP: .*\..*\..*\..*\n'
+        r'        Instance Private IP: 10\..*\..*\..*\n'
+        r'        Instance State: running\n'))
+
     assert result.exception is None
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['service', 'destroy', 'foo', 'bar'])
-    assert result.output == ('service group with profile: default\n'
-                             'service group destroy with profile: default'
-                             ', network: foo, name: bar\n')
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Destroyed service: bar in network: foo\n')
     assert result.exception is None
     assert result.exit_code == 0
 

@@ -29,7 +29,7 @@ except ImportError:
     easy_install.main(['fastentrypoints'])
     # pylint:disable=unused-import
     pkg_resources.require('fastentrypoints')
-    import fastentrypoint
+    import fastentrypoints
 
 # Used for looking up "<NAME>/__version__.py
 NAME = 'cloudless'
