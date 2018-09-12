@@ -4,7 +4,7 @@ Test the cloudless command line interface.
 import traceback
 from unittest.mock import patch
 from click.testing import CliRunner
-from cloudless.cli import get_cldls
+from cloudless.cli.cldls import get_cldls
 
 # Need to patch this so the test doesn't mess up our real configuration.
 # pylint:disable=unused-argument
