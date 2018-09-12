@@ -59,6 +59,8 @@ def add_service_group(cldls):
         Get details about a service in this profile.
         """
 
+        # See
+        # https://stackoverflow.com/questions/16782112/can-pyyaml-dump-dict-items-in-non-alphabetical-order
         def represent_ordereddict(dumper, data):
             value = []
 
@@ -69,14 +71,6 @@ def add_service_group(cldls):
                 value.append((node_key, node_value))
 
             return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
-
-        class LastUpdatedOrderedDict(OrderedDict):
-            'Store items in the order the keys were last added'
-            def __setitem__(self, key, value):
-                if key in self:
-                    del self[key]
-                OrderedDict.__setitem__(self, key, value)
-
         yaml.add_representer(OrderedDict, represent_ordereddict)
 
         network_object = ctx.obj['CLIENT'].network.get(network)
