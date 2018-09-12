@@ -11,7 +11,6 @@ from cloudless.providers import get_provider
 # pylint: disable=unused-import
 from cloudless.types.networking import CidrBlock
 
-
 class PathsClient:
     """
     Cloudless Paths Client.
@@ -56,7 +55,7 @@ class PathsClient:
             client.paths.add(internet, service1, 80)
 
         """
-        logger.info('Adding path from %s to %s on port %s', source, destination, port)
+        logger.debug('Adding path from %s to %s on port %s', source, destination, port)
         return self.paths.add(source, destination, port)
 
     def remove(self, source, destination, port):
@@ -75,7 +74,7 @@ class PathsClient:
             client.paths.remove(internet, service1, 80)
 
         """
-        logger.info('Removing path from %s to %s on port %s', source, destination, port)
+        logger.debug('Removing path from %s to %s on port %s', source, destination, port)
         return self.paths.remove(source, destination, port)
 
     def list(self):

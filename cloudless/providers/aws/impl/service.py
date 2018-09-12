@@ -19,13 +19,13 @@ import cloudless.providers.aws.impl.network
 import cloudless.providers.aws.impl.subnetwork
 from cloudless.providers.aws.impl.asg import (ASG, AsgName)
 from cloudless.providers.aws.impl.security_groups import SecurityGroups
-from cloudless.providers.aws.log import logger
 from cloudless.providers.aws.schemas import (canonicalize_instance_info,
                                              canonicalize_node_size)
 from cloudless.types.common import Service
+from cloudless.providers.aws.log import logger
 
 RETRY_COUNT = int(60)
-RETRY_DELAY = float(1.0)
+RETRY_DELAY = float(10.0)
 
 
 class ServiceClient:
@@ -111,7 +111,9 @@ class ServiceClient:
 
             retries = 0
             while len(instance_list(asg, state)) < instance_count:
-                logger.info("Waiting for instance creation in asg: %s", asg)
+                logger.info("Waiting for instance creation for service %s.  %s of %s running",
+                            service_name, len(instance_list(asg, state)), instance_count)
+                logger.debug("Waiting for instance creation in asg: %s", asg)
                 asg = self.get(network, service_name)
                 retries = retries + 1
                 if retries > RETRY_COUNT:
@@ -138,8 +140,8 @@ class ServiceClient:
         """
         Discover a service in "network" named "service_name".
         """
-        logger.info("Discovering autoscaling group named %s in network: %s",
-                    service_name, network)
+        logger.debug("Discovering autoscaling group named %s in network: %s",
+                     service_name, network)
 
         def discover_asg(network_name, service_name):
             autoscaling = self.driver.client("autoscaling")
@@ -184,7 +186,7 @@ class ServiceClient:
                 # There is a race between when I discover the autoscaling group
                 # itself and when I try to search for the instances inside it,
                 # so just retry if this happens.
-                logger.info("Recieved exception discovering instance: %s", client_error)
+                logger.debug("Recieved exception discovering instance: %s", client_error)
                 if client_error.response["Error"]["Code"] == "InvalidInstanceID.NotFound":
                     pass
                 else:
@@ -193,8 +195,8 @@ class ServiceClient:
             if discovery_complete:
                 break
             discovery_retries = discovery_retries + 1
-            logger.info("Instance discovery retry number: %s",
-                        discovery_retries)
+            logger.debug("Instance discovery retry number: %s",
+                         discovery_retries)
             if discovery_retries >= RETRY_COUNT:
                 raise OperationTimedOut(
                     "Exceeded retries while discovering %s, in network %s" %
@@ -235,17 +237,19 @@ class ServiceClient:
         def instance_list(service, state):
             return [instance for subnetwork in service.subnetworks
                     for instance in subnetwork.instances
-                    if instance.state == state]
+                    if instance.state != state]
 
         asg = self.get(service.network, service.name)
         retries = 0
         while asg and instance_list(asg, "terminated"):
-            logger.info("Waiting for instance termination in asg: %s", asg)
+            logger.info("Waiting for instance termination in service %s.  %s still terminating",
+                        service.name, len(instance_list(asg, "terminated")))
+            logger.debug("Waiting for instance termination in asg: %s", asg)
             asg = self.get(service.network, service.name)
             retries = retries + 1
-            if retries > 60:
+            if retries > RETRY_COUNT:
                 raise OperationTimedOut("Timed out waiting for ASG scale down")
-            time.sleep(float(10))
+            time.sleep(RETRY_DELAY)
 
         self.asg.destroy_auto_scaling_group(asg_name)
 
@@ -254,12 +258,12 @@ class ServiceClient:
         asg = self.get(service.network, service.name)
         retries = 0
         while asg:
-            logger.info("Waiting for asg deletion: %s", asg)
+            logger.debug("Waiting for asg deletion: %s", asg)
             asg = self.get(service.network, service.name)
             retries = retries + 1
-            if retries > 60:
+            if retries > RETRY_COUNT:
                 raise OperationTimedOut("Timed out waiting for ASG deletion")
-            time.sleep(float(10))
+            time.sleep(RETRY_DELAY)
 
         vpc_id = service.network.network_id
         lc_security_group = self.asg.get_launch_configuration_security_group(
