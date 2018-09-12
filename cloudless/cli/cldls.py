@@ -2,6 +2,7 @@
 Cloudless command line interface definitions.
 """
 import os
+import logging
 import click
 from click_repl import register_repl
 from cloudless.cli.init import add_init_group
@@ -11,7 +12,9 @@ from cloudless.cli.paths import add_paths_group
 from cloudless.cli.image import add_image_group
 from cloudless.cli.blueprint import add_blueprint_group
 from cloudless.cli.utils import NaturalOrderGroup
+import cloudless
 
+cloudless.set_level(logging.WARN)
 
 def get_cldls():
     """

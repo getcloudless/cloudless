@@ -1,12 +1,9 @@
 """
 Cloudless network command line interface.
 """
-import logging
 import click
 from cloudless.cli.utils import AliasedGroup
 import cloudless
-
-cloudless.set_level(logging.WARN)
 
 def add_network_group(cldls):
     """

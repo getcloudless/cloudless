@@ -17,4 +17,4 @@ def set_level(level):
     logger.setLevel(level)
     root_logger.setLevel(level)
 
-set_level(logging.WARN)
+set_level(logging.INFO)
