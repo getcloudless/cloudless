@@ -12,6 +12,9 @@ EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "..", "example-
 NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.yml")
 AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
 
+# Make sure we don't leak this from the environment.
+del os.environ['CLOUDLESS_PROFILE']
+
 # See https://kalnytskyi.com/howto/assert-str-matches-regex-in-pytest/
 # pylint:disable=invalid-name
 class pytest_regex:
@@ -131,38 +134,43 @@ def test_service_subcommand(mock_config_source):
     result = runner.invoke(get_cldls(), ['service', 'get', 'foo', 'bar'])
     assert result.output == (pytest_regex(
         r'Service group with provider: mock-aws\n'
-        r'Name: bar\n'
-        r'Network Name: foo.*\n'
-        r'Network Id: vpc-.*\n'
-        r'Network Block: 10.0.0.0/16\n'
-        r'Network Region: us-east-1\n'
-        r'    Subnetwork Name: None\n.*'
-        r'    Subnetwork Id: subnet-.*\n'
-        r'    Subnetwork Block: 10.0.0.0/24\n'
-        r'    Subnetwork Region: us-east-1\n.*'
-        r'    Subnetwork Availability_zone: us-east-1a\n'
-        r'        Instance Id: i-.*\n'
-        r'        Instance Public IP: .*\..*\..*\..*\n'
-        r'        Instance Private IP: 10\..*\..*\..*\n'
-        r'        Instance State: running\n'
-        r'    Subnetwork Name: None\n'
-        r'    Subnetwork Id: subnet-.*\n'
-        r'    Subnetwork Block: 10.0.1.0/24\n'
-        r'    Subnetwork Region: us-east-1\n'
-        r'    Subnetwork Availability_zone: us-east-1b\n'
-        r'        Instance Id: i-.*\n'
-        r'        Instance Public IP: .*\..*\..*\..*\n'
-        r'        Instance Private IP: 10\..*\..*\..*\n'
-        r'        Instance State: running\n'
-        r'    Subnetwork Name: None\n'
-        r'    Subnetwork Id: subnet-.*\n'
-        r'    Subnetwork Block: 10.0.2.0/24\n'
-        r'    Subnetwork Region: us-east-1\n'
-        r'    Subnetwork Availability_zone: us-east-1c\n'
-        r'        Instance Id: i-.*\n'
-        r'        Instance Public IP: .*\..*\..*\..*\n'
-        r'        Instance Private IP: 10\..*\..*\..*\n'
-        r'        Instance State: running\n'))
+        r'name: bar\n'
+        r'network:\n'
+        r'  name: foo\n'
+        r'  id: vpc-.*\n'
+        r'  block: 10.0.0.0/16\n'
+        r'  region: us-east-1\n'
+        r'  subnetworks:\n'
+        r'  - name: null\n'
+        r'    id: subnet-.*\n'
+        r'    block: 10.0.0.0/24\n'
+        r'    region: us-east-1\n'
+        r'    availability_zone: us-east-1a\n'
+        r'    instances:\n'
+        r'    - id: i-.*\n'
+        r'      public_ip: .*\n'
+        r'      private_ip: .*\n'
+        r'      state: running\n.*'
+        r'  - name: null\n'
+        r'    id: subnet-.*\n'
+        r'    block: 10.0.1.0/24\n'
+        r'    region: us-east-1\n'
+        r'    availability_zone: us-east-1b\n'
+        r'    instances:\n'
+        r'    - id: i-.*\n'
+        r'      public_ip: .*\n'
+        r'      private_ip: .*\n'
+        r'      state: running\n'
+        r'  - name: null\n'
+        r'    id: subnet-.*\n'
+        r'    block: 10.0.2.0/24\n'
+        r'    region: us-east-1\n'
+        r'    availability_zone: us-east-1c\n'
+        r'    instances:\n'
+        r'    - id: i-.*\n'
+        r'      public_ip: .*\n'
+        r'      private_ip: .*\n'
+        r'      state: running\n'))
 
     assert result.exception is None
     assert result.exit_code == 0
@@ -173,73 +181,104 @@ def test_service_subcommand(mock_config_source):
     assert result.exception is None
     assert result.exit_code == 0
 
+    # Destroy the network we created.
+    result = runner.invoke(get_cldls(), ['network', 'destroy', 'foo'])
+    assert result.output == ('Network group with provider: mock-aws\n'
+                             'Destroyed network: foo\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
 # Need to patch this so the test doesn't mess up our real configuration.
-# pylint:disable=unused-argument
+# pylint:disable=unused-argument,too-many-statements
 @patch('cloudless.profile.FileConfigSource')
 def test_paths_subcommand(mock_config_source):
     """
     Test that the subcommand to work with pathss works.
     """
+    # Do some mock weirdness to make sure our commands get the right values for the default profile.
+    mock_config_source = mock_config_source.return_value
+    mock_config_source.load.return_value = {"default": {"provider": "mock-aws"}}
+    result = cloudless.profile.load_profile("default")
+    assert result == {"provider": "mock-aws"}
+
     runner = CliRunner()
 
-    result = runner.invoke(get_cldls(), ['paths', 'allow_service', 'foo', 'bar', 'baz'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group allow_service with profile: default'
-                             ', network: foo, destination: bar, source: baz\n')
+    # Create the network and services I'll be connecting.
+    result = runner.invoke(get_cldls(), ['network', 'create', 'foo', NETWORK_BLUEPRINT])
+    assert result.output == ('Network group with provider: mock-aws\n'
+                             'Created network: foo\n')
+    assert result.exit_code == 0
+    assert result.exception is None
+
+    result = runner.invoke(get_cldls(), ['service', 'create', 'foo', 'bar', AWS_SERVICE_BLUEPRINT])
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Created service: bar in network: foo\n')
     assert result.exception is None
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['paths', 'allow_external', 'foo', 'bar', '0.0.0.0/0'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group allow_external with profile: default'
-                             ', network: foo, destination: bar, source: 0.0.0.0/0\n')
+    result = runner.invoke(get_cldls(), ['service', 'create', 'foo', 'baz', AWS_SERVICE_BLUEPRINT])
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Created service: baz in network: foo\n')
     assert result.exception is None
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['paths', 'revoke_service', 'foo', 'bar', 'baz'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group revoke_service with profile: default'
-                             ', network: foo, destination: bar, source: baz\n')
+    result = runner.invoke(get_cldls(), ['paths', 'allow_service', 'foo', 'bar', 'baz', '80'])
     assert result.exception is None
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'Added path from baz to bar in network foo for port 80\n')
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['paths', 'revoke_external', 'foo', 'bar', '0.0.0.0/0'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group revoke_external with profile: default'
-                             ', network: foo, destination: bar, source: 0.0.0.0/0\n')
+    result = runner.invoke(get_cldls(), ['paths', 'allow_external', 'foo', 'bar', '0.0.0.0/0',
+                                         '80'])
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'Added path from 0.0.0.0/0 to bar in network foo for port 80\n')
     assert result.exception is None
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['paths', 'list'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group list with profile: default\n')
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'foo:baz -(80)-> foo:bar\n'
+                             'external:0.0.0.0/0 -(80)-> foo:bar\n')
     assert result.exception is None
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['paths', 'ls'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group list with profile: default\n')
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'foo:baz -(80)-> foo:bar\n'
+                             'external:0.0.0.0/0 -(80)-> foo:bar\n')
     assert result.exception is None
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['paths', 'is_internet_accessible', 'foo', 'bar'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group is_internet_accessible with profile: default'
-                             ', network: foo, destination: bar\n')
+    result = runner.invoke(get_cldls(), ['paths', 'revoke_service', 'foo', 'bar', 'baz', '80'])
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'Removed path from baz to bar in network foo for port 80\n')
     assert result.exception is None
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['paths', 'service_has_access', 'foo', 'bar', 'baz'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group service_has_access with profile: default'
-                             ', network: foo, destination: bar, source: baz\n')
+    result = runner.invoke(get_cldls(), ['paths', 'revoke_external', 'foo', 'bar', '0.0.0.0/0',
+                                         '80'])
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'Removed path from 0.0.0.0/0 to bar in network foo for port 80\n')
     assert result.exception is None
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['paths', 'external_has_access', 'foo', 'bar', '0.0.0.0/0'])
-    assert result.output == ('paths group with profile: default\n'
-                             'paths group external_has_access with profile: default'
-                             ', network: foo, destination: bar, source: 0.0.0.0/0\n')
+    result = runner.invoke(get_cldls(), ['paths', 'is_internet_accessible', 'foo', 'bar', '80'])
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'Service bar in network foo is not internet accessible on port 80\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['paths', 'service_has_access', 'foo', 'bar', 'baz', '80'])
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'Service baz does not have access to bar in network foo on port 80\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['paths', 'external_has_access', 'foo', 'bar', '0.0.0.0/0',
+                                         '80'])
+    assert result.output == ('Paths group with provider: mock-aws\n'
+                             'Network 0.0.0.0/0 does not have access to bar in '
+                             'network foo on port 80\n')
     assert result.exception is None
     assert result.exit_code == 0
 

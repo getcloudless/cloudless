@@ -2,8 +2,10 @@
 Cloudless paths command line interface.
 """
 import click
+import cloudless
 from cloudless.cli.utils import AliasedGroup
 
+# pylint:disable=too-many-statements
 def add_paths_group(cldls):
     """
     Add commands for the paths command group.
@@ -16,59 +18,78 @@ def add_paths_group(cldls):
 
         Commands to interact with paths, which are allowed connections between services.
         """
-        click.echo('paths group with profile: %s' % ctx.obj['PROFILE'])
+        profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
+        ctx.obj['PROVIDER'] = profile["provider"]
+        click.echo('Paths group with provider: %s' % ctx.obj['PROVIDER'])
+        ctx.obj['CLIENT'] = cloudless.Client(provider=ctx.obj['PROVIDER'], credentials={})
 
     @paths_group.command(name="allow_service")
     @click.argument('network')
     @click.argument('destination')
     @click.argument('source')
+    @click.argument('port')
     @click.pass_context
     # pylint:disable=unused-variable
-    def paths_allow_service(ctx, network, destination, source):
+    def paths_allow_service(ctx, network, destination, source, port):
         """
         Allow access from source to destination.  These must be names of services in the same
         network.
         """
-        click.echo(('paths group allow_service with profile: %s, network: %s, destination: %s, '
-                    'source: %s') % (ctx.obj['PROFILE'], network, destination, source))
+        network_object = ctx.obj['CLIENT'].network.get(network)
+        source_service = ctx.obj['CLIENT'].service.get(network_object, source)
+        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        ctx.obj['CLIENT'].paths.add(source_service, destination_service, port)
+        click.echo('Added path from %s to %s in network %s for port %s' % (source, destination,
+                                                                           network, port))
 
     @paths_group.command(name="allow_external")
     @click.argument('network')
     @click.argument('destination')
     @click.argument('source')
+    @click.argument('port')
     @click.pass_context
     # pylint:disable=unused-variable
-    def paths_allow_external(ctx, network, destination, source):
+    def paths_allow_external(ctx, network, destination, source, port):
         """
         Revoke access from source to destination.  Destination must be a service and source must be
         a public network address block.
 
         For example, pass 0,0.0.0/0 to allow all addresses on the internet.
         """
-        click.echo(('paths group allow_external with profile: %s, network: %s, destination: %s, '
-                    'source: %s') % (ctx.obj['PROFILE'], network, destination, source))
+        network_object = ctx.obj['CLIENT'].network.get(network)
+        source_block = cloudless.paths.CidrBlock(source)
+        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        ctx.obj['CLIENT'].paths.add(source_block, destination_service, port)
+        click.echo('Added path from %s to %s in network %s for port %s' % (source, destination,
+                                                                           network, port))
 
     @paths_group.command(name="revoke_service")
     @click.argument('network')
     @click.argument('destination')
     @click.argument('source')
+    @click.argument('port')
     @click.pass_context
     # pylint:disable=unused-variable
-    def paths_revoke_service(ctx, network, destination, source):
+    def paths_revoke_service(ctx, network, destination, source, port):
         """
         Revoke access from source to destination.  These must be names of services in the same
         network.
         """
-        click.echo(('paths group revoke_service with profile: %s, network: %s, destination: %s, '
-                    'source: %s') % (ctx.obj['PROFILE'], network, destination, source))
+        network_object = ctx.obj['CLIENT'].network.get(network)
+        source_service = ctx.obj['CLIENT'].service.get(network_object, source)
+        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        ctx.obj['CLIENT'].paths.remove(source_service, destination_service, port)
+        click.echo('Removed path from %s to %s in network %s for port %s' % (source, destination,
+                                                                             network, port))
 
     @paths_group.command(name="revoke_external")
     @click.argument('network')
     @click.argument('destination')
     @click.argument('source')
+    @click.argument('port')
     @click.pass_context
     # pylint:disable=unused-variable
-    def paths_revoke_external(ctx, network, destination, source):
+    def paths_revoke_external(ctx, network, destination, source, port):
         """
         Revoke access from source to destination.  Destination must be a service and source must be
         a public network address block.
@@ -76,48 +97,73 @@ def add_paths_group(cldls):
         For example, pass 0,0.0.0/0 to revoke all addresses on the internet.  Does not revoke access
         for internal services.  Use the "revoke_service" command for that.
         """
-        click.echo(('paths group revoke_external with profile: %s, network: %s, destination: %s, '
-                    'source: %s') % (ctx.obj['PROFILE'], network, destination, source))
+        network_object = ctx.obj['CLIENT'].network.get(network)
+        source_block = cloudless.paths.CidrBlock(source)
+        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        ctx.obj['CLIENT'].paths.remove(source_block, destination_service, port)
+        click.echo('Removed path from %s to %s in network %s for port %s' % (source, destination,
+                                                                             network, port))
 
     @paths_group.command(name="service_has_access")
     @click.argument('network')
     @click.argument('destination')
     @click.argument('source')
+    @click.argument('port')
     @click.pass_context
     # pylint:disable=unused-variable
-    def paths_service_has_access(ctx, network, destination, source):
+    def paths_service_has_access(ctx, network, destination, source, port):
         """
         Returns true if access is allowed from source to destination.
         """
-        click.echo(('paths group service_has_access with profile: %s, network: %s, '
-                    'destination: %s, source: %s') % (ctx.obj['PROFILE'], network, destination,
-                                                      source))
+        network_object = ctx.obj['CLIENT'].network.get(network)
+        source_service = ctx.obj['CLIENT'].service.get(network_object, source)
+        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        if ctx.obj['CLIENT'].paths.has_access(source_service, destination_service, port):
+            click.echo('Service %s has access to %s in network %s on port %s' % (
+                source, destination, network, port))
+        else:
+            click.echo('Service %s does not have access to %s in network %s on port %s' % (
+                source, destination, network, port))
 
     @paths_group.command(name="external_has_access")
     @click.argument('network')
     @click.argument('destination')
     @click.argument('source')
+    @click.argument('port')
     @click.pass_context
     # pylint:disable=unused-variable
-    def paths_external_has_access(ctx, network, destination, source):
+    def paths_external_has_access(ctx, network, destination, source, port):
         """
         Returns true if access is allowed from source to destination.
         """
-        click.echo(('paths group external_has_access with profile: %s, network: %s, '
-                    'destination: %s, source: %s') % (ctx.obj['PROFILE'], network, destination,
-                                                      source))
+        network_object = ctx.obj['CLIENT'].network.get(network)
+        source_block = cloudless.paths.CidrBlock(source)
+        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        if ctx.obj['CLIENT'].paths.has_access(source_block, destination_service, port):
+            click.echo('Network %s has access to %s in network %s on port %s' % (
+                source, destination, network, port))
+        else:
+            click.echo('Network %s does not have access to %s in network %s on port %s' % (
+                source, destination, network, port))
 
     @paths_group.command(name="is_internet_accessible")
     @click.argument('network')
     @click.argument('destination')
+    @click.argument('port')
     @click.pass_context
     # pylint:disable=unused-variable
-    def paths_is_internet_accessible(ctx, network, destination):
+    def paths_is_internet_accessible(ctx, network, destination, port):
         """
         Returns true if access is allowed from source to destination.
         """
-        click.echo(('paths group is_internet_accessible with profile: %s, network: %s, '
-                    'destination: %s') % (ctx.obj['PROFILE'], network, destination))
+        network_object = ctx.obj['CLIENT'].network.get(network)
+        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        if ctx.obj['CLIENT'].paths.internet_accessible(destination_service, port):
+            click.echo('Service %s in network %s is internet accessible on port %s' % (
+                destination, network, port))
+        else:
+            click.echo('Service %s in network %s is not internet accessible on port %s' % (
+                destination, network, port))
 
     @paths_group.command(name="list")
     @click.pass_context
@@ -126,4 +172,13 @@ def add_paths_group(cldls):
         """
         List all pathss in this profile.
         """
-        click.echo('paths group list with profile: %s' % ctx.obj['PROFILE'])
+        for path in ctx.obj['CLIENT'].paths.list():
+            if not path.source.name:
+                cidr_blocks = [subnetwork.cidr_block for subnetwork in path.source.subnetworks]
+                source_name = ",".join(cidr_blocks)
+                network_name = "external"
+            else:
+                source_name = path.source.name
+                network_name = path.source.network.name
+            click.echo("%s:%s -(%s)-> %s:%s" % (network_name, source_name, path.port,
+                                                path.network.name, path.destination.name))

@@ -56,7 +56,7 @@ class PathsClient:
 
         """
         logger.debug('Adding path from %s to %s on port %s', source, destination, port)
-        return self.paths.add(source, destination, port)
+        return self.paths.add(source, destination, int(port))
 
     def remove(self, source, destination, port):
         """
@@ -75,7 +75,7 @@ class PathsClient:
 
         """
         logger.debug('Removing path from %s to %s on port %s', source, destination, port)
-        return self.paths.remove(source, destination, port)
+        return self.paths.remove(source, destination, int(port))
 
     def list(self):
         """
@@ -98,7 +98,7 @@ class PathsClient:
             client.paths.internet_accessible(service1, 443)
 
         """
-        return self.paths.internet_accessible(service, port)
+        return self.paths.internet_accessible(service, int(port))
 
     def has_access(self, source, destination, port):
         """
@@ -116,4 +116,4 @@ class PathsClient:
             client.paths.has_access(internet, service1, 80)
 
         """
-        return self.paths.has_access(source, destination, port)
+        return self.paths.has_access(source, destination, int(port))

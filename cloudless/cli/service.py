@@ -1,6 +1,8 @@
 """
 Cloudless service command line interface.
 """
+from collections import OrderedDict
+import yaml
 import click
 from cloudless.cli.utils import AliasedGroup
 import cloudless
@@ -56,24 +58,55 @@ def add_service_group(cldls):
         """
         Get details about a service in this profile.
         """
+
+        def represent_ordereddict(dumper, data):
+            value = []
+
+            for item_key, item_value in data.items():
+                node_key = dumper.represent_data(item_key)
+                node_value = dumper.represent_data(item_value)
+
+                value.append((node_key, node_value))
+
+            return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
+
+        class LastUpdatedOrderedDict(OrderedDict):
+            'Store items in the order the keys were last added'
+            def __setitem__(self, key, value):
+                if key in self:
+                    del self[key]
+                OrderedDict.__setitem__(self, key, value)
+
+        yaml.add_representer(OrderedDict, represent_ordereddict)
+
         network_object = ctx.obj['CLIENT'].network.get(network)
         service = ctx.obj['CLIENT'].service.get(network_object, name)
-        click.echo('Name: %s' % service.name)
-        click.echo('Network Name: %s' % service.network.name)
-        click.echo('Network Id: %s' % service.network.network_id)
-        click.echo('Network Block: %s' % service.network.cidr_block)
-        click.echo('Network Region: %s' % service.network.region)
+        service_info = OrderedDict()
+        service_info['name'] = service.name
+        network_info = OrderedDict()
+        network_info['name'] = service.network.name
+        network_info['id'] = service.network.network_id
+        network_info['block'] = service.network.cidr_block
+        network_info['region'] = service.network.region
+        network_info['subnetworks'] = []
+        service_info['network'] = network_info
         for subnetwork in service.subnetworks:
-            click.echo('    Subnetwork Name: %s' % subnetwork.name)
-            click.echo('    Subnetwork Id: %s' % subnetwork.subnetwork_id)
-            click.echo('    Subnetwork Block: %s' % subnetwork.cidr_block)
-            click.echo('    Subnetwork Region: %s' % subnetwork.region)
-            click.echo('    Subnetwork Availability_zone: %s' % subnetwork.availability_zone)
+            subnetwork_info = OrderedDict()
+            subnetwork_info['name'] = subnetwork.name
+            subnetwork_info['id'] = subnetwork.subnetwork_id
+            subnetwork_info['block'] = subnetwork.cidr_block
+            subnetwork_info['region'] = subnetwork.region
+            subnetwork_info['availability_zone'] = subnetwork.availability_zone
+            subnetwork_info['instances'] = []
             for instance in subnetwork.instances:
-                click.echo('        Instance Id: %s' % instance.instance_id)
-                click.echo('        Instance Public IP: %s' % instance.public_ip)
-                click.echo('        Instance Private IP: %s' % instance.private_ip)
-                click.echo('        Instance State: %s' % instance.state)
+                instance_info = OrderedDict()
+                instance_info['id'] = instance.instance_id
+                instance_info['public_ip'] = instance.public_ip
+                instance_info['private_ip'] = instance.private_ip
+                instance_info['state'] = instance.state
+                subnetwork_info["instances"].append(instance_info)
+            service_info["network"]["subnetworks"].append(subnetwork_info)
+        click.echo(yaml.dump(service_info, default_flow_style=False))
 
     @service_group.command(name="destroy")
     @click.argument('network')
