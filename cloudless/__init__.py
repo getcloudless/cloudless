@@ -15,13 +15,16 @@ automatically cross cloud.
 The main entry point to this module is through the `cloudless.Client` object, and all calls that
 interact with a backing cloud provider go through this object.
 """
+import logging
 import lazy_import
+from cloudless.log import set_level
 # Lazily import these so the import and command line is fast unless we are actually creating a
 # client.
 # pylint:disable=invalid-name
 network = lazy_import.lazy_module("cloudless.network")
 service = lazy_import.lazy_module("cloudless.service")
 paths = lazy_import.lazy_module("cloudless.paths")
+
 
 # pylint: disable=too-few-public-methods
 class Client:

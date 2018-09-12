@@ -8,4 +8,11 @@ import logging
 
 logging.basicConfig()
 logger = logging.getLogger(__name__) # pylint: disable=locally-disabled, invalid-name
-logger.setLevel(logging.INFO)
+
+def set_level(level):
+    """
+    Set log level for this module.
+    """
+    logger.setLevel(level)
+
+set_level(logging.WARN)
