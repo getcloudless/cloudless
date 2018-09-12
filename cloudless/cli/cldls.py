@@ -31,14 +31,14 @@ def get_cldls():
         """
         if not ctx.obj:
             ctx.obj = {}
-        click.echo('Debug mode is %s' % ('on' if debug else 'off'))
+        if debug:
+            click.echo('Debug mode is currently not implemented, ignoring.')
         if profile:
             ctx.obj['PROFILE'] = profile
         elif "CLOUDLESS_PROFILE" in os.environ:
             ctx.obj['PROFILE'] = os.environ["CLOUDLESS_PROFILE"]
         else:
             ctx.obj['PROFILE'] = "default"
-        click.echo('Profile is %s' % (ctx.obj['PROFILE']))
 
     add_init_group(cldls)
     add_network_group(cldls)

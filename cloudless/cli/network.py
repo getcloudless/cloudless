@@ -3,6 +3,7 @@ Cloudless network command line interface.
 """
 import click
 from cloudless.cli.utils import AliasedGroup
+import cloudless
 
 def add_network_group(cldls):
     """
@@ -17,7 +18,10 @@ def add_network_group(cldls):
         Commands to interact with networks, which are isolated private networks that cloudless can
         deploy services into.
         """
-        click.echo('Network group with profile: %s' % ctx.obj['PROFILE'])
+        profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
+        ctx.obj['PROVIDER'] = profile["provider"]
+        click.echo('Network group with provider: %s' % ctx.obj['PROVIDER'])
+        ctx.obj['CLIENT'] = cloudless.Client(provider=ctx.obj['PROVIDER'], credentials={})
 
     @network_group.command(name="create")
     @click.argument('name')
@@ -28,10 +32,8 @@ def add_network_group(cldls):
         """
         Create a network in this profile.
         """
-        click.echo('Network group create with profile: %s, name: %s, blueprint: %s' % (
-            ctx.obj['PROFILE'],
-            name,
-            blueprint))
+        network = ctx.obj['CLIENT'].network.create(name, blueprint)
+        click.echo('Created network: %s' % network.name)
 
     @network_group.command(name="list")
     @click.pass_context
@@ -40,7 +42,8 @@ def add_network_group(cldls):
         """
         List all networks in this profile.
         """
-        click.echo('Network group list with profile: %s' % ctx.obj['PROFILE'])
+        networks = ctx.obj['CLIENT'].network.list()
+        click.echo('Networks: %s' % [network.name for network in networks])
 
     @network_group.command(name="get")
     @click.argument('name')
@@ -50,7 +53,11 @@ def add_network_group(cldls):
         """
         Get details about a network in this profile.
         """
-        click.echo('Network group get with profile: %s, name: %s' % (ctx.obj['PROFILE'], name))
+        network = ctx.obj['CLIENT'].network.get(name)
+        click.echo('Name: %s' % network.name)
+        click.echo('Id: %s' % network.network_id)
+        click.echo('Network: %s' % network.cidr_block)
+        click.echo('Region: %s' % network.region)
 
     @network_group.command(name="destroy")
     @click.argument('name')
@@ -60,4 +67,5 @@ def add_network_group(cldls):
         """
         Destroy a network in this profile.
         """
-        click.echo('Network group destroy with profile: %s, name: %s' % (ctx.obj['PROFILE'], name))
+        ctx.obj['CLIENT'].network.destroy(ctx.obj['CLIENT'].network.get(name))
+        click.echo('Destroyed network: %s' % name)

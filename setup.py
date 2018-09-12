@@ -37,6 +37,8 @@ NAME = 'cloudless'
 # What packages are required for this module to be executed?
 REQUIRED = [
     'boto3>=1.7.77,<1.8.0',
+    # Should update to a more recent botocore version once
+    # https://github.com/spulec/moto/issues/1793 is updated.
     'botocore>=1.10.84,<1.11.0',
     'PyYaml>=3.13,<4.0',
     'jinja2>=2.10,<3.0',
