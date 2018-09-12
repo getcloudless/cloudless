@@ -45,7 +45,7 @@ REQUIRED = [
     'pytest>=3.8.0,<3.9.0',
     'attr>=0.3.1,<0.4.0',
     'click>=6.7,<7.0',
-    'click-repl',
+    'click-repl>=0.1.5,<0.2.0',
     'apache-libcloud>=2.3.0,<2.4.0',
     'pycryptodome>=3.6.6,<3.7.0',
     # Even though moto is for testing, need it for the "mock-aws" provider.
