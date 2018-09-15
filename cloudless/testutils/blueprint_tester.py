@@ -9,10 +9,9 @@ import string
 import json
 import importlib
 
-from cloudless.testutils.log import logger
 from cloudless.testutils.fixture import SetupInfo
+from cloudless.util.log import logger
 from cloudless.util.exceptions import DisallowedOperationException
-
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 NETWORK_BLUEPRINT = os.path.join(SCRIPT_PATH, "network.yml")

@@ -9,7 +9,6 @@ from cloudless.providers import get_provider
 from cloudless.types.common import Network, Service
 from cloudless.util.exceptions import DisallowedOperationException
 
-
 class ServiceClient:
     """
     Cloudless Service Client.
@@ -51,8 +50,8 @@ class ServiceClient:
                                                     blueprint="example-blueprint.yml")
 
         """
-        logger.info('Creating service %s in network %s with blueprint %s, template_vars %s, '
-                    'and count %s', service_name, network, blueprint, template_vars, count)
+        logger.debug('Creating service %s in network %s with blueprint %s, template_vars %s, '
+                     'and count %s', service_name, network, blueprint, template_vars, count)
         if not isinstance(network, Network):
             raise DisallowedOperationException(
                 "Network argument to create must be of type cloudless.types.common.Network")
@@ -68,7 +67,7 @@ class ServiceClient:
                                                  name="example_service")
 
         """
-        logger.info('Discovering service %s in network %s', service_name, network)
+        logger.debug('Discovering service %s in network %s', service_name, network)
         if not isinstance(network, Network):
             raise DisallowedOperationException(
                 "Network argument to get must be of type cloudless.types.common.Network")
@@ -102,7 +101,7 @@ class ServiceClient:
             client.service.destroy(example_service)
 
         """
-        logger.info('Destroying service %s', service)
+        logger.debug('Destroying service %s', service)
         if not isinstance(service, Service):
             raise DisallowedOperationException(
                 "Service argument to destroy must be of type cloudless.types.common.Service")
@@ -117,7 +116,7 @@ class ServiceClient:
             client.service.list()
 
         """
-        logger.info('Listing services')
+        logger.debug('Listing services')
         return self.service.list()
 
     def node_types(self):
@@ -129,5 +128,5 @@ class ServiceClient:
             client.service.node_types()
 
         """
-        logger.info('Listing node types')
+        logger.debug('Listing node types')
         return self.service.node_types()

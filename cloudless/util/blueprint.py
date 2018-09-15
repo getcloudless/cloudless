@@ -8,10 +8,9 @@ import os
 import yaml
 import jinja2
 
-from cloudless.util.log import logger
 from cloudless.util.exceptions import BlueprintException
 from cloudless.util.storage_size_parser import parse_storage_size
-
+from cloudless.util.log import logger
 
 # pylint: disable=too-few-public-methods
 class Blueprint:

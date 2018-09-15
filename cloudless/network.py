@@ -9,7 +9,6 @@ from cloudless.providers import get_provider
 from cloudless.types.common import Network
 from cloudless.util.exceptions import DisallowedOperationException
 
-
 class NetworkClient:
     """
     Cloudless Network Client.
@@ -41,7 +40,7 @@ class NetworkClient:
             client.network.create("mynetwork", "network-blueprint.yml")
 
         """
-        logger.info('Creating network %s with blueprint %s', name, blueprint)
+        logger.debug('Creating network %s with blueprint %s', name, blueprint)
         return self.network.create(name, blueprint)
 
     def get(self, name):
@@ -53,7 +52,7 @@ class NetworkClient:
             client.network.get("mynetwork")
 
         """
-        logger.info('Getting network %s', name)
+        logger.debug('Getting network %s', name)
         return self.network.get(name)
 
     def destroy(self, network):
@@ -65,7 +64,7 @@ class NetworkClient:
             client.network.destroy(client.network.get("mynetwork"))
 
         """
-        logger.info('Destroying network %s', network)
+        logger.debug('Destroying network %s', network)
         if not isinstance(network, Network):
             raise DisallowedOperationException(
                 "Argument to destroy must be of type cloudless.types.common.Network")
@@ -80,5 +79,5 @@ class NetworkClient:
             client.network.list()
 
         """
-        logger.info('Listing networks')
+        logger.debug('Listing networks')
         return self.network.list()

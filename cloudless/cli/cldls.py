@@ -2,6 +2,7 @@
 Cloudless command line interface definitions.
 """
 import os
+import logging
 import click
 from click_repl import register_repl
 from cloudless.cli.init import add_init_group
@@ -11,7 +12,10 @@ from cloudless.cli.paths import add_paths_group
 from cloudless.cli.image import add_image_group
 from cloudless.cli.blueprint import add_blueprint_group
 from cloudless.cli.utils import NaturalOrderGroup
+import cloudless
 
+cloudless.set_level(logging.INFO)
+cloudless.set_global_level(logging.WARN)
 
 def get_cldls():
     """
@@ -32,7 +36,8 @@ def get_cldls():
         if not ctx.obj:
             ctx.obj = {}
         if debug:
-            click.echo('Debug mode is currently not implemented, ignoring.')
+            click.echo('Enabling debug logging.')
+            cloudless.set_level(logging.DEBUG)
         if profile:
             ctx.obj['PROFILE'] = profile
         elif "CLOUDLESS_PROFILE" in os.environ:
