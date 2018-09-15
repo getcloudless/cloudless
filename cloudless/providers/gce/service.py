@@ -11,8 +11,7 @@ from cloudless.providers.gce.driver import get_gce_driver
 
 from cloudless.util.blueprint import ServiceBlueprint
 from cloudless.util.instance_fitter import get_fitting_instance
-from cloudless.util.exceptions import (DisallowedOperationException,
-                                       BadEnvironmentStateException)
+from cloudless.util.exceptions import DisallowedOperationException
 from cloudless.providers.gce.impl import subnetwork
 from cloudless.providers.gce.network import NetworkClient
 from cloudless.providers.gce.impl.firewalls import Firewalls
@@ -100,6 +99,8 @@ class ServiceClient:
 
         # 2. Get List Of Subnets
         subnetworks = self.subnetwork.get(network, service_name)
+        if not subnetworks:
+            return None
 
         # 3. Group Services By Subnet
         for subnet_info in subnetworks:
@@ -107,7 +108,6 @@ class ServiceClient:
                 if (instance.private_ip and ipaddress.IPv4Network(subnet_info.cidr_block).overlaps(
                         ipaddress.IPv4Network(instance.private_ip))):
                     subnet_info.instances.append(instance)
-
         return Service(network=network, name=service_name, subnetworks=subnetworks)
 
     def destroy(self, service):
@@ -141,30 +141,23 @@ class ServiceClient:
         List all instance groups.
         """
         logger.debug('Listing services')
-        instances_info = {}
-        for node in self.driver.list_nodes():
-            logger.debug("Node metadata: %s", node.extra["metadata"])
-            metadata = node.extra["metadata"]["items"]
-            network_names = [item["value"] for item in metadata
-                             if item["key"] == "network"]
-            if len(network_names) != 1:
-                raise BadEnvironmentStateException(
-                    "Found node with no network in metadata: %s" % metadata)
-            subnetwork_names = [item["value"] for item in metadata
-                                if item["key"] == "subnetwork"]
-            if len(subnetwork_names) != 1:
-                raise BadEnvironmentStateException(
-                    "Found node with no subnetwork in metadata: %s" % metadata)
-            instance_group_name = "%s-%s" % (network_names[0],
-                                             subnetwork_names[0])
-            if instance_group_name not in instances_info:
-                instances_info[instance_group_name] = {}
-                instances_info[instance_group_name]["Nodes"] = []
-                instances_info[instance_group_name]["Network"] = self.network.get(network_names[0])
-                instances_info[instance_group_name]["Id"] = subnetwork_names[0]
-            instances_info[instance_group_name]["Nodes"].append(node)
-        return [self.get(group_info["Network"], group_info["Id"])
-                for group_info in instances_info.values()]
+        subnetworks = self.subnetwork.list()
+        services = []
+        for network_name, subnet_info in subnetworks.items():
+            logger.debug("Subnets in network %s: %s", network_name, subnet_info)
+            for subnetwork_name, _ in subnet_info.items():
+                # Things might have changed from the time we listed the services, so skip if we
+                # can't find them anymore.
+                network = self.network.get(network_name)
+                if not network:
+                    logger.debug("Network %s not found!  %s", network_name, subnet_info)
+                    continue
+                service = self.get(network, subnetwork_name)
+                if not service:
+                    logger.debug("Service %s not found!  %s", subnetwork_name, subnet_info)
+                    continue
+                services.append(service)
+        return services
 
     def _get_availability_zones(self):
         zones = self.driver.ex_list_zones()

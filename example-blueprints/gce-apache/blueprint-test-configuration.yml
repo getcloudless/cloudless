@@ -1,0 +1,34 @@
+---
+# Configuration options for the blueprint testing framework.
+#
+# This file describes configuration for the blueprint test runner, which can
+# create, verify, and cleanup services based on a blueprint, providing a
+# deterministic way to test the way instances actually behave in a deployment.
+# See https://docs.getcloudless.com/ for more details.
+
+# Configuration for service creation.
+create:
+
+  # Number of instances needed for the test.
+  count: 1
+
+  # Blueprint file to use to create test service.  This is the default.
+  blueprint: blueprint.yml
+
+  # This is a fixture that describes any pre setup (e.g. necessary services that
+  # this service being tested needs to run) and post setup (e.g. adding the
+  # right firewall rules) that needs to be done to properly test this blueprint.
+  # These are the defaults.  See blueprint_fixture.py for more details.
+  fixture_type: python-blueprint-fixture
+  fixture_options:
+    module_name: blueprint_fixture
+
+# Configuration for service verification.
+verify:
+
+  # This happens to be the same fixture, but for verify this is the code that
+  # tests whether the running service is behaving as expected.  These are the
+  # defaults.  See blueprint_fixture.py for more details.
+  fixture_type: python-blueprint-fixture
+  fixture_options:
+    module_name: blueprint_fixture

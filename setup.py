@@ -60,7 +60,8 @@ TESTS_REQUIRED = [
     'pytest>=3.8.0,<3.9.0',
     'pytest-xdist>=1.23.0,<1.24.0',
     'tox>=3.2.1,<3.3.0',
-    'pylint>=2.1.1,<2.2.0'
+    'pylint>=2.1.1,<2.2.0',
+    'paramiko>=2.4.1,<2.5.0'
 ]
 
 # What packages are optional?
@@ -165,8 +166,7 @@ setup(
     # py_modules=['mypackage'],
 
     entry_points={
-        'console_scripts': ['cloudless-test=cloudless.testutils.cli:main',
-                            'cldls=cloudless.cli.main:main'],
+        'console_scripts': ['cldls=cloudless.cli.main:main'],
     },
     install_requires=REQUIRED,
     tests_require=TESTS_REQUIRED,

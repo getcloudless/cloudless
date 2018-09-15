@@ -5,7 +5,7 @@ from collections import OrderedDict
 import yaml
 import click
 from cloudless.cli.utils import NaturalOrderAliasedGroup
-import cloudless
+from cloudless.cli.utils import handle_profile_for_cli, get_network_for_cli, get_service_for_cli
 
 # pylint:disable=too-many-statements
 def add_service_group(cldls):
@@ -21,12 +21,8 @@ def add_service_group(cldls):
         Commands to interact with services, which are groups of instances and the main unit of work
         in cloudless.
         """
-        profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
-        ctx.obj['PROVIDER'] = profile["provider"]
-        ctx.obj['CREDENTIALS'] = profile["credentials"]
+        handle_profile_for_cli(ctx)
         click.echo('Service group with provider: %s' % ctx.obj['PROVIDER'])
-        ctx.obj['CLIENT'] = cloudless.Client(provider=ctx.obj['PROVIDER'],
-                                             credentials=ctx.obj['CREDENTIALS'])
 
     @service_group.command(name="create")
     @click.argument('network')
@@ -38,7 +34,7 @@ def add_service_group(cldls):
         """
         Create a service in this profile.
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
+        network_object = get_network_for_cli(ctx, network)
         service = ctx.obj['CLIENT'].service.create(network_object, name, blueprint)
         click.echo('Created service: %s in network: %s' % (name, network))
 
@@ -96,9 +92,7 @@ def add_service_group(cldls):
                                                        path.port))
             return {"has_access_to": has_access_to, "is_accessible_from": is_accessible_from}
 
-
-        network_object = ctx.obj['CLIENT'].network.get(network)
-        service = ctx.obj['CLIENT'].service.get(network_object, name)
+        service = get_service_for_cli(ctx, network, name)
         paths_info = get_paths_info_for_service(service)
         service_info = OrderedDict()
         service_info['name'] = service.name
@@ -139,7 +133,6 @@ def add_service_group(cldls):
         """
         Destroy a service in this profile.
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
-        service_object = ctx.obj['CLIENT'].service.get(network_object, name)
-        ctx.obj['CLIENT'].service.destroy(service_object)
+        service = get_service_for_cli(ctx, network, name)
+        ctx.obj['CLIENT'].service.destroy(service)
         click.echo('Destroyed service: %s in network: %s' % (name, network))

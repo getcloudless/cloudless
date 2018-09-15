@@ -106,8 +106,7 @@ class SubnetworkClient:
         for subnet in subnets:
             if subnet.network.name == "default":
                 continue
-            subnetwork_name = subnet.name.replace("%s-" % subnet.network.name,
-                                                  "")
+            subnetwork_name = subnet.name.replace("%s-" % subnet.network.name, "")
             if subnet.network.name not in subnets_info:
                 subnets_info[subnet.network.name] = {}
             if subnetwork_name not in subnets_info[subnet.network.name]:

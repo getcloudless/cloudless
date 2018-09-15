@@ -3,7 +3,7 @@ Cloudless network command line interface.
 """
 import click
 from cloudless.cli.utils import NaturalOrderAliasedGroup
-import cloudless
+from cloudless.cli.utils import handle_profile_for_cli, get_network_for_cli
 
 def add_network_group(cldls):
     """
@@ -18,12 +18,8 @@ def add_network_group(cldls):
         Commands to interact with networks, which are isolated private networks that cloudless can
         deploy services into.
         """
-        profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
-        ctx.obj['PROVIDER'] = profile["provider"]
-        ctx.obj['CREDENTIALS'] = profile["credentials"]
+        handle_profile_for_cli(ctx)
         click.echo('Network group with provider: %s' % ctx.obj['PROVIDER'])
-        ctx.obj['CLIENT'] = cloudless.Client(provider=ctx.obj['PROVIDER'],
-                                             credentials=ctx.obj['CREDENTIALS'])
 
     @network_group.command(name="create")
     @click.argument('name')
@@ -55,7 +51,7 @@ def add_network_group(cldls):
         """
         Get details about a network in this profile.
         """
-        network = ctx.obj['CLIENT'].network.get(name)
+        network = get_network_for_cli(ctx, name)
         click.echo('Name: %s' % network.name)
         click.echo('Id: %s' % network.network_id)
         click.echo('Network: %s' % network.cidr_block)
@@ -69,5 +65,6 @@ def add_network_group(cldls):
         """
         Destroy a network in this profile.
         """
-        ctx.obj['CLIENT'].network.destroy(ctx.obj['CLIENT'].network.get(name))
+        network = get_network_for_cli(ctx, name)
+        ctx.obj['CLIENT'].network.destroy(network)
         click.echo('Destroyed network: %s' % name)

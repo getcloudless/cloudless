@@ -75,6 +75,7 @@ class SecurityGroups:
                 "Found multiple security groups with name %s, in vpc %s: %s" %
                 (security_group_name, vpc_id, security_groups))
         security_group_id = security_groups["SecurityGroups"][0]["GroupId"]
+        self.delete_referencing_rules(vpc_id, security_group_id)
         return self.delete_with_retries(security_group_id, retries, retry_delay)
 
     def delete_with_retries(self, security_group_id, retries, retry_delay):

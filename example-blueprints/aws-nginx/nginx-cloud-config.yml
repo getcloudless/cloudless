@@ -4,6 +4,15 @@ repo_upgrade: all
 
 output: {all: '| tee -a /var/log/cloud-init-output.log'}
 
+{% if cloudless_test_framework_ssh_key %}
+users:
+  - name: "{{ cloudless_test_framework_ssh_username }}"
+    gecos: "Cloudless Test User"
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - "{{ cloudless_test_framework_ssh_key }}"
+{% endif %}
+
 packages:
   - nginx
 
