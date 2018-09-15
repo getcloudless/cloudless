@@ -165,8 +165,7 @@ setup(
     # py_modules=['mypackage'],
 
     entry_points={
-        'console_scripts': ['cloudless-test=cloudless.testutils.cli:main',
-                            'cldls=cloudless.cli.main:main'],
+        'console_scripts': ['cldls=cloudless.cli.main:main'],
     },
     install_requires=REQUIRED,
     tests_require=TESTS_REQUIRED,
