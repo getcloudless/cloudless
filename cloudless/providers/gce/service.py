@@ -41,8 +41,8 @@ class ServiceClient:
         """
         Create a service in "network" named "service_name" with blueprint file at "blueprint".
         """
-        logger.info('Creating service %s, %s with blueprint %s and ' 'template_vars %s',
-                    network.name, service_name, blueprint, template_vars)
+        logger.debug('Creating service %s, %s with blueprint %s and ' 'template_vars %s',
+                     network.name, service_name, blueprint, template_vars)
         self.subnetwork.create(network.name, service_name,
                                blueprint=blueprint)
         instances_blueprint = ServiceBlueprint(blueprint, template_vars)
@@ -78,7 +78,7 @@ class ServiceClient:
                 {"key": "network", "value": network.name},
                 {"key": "subnetwork", "value": service_name}
             ]
-            logger.info('Creating instance %s in zone %s', instance_name, availability_zone)
+            logger.info('Creating instance %s in zone %s', instance_name, availability_zone.name)
             self.driver.create_node(instance_name, instance_type, image, location=availability_zone,
                                     ex_network=network.name, ex_subnetwork=full_subnetwork_name,
                                     external_ip="ephemeral", ex_metadata=metadata,
@@ -89,7 +89,7 @@ class ServiceClient:
         """
         Get a service in "network" named "service_name".
         """
-        logger.info('Discovering service %s, %s', network.name, service_name)
+        logger.debug('Discovering service %s, %s', network.name, service_name)
 
         # 1. Get list of instances
         instances = []
@@ -114,7 +114,7 @@ class ServiceClient:
         """
         Destroy a service described by "service".
         """
-        logger.info('Destroying service: %s', service)
+        logger.debug('Destroying service: %s', service)
         destroy_results = []
         for node in self.driver.list_nodes():
             metadata = node.extra.get("metadata", {}).get("items", [])

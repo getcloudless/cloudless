@@ -138,6 +138,13 @@
             ],
             "version": "==6.7"
         },
+        "click-repl": {
+            "hashes": [
+                "sha256:587a19a300f7740bcde584c2d93cd5e1e26c5cd27e315d163e25dfda3bccb219",
+                "sha256:813e404b425517067e78a3ee783238c2c41e6353a1e8dba72882688922cde68e"
+            ],
+            "version": "==0.1.5"
+        },
         "cookies": {
             "hashes": [
                 "sha256:15bee753002dff684987b8df8c235288eb8d45f8191ae056254812dfd42c81d3",
@@ -242,6 +249,12 @@
             ],
             "version": "==0.9.6"
         },
+        "lazy-import": {
+            "hashes": [
+                "sha256:2149aef8579459407c62cfeccf118527939c9931ace124f355236360644f8a3d"
+            ],
+            "version": "==0.2.2"
+        },
         "markupsafe": {
             "hashes": [
                 "sha256:a6be69091dac236ea9c6bc7d012beab42010fa914c459791d627dad4910eb665"
@@ -284,6 +297,14 @@
             ],
             "markers": "python_version != '3.3.*' and python_version >= '2.7' and python_version != '3.0.*' and python_version != '3.2.*' and python_version != '3.1.*'",
             "version": "==0.7.1"
+        },
+        "prompt-toolkit": {
+            "hashes": [
+                "sha256:12e076b21178064b5627f74c4819559c125e31046b55a28d5e024b85fef5617e",
+                "sha256:f2289fe9dd7f27c305421bffe880a543b04cc67660796a2a912595dbcd0d209f",
+                "sha256:ff58ce8bb82c11c43416dd3eec7701dcbe8c576e2d7649f1d2b9d21a2fd93808"
+            ],
+            "version": "==2.0.4"
         },
         "py": {
             "hashes": [
@@ -343,7 +364,7 @@
         },
         "pydoc-markdown": {
             "git": "https://github.com/sverch/pydoc-markdown.git",
-            "ref": "26ca46e37c7d9e0ac62093734c1da52adb6e2f2e"
+            "ref": "c958255b33743423ae4212710612c995954297c8"
         },
         "pytest": {
             "hashes": [
@@ -425,6 +446,13 @@
             ],
             "markers": "python_version < '4' and python_version != '3.2.*' and python_version != '3.1.*' and python_version != '3.0.*' and python_version != '3.3.*' and python_version >= '2.6'",
             "version": "==1.23"
+        },
+        "wcwidth": {
+            "hashes": [
+                "sha256:3df37372226d6e63e1b1e1eda15c594bca98a22d33a23832a90998faa96bc65e",
+                "sha256:f4ebe71925af7b40a864553f761ed559b43544f8f71746c2d756c7fe788ade7c"
+            ],
+            "version": "==0.1.7"
         },
         "websocket-client": {
             "hashes": [
@@ -656,11 +684,11 @@
         },
         "tqdm": {
             "hashes": [
-                "sha256:5ef526702c0d265d5a960a3b27f3971fac13c26cf0fb819294bfa71fc6026c88",
-                "sha256:a3364bd83ce4777320b862e3c8a93d7da91e20a95f06ef79bed7dd71c654cafa"
+                "sha256:18f1818ce951aeb9ea162ae1098b43f583f7d057b34d706f66939353d1208889",
+                "sha256:df02c0650160986bac0218bb07952245fc6960d23654648b5d5526ad5a4128c9"
             ],
-            "markers": "python_version != '3.1.*' and python_version != '3.0.*' and python_version >= '2.6'",
-            "version": "==4.25.0"
+            "markers": "python_version != '3.0.*' and python_version != '3.1.*' and python_version >= '2.6'",
+            "version": "==4.26.0"
         },
         "twine": {
             "hashes": [

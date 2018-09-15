@@ -58,6 +58,7 @@ class Instance:
     public_ip = attr.ib(type=str)
     private_ip = attr.ib(type=str)
     state = attr.ib(type=str)
+    availability_zone = attr.ib(type=str)
 
 @attr.s
 class Path:

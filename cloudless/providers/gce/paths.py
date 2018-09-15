@@ -65,7 +65,7 @@ class PathsClient:
         """
         Add path between two services on a given port.
         """
-        logger.info('Adding path from %s to %s on port %s', source, destination, port)
+        logger.debug('Adding path from %s to %s on port %s', source, destination, port)
         rules = [{"IPProtocol": "tcp", "ports": [int(port)]}]
         src_tags, dest_tags, src_ranges, _ = self._extract_service_info(
             source, destination)
@@ -76,16 +76,16 @@ class PathsClient:
                 if not firewall.source_ranges:
                     firewall.source_ranges = []
                 firewall.source_ranges.append(str(source.cidr_block))
-                logger.info(firewall.source_ranges)
+                logger.debug(firewall.source_ranges)
             if isinstance(source, Service):
                 if not firewall.source_tags:
                     firewall.source_tags = []
                 source_tag = "%s-%s" % (source.network.name, source.name)
                 firewall.source_tags.append(source_tag)
-                logger.info(firewall.source_tags)
+                logger.debug(firewall.source_tags)
             firewall = self.driver.ex_update_firewall(firewall)
         except ResourceNotFoundError:
-            logger.info("Firewall %s not found, creating.", firewall_name)
+            logger.debug("Firewall %s not found, creating.", firewall_name)
             firewall = self.driver.ex_create_firewall(firewall_name, allowed=rules,
                                                       network=destination.network.name,
                                                       source_ranges=src_ranges,
@@ -97,13 +97,13 @@ class PathsClient:
         """
         Remove path between two services on a given port.
         """
-        logger.info('Removing path from %s to %s on port %s',
-                    source, destination, port)
+        logger.debug('Removing path from %s to %s on port %s',
+                     source, destination, port)
 
         firewall_name = "bu-%s-%s-%s" % (destination.network.name, destination.name, port)
 
         def remove_from_ranges(to_remove, address_ranges):
-            logger.info("Removing %s from %s", to_remove, address_ranges)
+            logger.debug("Removing %s from %s", to_remove, address_ranges)
             resulting_ranges = []
             if not address_ranges:
                 return None
@@ -117,7 +117,7 @@ class PathsClient:
                                                  in new_range_networks])
                 else:
                     resulting_ranges.extend([str(address_range_network)])
-            logger.info("New ranges: %s", resulting_ranges)
+            logger.debug("New ranges: %s", resulting_ranges)
             return resulting_ranges
 
         try:
@@ -131,7 +131,7 @@ class PathsClient:
                     firewall.source_tags = [tag for tag in firewall.source_tags
                                             if tag != source_tag]
         except ResourceNotFoundError:
-            logger.info("Firewall %s doesn't exist", firewall_name)
+            logger.debug("Firewall %s doesn't exist", firewall_name)
             return None
 
         # We need this because the default is to add "0.0.0.0/0" if these aren't set, which is bad.
@@ -239,8 +239,8 @@ class PathsClient:
         """
         Return true if there's a path between the services.
         """
-        logger.info('Looking for path from %s to %s on port %s', source, destination, 80)
+        logger.debug('Looking for path from %s to %s on port %s', source, destination, 80)
         self._validate_args(source, destination)
         paths = self.list()
-        logger.info('Found paths %s', paths)
+        logger.debug('Found paths %s', paths)
         return self._has_access(paths, source, destination, port)
