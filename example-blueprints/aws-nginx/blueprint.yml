@@ -23,3 +23,5 @@ initialization:
     vars:
       cloudless-test-framework-ssh-key:
         required: false
+      cloudless-test-framework-ssh-username:
+        required: false

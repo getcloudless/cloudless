@@ -40,13 +40,17 @@ def run_ssh_test(provider, credentials):
     if provider in ["aws", "mock-aws"]:
         test_service = client.service.create(test_network, service_name, AWS_SERVICE_BLUEPRINT,
                                              template_vars={"cloudless-test-framework-ssh-key":
-                                                            key_pair.public_key},
+                                                            key_pair.public_key,
+                                                            "cloudless-test-framework-ssh-username":
+                                                            "cloudless"},
                                              count=1)
     else:
         assert provider == "gce"
         test_service = client.service.create(test_network, service_name, GCE_SERVICE_BLUEPRINT,
                                              template_vars={"cloudless-test-framework-ssh-key":
-                                                            key_pair.public_key},
+                                                            key_pair.public_key,
+                                                            "cloudless-test-framework-ssh-username":
+                                                            "cloudless"},
                                              count=1)
 
     def validate_service(network, service, count):
