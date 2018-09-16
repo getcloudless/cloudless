@@ -2,6 +2,7 @@
 Cloudless blueprint command line interface.
 """
 import sys
+import os
 import click
 from cloudless.cli.utils import NaturalOrderAliasedGroup
 import cloudless
@@ -22,7 +23,7 @@ def add_blueprint_group(cldls):
         Blueprint testing framework.
 
         Helper to test blueprints, run create, verify, and cleanup.  Saves deployment state into
-        <blueprint_directory>/blueprint-test-state.json.
+        <config_path>/blueprint-test-state.json.
         """
         ctx.obj['DEV'] = dev
         profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
@@ -37,43 +38,65 @@ def add_blueprint_group(cldls):
                                              credentials=ctx.obj['CREDENTIALS'])
 
     @blueprint_group.command(name="create")
-    @click.argument('blueprint-directory')
+    @click.argument('config')
     @click.pass_context
     # pylint:disable=unused-variable
-    def blueprint_provision(ctx, blueprint_directory):
+    def blueprint_create(ctx, config):
         """
-        provision an blueprint given a configuration file.
+        Create test service from blueprint.
+
+        Config must be the path to a test configuration file.
         """
-        do_setup(ctx.obj['CLIENT'], blueprint_directory)
-        click.echo("Creation complete, state is in: %s/blueprint-test-state.json" %
-                   blueprint_directory)
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        do_setup(ctx.obj['CLIENT'], config)
+        click.echo("Creation complete!")
 
     @blueprint_group.command(name="verify")
-    @click.argument('blueprint-directory')
+    @click.argument('config')
     @click.pass_context
     # pylint:disable=unused-variable
-    def blueprint_validate(ctx, blueprint_directory):
+    def blueprint_verify(ctx, config):
         """
-        validate an blueprint given a configuration file.
+        Verify test service is behaving as expected.
+
+        Config must be the path to a test configuration file.
         """
-        do_verify(ctx.obj['CLIENT'], blueprint_directory)
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        do_verify(ctx.obj['CLIENT'], config)
+        click.echo("Verify complete!")
 
     @blueprint_group.command(name="cleanup")
-    @click.argument('blueprint-directory')
+    @click.argument('config')
     @click.pass_context
     # pylint:disable=unused-variable
-    def blueprint_cleanup(ctx, blueprint_directory):
+    def blueprint_cleanup(ctx, config):
         """
-        Tear down a blueprint given a configuration file.
+        Cleanup test service.
+
+        Config must be the path to a test configuration file.
         """
-        do_teardown(ctx.obj['CLIENT'], blueprint_directory)
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        do_teardown(ctx.obj['CLIENT'], config)
+        click.echo("Cleanup complete!")
 
     @blueprint_group.command(name="test")
-    @click.argument('blueprint-directory')
+    @click.argument('config')
     @click.pass_context
     # pylint:disable=unused-variable
-    def blueprint_test(ctx, blueprint_directory):
+    def blueprint_test(ctx, config):
         """
         Run create, verify, and cleanup.
+
+        Config must be the path to a test configuration file.
         """
-        run_all(ctx.obj['CLIENT'], blueprint_directory)
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        run_all(ctx.obj['CLIENT'], config)
+        click.echo("Full test run complete!")
