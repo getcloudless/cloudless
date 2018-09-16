@@ -119,6 +119,8 @@ class ServiceClient:
                 if retries > RETRY_COUNT:
                     raise OperationTimedOut("Timed out waiting for ASG to be created")
                 time.sleep(RETRY_DELAY)
+            logger.info("Success!  %s of %s instance running.", len(instance_list(asg, state)),
+                        instance_count)
         wait_until("running")
 
         return self.get(network, service_name)
@@ -250,6 +252,7 @@ class ServiceClient:
             if retries > RETRY_COUNT:
                 raise OperationTimedOut("Timed out waiting for ASG scale down")
             time.sleep(RETRY_DELAY)
+        logger.info("Success!  All instances terminated.")
 
         self.asg.destroy_auto_scaling_group(asg_name)
 

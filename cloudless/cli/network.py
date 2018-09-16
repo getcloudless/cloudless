@@ -1,6 +1,7 @@
 """
 Cloudless network command line interface.
 """
+import sys
 import click
 from cloudless.cli.utils import NaturalOrderAliasedGroup
 import cloudless
@@ -19,6 +20,10 @@ def add_network_group(cldls):
         deploy services into.
         """
         profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
+        if not profile:
+            click.echo("Profile: \"%s\" not found." % ctx.obj['PROFILE'])
+            click.echo("Try running \"cldls --profile %s init\"." % ctx.obj['PROFILE'])
+            sys.exit(1)
         ctx.obj['PROVIDER'] = profile["provider"]
         ctx.obj['CREDENTIALS'] = profile["credentials"]
         click.echo('Network group with provider: %s' % ctx.obj['PROVIDER'])
@@ -69,5 +74,9 @@ def add_network_group(cldls):
         """
         Destroy a network in this profile.
         """
-        ctx.obj['CLIENT'].network.destroy(ctx.obj['CLIENT'].network.get(name))
+        network_object = ctx.obj['CLIENT'].network.get(name)
+        if not network_object:
+            click.echo("Could not find network: %s" % name)
+            sys.exit(1)
+        ctx.obj['CLIENT'].network.destroy(network_object)
         click.echo('Destroyed network: %s' % name)

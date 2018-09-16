@@ -100,6 +100,8 @@ class ServiceClient:
 
         # 2. Get List Of Subnets
         subnetworks = self.subnetwork.get(network, service_name)
+        if not subnetworks:
+            return None
 
         # 3. Group Services By Subnet
         for subnet_info in subnetworks:
@@ -107,7 +109,6 @@ class ServiceClient:
                 if (instance.private_ip and ipaddress.IPv4Network(subnet_info.cidr_block).overlaps(
                         ipaddress.IPv4Network(instance.private_ip))):
                     subnet_info.instances.append(instance)
-
         return Service(network=network, name=service_name, subnetworks=subnetworks)
 
     def destroy(self, service):

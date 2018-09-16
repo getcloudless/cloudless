@@ -40,7 +40,7 @@ class NetworkClient:
         try:
             network = self.driver.ex_get_network(name)
         except ResourceNotFoundError as not_found:
-            logger.info("Caught exception trying to get network: %s", not_found)
+            logger.debug("Caught exception trying to get network: %s", not_found)
             return None
         return canonicalize_network_info(network)
 
@@ -51,8 +51,8 @@ class NetworkClient:
         try:
             network = self.driver.ex_get_network(network.name)
         except ResourceNotFoundError as not_found:
-            logger.info("Caught exception destroying network, ignoring: %s",
-                        not_found)
+            logger.debug("Caught exception destroying network, ignoring: %s",
+                         not_found)
             return None
         return self.driver.ex_destroy_network(network)
 

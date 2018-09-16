@@ -1,6 +1,7 @@
 """
 Cloudless service command line interface.
 """
+import sys
 from collections import OrderedDict
 import yaml
 import click
@@ -22,6 +23,10 @@ def add_service_group(cldls):
         in cloudless.
         """
         profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
+        if not profile:
+            click.echo("Profile: \"%s\" not found." % ctx.obj['PROFILE'])
+            click.echo("Try running \"cldls init\".")
+            sys.exit(1)
         ctx.obj['PROVIDER'] = profile["provider"]
         ctx.obj['CREDENTIALS'] = profile["credentials"]
         click.echo('Service group with provider: %s' % ctx.obj['PROVIDER'])
@@ -39,6 +44,9 @@ def add_service_group(cldls):
         Create a service in this profile.
         """
         network_object = ctx.obj['CLIENT'].network.get(network)
+        if not network_object:
+            click.echo("Could not find network: %s" % network)
+            sys.exit(1)
         service = ctx.obj['CLIENT'].service.create(network_object, name, blueprint)
         click.echo('Created service: %s in network: %s' % (name, network))
 
@@ -98,6 +106,9 @@ def add_service_group(cldls):
 
 
         network_object = ctx.obj['CLIENT'].network.get(network)
+        if not network_object:
+            click.echo("Could not find network: %s" % network)
+            sys.exit(1)
         service = ctx.obj['CLIENT'].service.get(network_object, name)
         paths_info = get_paths_info_for_service(service)
         service_info = OrderedDict()
@@ -140,6 +151,12 @@ def add_service_group(cldls):
         Destroy a service in this profile.
         """
         network_object = ctx.obj['CLIENT'].network.get(network)
+        if not network_object:
+            click.echo("Could not find network: %s" % network)
+            sys.exit(1)
         service_object = ctx.obj['CLIENT'].service.get(network_object, name)
+        if not service_object:
+            click.echo("Could not find service: %s in network %s" % (name, network))
+            sys.exit(1)
         ctx.obj['CLIENT'].service.destroy(service_object)
         click.echo('Destroyed service: %s in network: %s' % (name, network))
