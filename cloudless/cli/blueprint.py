@@ -1,6 +1,7 @@
 """
 Cloudless blueprint command line interface.
 """
+import sys
 import click
 from cloudless.cli.utils import NaturalOrderAliasedGroup
 import cloudless
@@ -25,23 +26,17 @@ def add_blueprint_group(cldls):
         """
         ctx.obj['DEV'] = dev
         profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
+        if not profile:
+            click.echo("Profile: \"%s\" not found." % ctx.obj['PROFILE'])
+            click.echo("Try running \"cldls --profile %s init\"." % ctx.obj['PROFILE'])
+            sys.exit(1)
         ctx.obj['PROVIDER'] = profile["provider"]
         ctx.obj['CREDENTIALS'] = profile["credentials"]
         click.echo('Service group with provider: %s' % ctx.obj['PROVIDER'])
         ctx.obj['CLIENT'] = cloudless.Client(provider=ctx.obj['PROVIDER'],
                                              credentials=ctx.obj['CREDENTIALS'])
 
-    @blueprint_group.command(name="test")
-    @click.argument('blueprint-directory')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def blueprint_build(ctx, blueprint_directory):
-        """
-        Test an blueprint given a configuration file.  Runs all steps in order.
-        """
-        run_all(ctx.obj['CLIENT'], blueprint_directory)
-
-    @blueprint_group.command(name="provision")
+    @blueprint_group.command(name="create")
     @click.argument('blueprint-directory')
     @click.pass_context
     # pylint:disable=unused-variable
@@ -50,19 +45,10 @@ def add_blueprint_group(cldls):
         provision an blueprint given a configuration file.
         """
         do_setup(ctx.obj['CLIENT'], blueprint_directory)
+        click.echo("Creation complete, state is in: %s/blueprint-test-state.json" %
+                   blueprint_directory)
 
-    @blueprint_group.command(name="configure")
-    @click.argument('configuration')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def blueprint_configure(ctx, configuration):
-        """
-        configure an blueprint given a configuration file.
-        """
-        click.echo('blueprint group configure with profile: %s, configuration: %s' % (
-            ctx.obj['PROFILE'], configuration))
-
-    @blueprint_group.command(name="validate")
+    @blueprint_group.command(name="verify")
     @click.argument('blueprint-directory')
     @click.pass_context
     # pylint:disable=unused-variable
@@ -82,13 +68,12 @@ def add_blueprint_group(cldls):
         """
         do_teardown(ctx.obj['CLIENT'], blueprint_directory)
 
-    @blueprint_group.command(name="list")
-    @click.argument('configuration')
+    @blueprint_group.command(name="test")
+    @click.argument('blueprint-directory')
     @click.pass_context
     # pylint:disable=unused-variable
-    def blueprint_list(ctx, configuration):
+    def blueprint_test(ctx, blueprint_directory):
         """
-        List blueprints given a configuration file.
+        Run create, verify, and cleanup.
         """
-        click.echo('blueprint group list with profile: %s, configuration: %s' % (ctx.obj['PROFILE'],
-                                                                                 configuration))
+        run_all(ctx.obj['CLIENT'], blueprint_directory)
