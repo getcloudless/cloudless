@@ -33,7 +33,7 @@ def add_blueprint_group(cldls):
             sys.exit(1)
         ctx.obj['PROVIDER'] = profile["provider"]
         ctx.obj['CREDENTIALS'] = profile["credentials"]
-        click.echo('Service group with provider: %s' % ctx.obj['PROVIDER'])
+        click.echo('Blueprint group with provider: %s' % ctx.obj['PROVIDER'])
         ctx.obj['CLIENT'] = cloudless.Client(provider=ctx.obj['PROVIDER'],
                                              credentials=ctx.obj['CREDENTIALS'])
 

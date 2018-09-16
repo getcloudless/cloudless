@@ -12,6 +12,10 @@ EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "..", "example-
 NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.yml")
 AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
 
+# Get the blueprint locations relative to the test script
+BLUEPRINT_DIR = os.path.join(os.path.dirname(__file__), "blueprint_tester_fixture")
+BLUEPRINT_TEST_CONFIGURATION = os.path.join(BLUEPRINT_DIR, "blueprint-test-configuration.yml")
+
 # Make sure we don't leak this from the environment.
 if 'CLOUDLESS_PROFILE' in os.environ:
     del os.environ['CLOUDLESS_PROFILE']
@@ -298,6 +302,12 @@ def test_image_subcommand(mock_config_source):
     """
     runner = CliRunner()
 
+    # Do some mock weirdness to make sure our commands get the right values for the default profile.
+    mock_config_source = mock_config_source.return_value
+    mock_config_source.load.return_value = {"default": {"provider": "mock-aws", "credentials": {}}}
+    result = cloudless.profile.load_profile("default")
+    assert result == {"provider": "mock-aws", "credentials": {}}
+
     result = runner.invoke(get_cldls(), ['image', 'build', 'configuration.yml'])
     assert result.output == ('image group with profile: default\n'
                              'image group build with profile: default'
@@ -349,44 +359,32 @@ def test_blueprint_subcommand(mock_config_source):
     """
     runner = CliRunner()
 
-    result = runner.invoke(get_cldls(), ['blueprint', 'test', 'configuration.yml'])
-    assert result.output == ('blueprint group with profile: default\n'
-                             'blueprint group test with profile: default'
-                             ', configuration: configuration.yml\n')
+    # Do some mock weirdness to make sure our commands get the right values for the default profile.
+    mock_config_source = mock_config_source.return_value
+    mock_config_source.load.return_value = {"default": {"provider": "mock-aws", "credentials": {}}}
+    result = cloudless.profile.load_profile("default")
+    assert result == {"provider": "mock-aws", "credentials": {}}
+
+    result = runner.invoke(get_cldls(), ['blueprint', 'create', BLUEPRINT_TEST_CONFIGURATION])
+    assert result.output == ('Blueprint group with provider: mock-aws\n'
+                             'Creation complete!\n')
     assert result.exception is None
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['blueprint', 'provision', 'configuration.yml'])
-    assert result.output == ('blueprint group with profile: default\n'
-                             'blueprint group provision with profile: default'
-                             ', configuration: configuration.yml\n')
+    result = runner.invoke(get_cldls(), ['blueprint', 'verify', BLUEPRINT_TEST_CONFIGURATION])
+    assert result.output == ('Blueprint group with provider: mock-aws\n'
+                             'Verify complete!\n')
     assert result.exception is None
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['blueprint', 'configure', 'configuration.yml'])
-    assert result.output == ('blueprint group with profile: default\n'
-                             'blueprint group configure with profile: default'
-                             ', configuration: configuration.yml\n')
+    result = runner.invoke(get_cldls(), ['blueprint', 'cleanup', BLUEPRINT_TEST_CONFIGURATION])
+    assert result.output == ('Blueprint group with provider: mock-aws\n'
+                             'Cleanup complete!\n')
     assert result.exception is None
     assert result.exit_code == 0
 
-    result = runner.invoke(get_cldls(), ['blueprint', 'validate', 'configuration.yml'])
-    assert result.output == ('blueprint group with profile: default\n'
-                             'blueprint group validate with profile: default'
-                             ', configuration: configuration.yml\n')
-    assert result.exception is None
-    assert result.exit_code == 0
-
-    result = runner.invoke(get_cldls(), ['blueprint', 'list', 'configuration.yml'])
-    assert result.output == ('blueprint group with profile: default\n'
-                             'blueprint group list with profile: default'
-                             ', configuration: configuration.yml\n')
-    assert result.exception is None
-    assert result.exit_code == 0
-
-    result = runner.invoke(get_cldls(), ['blueprint', 'ls', 'configuration.yml'])
-    assert result.output == ('blueprint group with profile: default\n'
-                             'blueprint group list with profile: default'
-                             ', configuration: configuration.yml\n')
+    result = runner.invoke(get_cldls(), ['blueprint', 'test', BLUEPRINT_TEST_CONFIGURATION])
+    assert result.output == ('Blueprint group with provider: mock-aws\n'
+                             'Full test run complete!\n')
     assert result.exception is None
     assert result.exit_code == 0
