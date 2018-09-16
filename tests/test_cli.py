@@ -13,7 +13,7 @@ NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.y
 AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
 
 # Get the blueprint locations relative to the test script
-BLUEPRINT_DIR = os.path.join(os.path.dirname(__file__), "blueprint_tester_fixture")
+BLUEPRINT_DIR = os.path.join(os.path.dirname(__file__), "cli_blueprint_tester_fixture")
 BLUEPRINT_TEST_CONFIGURATION = os.path.join(BLUEPRINT_DIR, "blueprint-test-configuration.yml")
 
 # Make sure we don't leak this from the environment.
