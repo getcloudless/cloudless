@@ -20,3 +20,6 @@ image:
 
 initialization:
   - path: "nginx-cloud-config.yml"
+    vars:
+      cloudless-test-framework-ssh-key:
+        required: false

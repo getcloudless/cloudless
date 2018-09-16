@@ -10,20 +10,12 @@ import cloudless
 from cloudless.types.common import Service
 from cloudless.types.networking import CidrBlock
 from cloudless.testutils.blueprint_tester import generate_unique_name, call_with_retries
-from cloudless.testutils.ssh import create_test_instance
+from cloudless.testutils.ssh import generate_ssh_keypair
 
-EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
-                                      "..",
-                                      "example-blueprints")
-NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                 "network", "blueprint.yml")
-SUBNETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                    "subnetwork", "blueprint.yml")
-
-AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                     "aws-nginx", "blueprint.yml")
-GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                     "gce-apache", "blueprint.yml")
+EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "..", "example-blueprints")
+NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.yml")
+AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
+GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "gce-apache", "blueprint.yml")
 
 # pylint: disable=too-many-locals,too-many-statements
 def run_ssh_test(provider, credentials):
@@ -37,15 +29,25 @@ def run_ssh_test(provider, credentials):
     # Get a somewhat unique network name
     network_name = generate_unique_name("unittest")
 
+    # Get a somewhat unique service name
+    service_name = generate_unique_name("unittest")
+
+    # Get a keypair to use
+    key_pair = generate_ssh_keypair()
+
     # Provision all the resources
     test_network = client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
     if provider in ["aws", "mock-aws"]:
-        test_service = create_test_instance(client, test_network, provider, AWS_SERVICE_BLUEPRINT,
-                                            ssh_setup_method="provider-default")
+        test_service = client.service.create(test_network, service_name, AWS_SERVICE_BLUEPRINT,
+                                             template_vars={"cloudless-test-framework-ssh-key":
+                                                            key_pair.public_key},
+                                             count=1)
     else:
         assert provider == "gce"
-        test_service = create_test_instance(client, test_network, provider, GCE_SERVICE_BLUEPRINT,
-                                            ssh_setup_method="provider-default")
+        test_service = client.service.create(test_network, service_name, GCE_SERVICE_BLUEPRINT,
+                                             template_vars={"cloudless-test-framework-ssh-key":
+                                                            key_pair.public_key},
+                                             count=1)
 
     def validate_service(network, service, count):
         discovered_service = client.service.get(network, service.name)
@@ -61,18 +63,18 @@ def run_ssh_test(provider, credentials):
         assert instances == client.service.get_instances(service)
 
     # Check that our service is provisioned properly
-    validate_service(test_network, test_service.service, 1)
+    validate_service(test_network, test_service, 1)
 
     # Add a path for SSH
     internet = CidrBlock("0.0.0.0/0")
-    client.paths.add(internet, test_service.service, 22)
+    client.paths.add(internet, test_service, 22)
 
     if provider != "mock-aws":
         # Test that we can connect with the given key
         def attempt_connection():
             ssh = paramiko.SSHClient()
-            ssh_key = paramiko.RSAKey(file_obj=StringIO(test_service.private_key))
-            public_ip = [i.public_ip for i in client.service.get_instances(test_service.service)][0]
+            ssh_key = paramiko.RSAKey(file_obj=StringIO(key_pair.private_key))
+            public_ip = [i.public_ip for i in client.service.get_instances(test_service)][0]
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(hostname=public_ip, username="ubuntu", pkey=ssh_key)
             return ssh
@@ -83,7 +85,7 @@ def run_ssh_test(provider, credentials):
         assert ssh_stderr.read().decode().strip() == ""
 
     # Make sure they are gone when I destroy them
-    client.service.destroy(test_service.service)
+    client.service.destroy(test_service)
 
     # Clean up the VPC
     client.network.destroy(test_network)
