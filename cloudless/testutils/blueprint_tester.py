@@ -14,6 +14,7 @@ from cloudless.util.log import logger
 from cloudless.util.blueprint_test_configuration import BlueprintTestConfiguration
 from cloudless.util.exceptions import DisallowedOperationException
 from cloudless.testutils.ssh import generate_ssh_keypair
+from cloudless.types.networking import CidrBlock
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 NETWORK_BLUEPRINT = os.path.join(SCRIPT_PATH, "network.yml")
@@ -23,8 +24,8 @@ def call_with_retries(function, retry_count, retry_delay):
     """
     Calls the given function with retries.  Also handles logging on each retry.
     """
-    logger.info("Calling function: %s with retry count: %s, retry_delay: %s",
-                function, retry_count, retry_delay)
+    logger.debug("Calling function: %s with retry count: %s, retry_delay: %s",
+                 function, retry_count, retry_delay)
     for retry in range(1, int(retry_count) + 1):
         logger.info("Attempt number: %s", retry)
         try:
@@ -73,6 +74,36 @@ def save_state(state, config):
     with open(state_file_path, "w") as state_file:
         state_file.write(state_json)
 
+def private_key_path(config):
+    """
+    Path where this framework saves the private test key.
+    """
+    return "%s/%s" % (config.get_config_dir(), "id_rsa_test")
+
+def public_key_path(config):
+    """
+    Path where this framework saves the public test key.
+    """
+    return "%s/%s" % (config.get_config_dir(), "id_rsa_test.pub")
+
+def save_key_pair(key_pair, config):
+    """
+    Save test state so we can run each command independently.
+    """
+    with open(private_key_path(config), "w", 0o600) as private_key_file:
+        private_key_file.write(key_pair.private_key)
+    with open(public_key_path(config), "w") as public_key_file:
+        public_key_file.write(key_pair.public_key)
+
+def remove_key_pair(config):
+    """
+    Save test state so we can run each command independently.
+    """
+    private_key_file_path = "%s/%s" % (config.get_config_dir(), "id_rsa")
+    public_key_file_path = "%s/%s" % (config.get_config_dir(), "id_rsa.pub")
+    os.remove(private_key_file_path)
+    os.remove(public_key_file_path)
+
 def get_state(config):
     """
     Get test state so we can run each command independently.
@@ -87,7 +118,7 @@ def setup(client, config):
     """
     Create all the boilerplate to spin up the service, and the service itself.
     """
-    logger.info("Running setup to test: %s", config)
+    logger.debug("Running setup to test: %s", config)
     config_obj = BlueprintTestConfiguration(config)
     state = get_state(config_obj)
     if state:
@@ -98,13 +129,14 @@ def setup(client, config):
     key_pair = generate_ssh_keypair()
     state = {"network_name": network_name, "service_name": service_name, "public_key":
              key_pair.public_key, "private_key": key_pair.private_key}
-    logger.info("Saving state: %s now in case something fails", state)
+    logger.debug("Saving state: %s now in case something fails", state)
     save_state(state, config_obj)
+    save_key_pair(key_pair, config_obj)
 
-    logger.info("Creating test network: %s", network_name)
+    logger.debug("Creating test network: %s", network_name)
     network = client.network.create(network_name, NETWORK_BLUEPRINT)
 
-    logger.info("Calling the pre service setup in test fixture")
+    logger.debug("Calling the pre service setup in test fixture")
     blueprint_tester = get_blueprint_tester(client, config_obj.get_config_dir(),
                                             config_obj.get_create_fixture_type(),
                                             config_obj.get_create_fixture_options())
@@ -114,7 +146,7 @@ def setup(client, config):
         "deployment_info": setup_info.deployment_info,
         "blueprint_vars": setup_info.blueprint_vars,
         }
-    logger.info("Saving full state: %s", state)
+    logger.debug("Saving full state: %s", state)
     save_state(state, config_obj)
 
     # Add SSH key to the instance using reserved variables
@@ -131,21 +163,28 @@ def setup(client, config):
                 setup_info.blueprint_vars))
     setup_info.blueprint_vars["cloudless_test_framework_ssh_username"] = "cloudless"
 
-    logger.info("Creating services using the blueprint under test")
+    logger.debug("Creating services using the blueprint under test")
     service = client.service.create(network, service_name, config_obj.get_blueprint_path(),
                                     setup_info.blueprint_vars)
     assert service.subnetworks
     for subnetwork in service.subnetworks:
         assert subnetwork.instances
 
-    logger.info("Calling the post service setup in test fixture")
+    logger.debug("Calling the post service setup in test fixture")
     blueprint_tester.setup_after_tested_service(network, service, setup_info)
+
+    logger.debug("Allowing SSH to test service")
+    internet = CidrBlock("0.0.0.0/0")
+    client.paths.add(internet, service, 22)
+
+    logger.debug("Test service instances: %s", client.service.get_instances(service))
+    return (service, private_key_path(config_obj))
 
 def verify(client, config):
     """
     Verify that the instances are behaving as expected.
     """
-    logger.info("Running verify on: %s", config)
+    logger.debug("Running verify on: %s", config)
     config_obj = BlueprintTestConfiguration(config)
     state = get_state(config_obj)
     blueprint_tester = get_blueprint_tester(client, config_obj.get_config_dir(),
@@ -156,13 +195,14 @@ def verify(client, config):
     network = client.network.get(state["network_name"])
     service = client.service.get(network, state["service_name"])
     blueprint_tester.verify(network, service, setup_info)
-    logger.info("Verify successful!")
+    logger.debug("Verify successful!")
+    return (service, private_key_path(config_obj))
 
 def teardown(client, config):
     """
     Destroy all services in this network, and destroy the network.
     """
-    logger.info("Running teardown on: %s", config)
+    logger.debug("Running teardown on: %s", config)
     config_obj = BlueprintTestConfiguration(config)
     state = get_state(config_obj)
     if not state or "network_name" not in state:
@@ -175,6 +215,7 @@ def teardown(client, config):
     if network:
         client.network.destroy(network)
     save_state({}, config_obj)
+    remove_key_pair(config_obj)
 
 def run_all(client, config):
     """

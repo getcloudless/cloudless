@@ -187,7 +187,7 @@ class ServiceClient:
                 try:
                     asg = self._discover_asg(network.name, service_name)
                     if not asg:
-                        return None
+                        return subnetworks
                     instance_ids = [instance["InstanceId"] for instance in asg["Instances"]]
                     instances = discover_instances(instance_ids)
                     logger.debug("Discovered instances: %s", instances)
@@ -256,6 +256,7 @@ class ServiceClient:
                     if instance.state != state]
 
         service = self.get(service.network, service.name)
+        logger.debug("Found service: %s", service)
         retries = 0
         while service and instance_list(service, "terminated"):
             logger.info("Waiting for instance termination in service %s.  %s still terminating",

@@ -50,8 +50,11 @@ def add_blueprint_group(cldls):
         if os.path.isdir(config):
             click.echo("Configuration must be a file, not a directory!")
             sys.exit(1)
-        do_setup(ctx.obj['CLIENT'], config)
+        service, private_key_path = do_setup(ctx.obj['CLIENT'], config)
         click.echo("Creation complete!")
+        click.echo("To log in, run:")
+        for instance in ctx.obj['CLIENT'].service.get_instances(service):
+            click.echo("ssh -i %s cloudless@%s" % (private_key_path, instance.public_ip))
 
     @blueprint_group.command(name="verify")
     @click.argument('config')
@@ -66,8 +69,11 @@ def add_blueprint_group(cldls):
         if os.path.isdir(config):
             click.echo("Configuration must be a file, not a directory!")
             sys.exit(1)
-        do_verify(ctx.obj['CLIENT'], config)
+        service, private_key_path = do_verify(ctx.obj['CLIENT'], config)
         click.echo("Verify complete!")
+        click.echo("To log in, run:")
+        for instance in ctx.obj['CLIENT'].service.get_instances(service):
+            click.echo("ssh -i %s cloudless@%s" % (private_key_path, instance.public_ip))
 
     @blueprint_group.command(name="cleanup")
     @click.argument('config')
