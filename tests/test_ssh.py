@@ -39,17 +39,17 @@ def run_ssh_test(provider, credentials):
     test_network = client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
     if provider in ["aws", "mock-aws"]:
         test_service = client.service.create(test_network, service_name, AWS_SERVICE_BLUEPRINT,
-                                             template_vars={"cloudless-test-framework-ssh-key":
+                                             template_vars={"cloudless_test_framework_ssh_key":
                                                             key_pair.public_key,
-                                                            "cloudless-test-framework-ssh-username":
+                                                            "cloudless_test_framework_ssh_username":
                                                             "cloudless"},
                                              count=1)
     else:
         assert provider == "gce"
         test_service = client.service.create(test_network, service_name, GCE_SERVICE_BLUEPRINT,
-                                             template_vars={"cloudless-test-framework-ssh-key":
+                                             template_vars={"cloudless_test_framework_ssh_key":
                                                             key_pair.public_key,
-                                                            "cloudless-test-framework-ssh-username":
+                                                            "cloudless_test_framework_ssh_username":
                                                             "cloudless"},
                                              count=1)
 
@@ -80,12 +80,12 @@ def run_ssh_test(provider, credentials):
             ssh_key = paramiko.RSAKey(file_obj=StringIO(key_pair.private_key))
             public_ip = [i.public_ip for i in client.service.get_instances(test_service)][0]
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(hostname=public_ip, username="ubuntu", pkey=ssh_key)
+            ssh.connect(hostname=public_ip, username="cloudless", pkey=ssh_key)
             return ssh
         call_with_retries(attempt_connection, int(10), float(1.0))
         ssh = attempt_connection()
         _, ssh_stdout, ssh_stderr = ssh.exec_command("whoami")
-        assert ssh_stdout.read().decode().strip() == "ubuntu"
+        assert ssh_stdout.read().decode().strip() == "cloudless"
         assert ssh_stderr.read().decode().strip() == ""
 
     # Make sure they are gone when I destroy them

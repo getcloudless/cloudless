@@ -23,3 +23,7 @@ initialization:
     vars:
       PrivateIps:
         required: true
+      cloudless_test_framework_ssh_key:
+        required: false
+      cloudless_test_framework_ssh_username:
+        required: false

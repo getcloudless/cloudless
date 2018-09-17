@@ -13,6 +13,7 @@ from cloudless.testutils.fixture import SetupInfo
 from cloudless.util.log import logger
 from cloudless.util.blueprint_test_configuration import BlueprintTestConfiguration
 from cloudless.util.exceptions import DisallowedOperationException
+from cloudless.testutils.ssh import generate_ssh_keypair
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 NETWORK_BLUEPRINT = os.path.join(SCRIPT_PATH, "network.yml")
@@ -94,7 +95,9 @@ def setup(client, config):
             "Found non empty state file: %s" % state)
     network_name = generate_unique_name("test-network")
     service_name = generate_unique_name("test-service")
-    state = {"network_name": network_name, "service_name": service_name}
+    key_pair = generate_ssh_keypair()
+    state = {"network_name": network_name, "service_name": service_name, "public_key":
+             key_pair.public_key, "private_key": key_pair.private_key}
     logger.info("Saving state: %s now in case something fails", state)
     save_state(state, config_obj)
 
@@ -113,6 +116,20 @@ def setup(client, config):
         }
     logger.info("Saving full state: %s", state)
     save_state(state, config_obj)
+
+    # Add SSH key to the instance using reserved variables
+    if "cloudless_test_framework_ssh_key" in setup_info.blueprint_vars:
+        raise DisallowedOperationException(
+            "cloudless_test_framework_ssh_key is a parameter reserved by the test framework "
+            "and cannot be returned by the test fixture.  Found: %s" % (
+                setup_info.blueprint_vars))
+    setup_info.blueprint_vars["cloudless_test_framework_ssh_key"] = key_pair.public_key
+    if "cloudless_test_framework_ssh_username" in setup_info.blueprint_vars:
+        raise DisallowedOperationException(
+            "cloudless_test_framework_ssh_username is a parameter reserved by the test "
+            "framework and cannot be returned by the test fixture.  Found: %s" % (
+                setup_info.blueprint_vars))
+    setup_info.blueprint_vars["cloudless_test_framework_ssh_username"] = "cloudless"
 
     logger.info("Creating services using the blueprint under test")
     service = client.service.create(network, service_name, config_obj.get_blueprint_path(),

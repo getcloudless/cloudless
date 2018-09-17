@@ -41,4 +41,4 @@ def generate_ssh_keypair():
     """
     key = RSA.generate(2048)
     pubkey = key.publickey()
-    return SSHKeyPair(pubkey.exportKey('OpenSSH'), key.exportKey('PEM').decode())
+    return SSHKeyPair(str(pubkey.exportKey('OpenSSH')), str(key.exportKey('PEM').decode()))
