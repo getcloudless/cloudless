@@ -189,6 +189,6 @@ def test_instances_gce():
     Run tests against real GCE (environment variables below must be set).
     """
     run_instances_test(provider="gce", credentials={
-        "user_id": os.environ['BUTTER_GCE_USER_ID'],
-        "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['BUTTER_GCE_PROJECT_NAME']})
+        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
+        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
+        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})

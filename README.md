@@ -87,9 +87,9 @@ dotfile you don't commit to version control.  Note the credentials file is in
 JSON format:
 
 ```shell
-export BUTTER_GCE_USER_ID="sverch-cloudless@cloudless-000000.iam.gserviceaccount.com"
-export BUTTER_GCE_CREDENTIALS_PATH="/home/sverch/.gce/credentials.json"
-export BUTTER_GCE_PROJECT_NAME="cloudless-000000"
+export CLOUDLESS_GCE_USER_ID="sverch-cloudless@cloudless-000000.iam.gserviceaccount.com"
+export CLOUDLESS_GCE_CREDENTIALS_PATH="/home/sverch/.gce/credentials.json"
+export CLOUDLESS_GCE_PROJECT_NAME="cloudless-000000"
 ```
 
 Then, you can run these commands in a python shell to create a GCE client:
@@ -98,9 +98,9 @@ Then, you can run these commands in a python shell to create a GCE client:
 import cloudless
 import os
 client = cloudless.Client("gce", credentials={
-    "user_id": os.environ['BUTTER_GCE_USER_ID'],
-    "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
-    "project": os.environ['BUTTER_GCE_PROJECT_NAME']})
+    "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
+    "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
+    "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
 ```
 
 ### Amazon Web Services Client
@@ -375,5 +375,5 @@ tox -e gce
 tox -e aws
 ```
 
-For GCE, you must set `BUTTER_GCE_USER_ID`, `BUTTER_GCE_CREDENTIALS_PATH`, and
-`BUTTER_GCE_PROJECT_NAME` as described above.
+For GCE, you must set `CLOUDLESS_GCE_USER_ID`, `CLOUDLESS_GCE_CREDENTIALS_PATH`, and
+`CLOUDLESS_GCE_PROJECT_NAME` as described above.

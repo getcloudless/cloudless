@@ -41,6 +41,6 @@ def test_instance_fitter_gce():
     Test instance fitter with GCE and below environment configuration.
     """
     run_instance_fitter_test(provider="gce", credentials={
-        "user_id": os.environ['BUTTER_GCE_USER_ID'],
-        "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['BUTTER_GCE_PROJECT_NAME']})
+        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
+        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
+        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})

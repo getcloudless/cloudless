@@ -12,9 +12,9 @@ def print_graph(provider):
         client = cloudless.Client("aws", {})
     elif provider == "gce":
         client = cloudless.Client("gce", {
-            "user_id": os.environ['BUTTER_GCE_USER_ID'],
-            "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
-            "project": os.environ['BUTTER_GCE_PROJECT_NAME']})
+            "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
+            "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
+            "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
     else:
         raise NotImplementedError("Provider %s not supported" % provider)
     print(client.graph())
