@@ -1,0 +1,29 @@
+---
+network:
+  subnetwork_max_instance_count: 768
+
+placement:
+  availability_zones: 1
+
+instance:
+  public_ip: True
+  memory: 4GB
+  cpus: 1
+  gpu: false
+  disks:
+    - size: 8GB
+      type: standard
+      device_name: /dev/sda1
+
+image:
+  name: "cloudless-example-base-image-v0"
+
+initialization:
+  - path: "haproxy_startup_script.sh"
+    vars:
+      PrivateIps:
+        required: true
+      cloudless_test_framework_ssh_key:
+        required: false
+      cloudless_test_framework_ssh_username:
+        required: false

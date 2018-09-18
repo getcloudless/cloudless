@@ -28,26 +28,18 @@ def test_blueprint():
     """
     Blueprint reader tests.
     """
-    instances_blueprint = ServiceBlueprint(INSTANCES_BLUEPRINT,
-                                           {"list_var": ["foo"],
-                                            "other_var": ["bar"]})
-    assert instances_blueprint.runtime_scripts() == OPTIONAL_NOT_SET
-    instances_blueprint = ServiceBlueprint(INSTANCES_BLUEPRINT,
-                                           {"list_var": ["foo"],
-                                            "other_var": ["bar"],
-                                            "optional_var": ["baz"]})
-    assert instances_blueprint.runtime_scripts() == OPTIONAL_SET
-    instances_blueprint = ServiceBlueprint(INSTANCES_BLUEPRINT,
-                                           {"list_var": ["foo"],
-                                            "other_var": ["bar"],
-                                            "optional_var": ["baz"],
-                                            "unrecognized_var": ["bop"]})
+    sbp = ServiceBlueprint.from_file(INSTANCES_BLUEPRINT)
+    template_vars = {"list_var": ["foo"], "other_var": ["bar"]}
+    assert sbp.runtime_scripts(template_vars) == OPTIONAL_NOT_SET
+    template_vars = {"list_var": ["foo"], "other_var": ["bar"], "optional_var": ["baz"]}
+    assert sbp.runtime_scripts(template_vars) == OPTIONAL_SET
+    template_vars = {"list_var": ["foo"], "other_var": ["bar"], "optional_var": ["baz"],
+                     "unrecognized_var": ["bop"]}
     with pytest.raises(BlueprintException,
                        message="Expected unrecognized value exception"):
-        instances_blueprint.runtime_scripts()
-    instances_blueprint = ServiceBlueprint(INSTANCES_BLUEPRINT, {})
+        sbp.runtime_scripts(template_vars)
     with pytest.raises(BlueprintException,
                        message="Expected missing value exception"):
-        instances_blueprint.runtime_scripts()
-    instances_blueprint = ServiceBlueprint(NOVARS_BLUEPRINT, {})
-    instances_blueprint.runtime_scripts()
+        sbp.runtime_scripts({})
+    sbp = ServiceBlueprint.from_file(NOVARS_BLUEPRINT)
+    sbp.runtime_scripts({})

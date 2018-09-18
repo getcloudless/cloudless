@@ -24,7 +24,7 @@ These examples show how to quickly create a simple service that is accessible on
 port 80 in Google Compute Engine and in Amazon Web Services.  Run any command
 with `--help` for more usage.
 
-### Google Compute Engine
+### Google Compute Engine Credentials
 
 To set up the Google Compute Engine client, you must first create your Google
 Compute Engine account and navigate to
@@ -35,29 +35,49 @@ save this key on your local machine, remembering the path.
 
 You will also need the project ID (not the project name).  Go to
 [https://console.cloud.google.com/iam-admin/settings/project](https://console.cloud.google.com/iam-admin/settings/project)
-and select your project to find your project ID.
+and select your project to find your project ID.  When you think you have
+everything, run:
 
-```
+```shell
 cldls init --provider gce
-cldls network create example-blueprints/network/blueprint.yml
-cldls service create mynet myservice example-blueprints/gce-apache/blueprint.yml
-cldls paths allow_external mynet myservice 0.0.0.0/0 80
-cldls service get mynet myservice
-# Navigate to the "public_ip" of each instance in a browser to see the service.
+cldls network list
 ```
 
-### Amazon Web Services
+This will set the "default" profile to use the "gce" backend.  You can change
+the profile by passing `--profile` to cloudless or setting the
+`CLOUDLESS_PROFILE` environment variable.
+
+### Amazon Web Services Credentials
 
 To set up the Amazon Web Services client, follow the steps at
 [https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 to configure the aws cli.  Currently, cloudless only uses the "default" aws
 profile that is configured in this way.  After you set up a default profile that
-works with the AWS cli, everything in cloudless should work.
+works with the AWS cli, everything in cloudless should work.  When you think you
+have this working, run:
 
 ```
 cldls init --provider aws
-cldls network create mynet example-blueprints/network/blueprint.yml
-cldls service create mynet myservice example-blueprints/aws-nginx/blueprint.yml
+cldls network list
+```
+
+This will set the "default" profile to use the "aws" backend.  You can change
+the profile by passing `--profile` to cloudless or setting the
+`CLOUDLESS_PROFILE` environment variable.
+
+### Simple Service
+
+The next steps are identical regardless of which cloud provider you're using.
+They do assume you have an image named "cloudless-example-base-image-v0" with
+Ubuntu 16.04 installed on it in your provider.  See the [Image
+Builder](#image-builder) section for how to build an image like this using
+Cloudless.
+
+Once you have the prerequisites, you can create your service with:
+
+```
+cldls network create examples/network/blueprint.yml
+cldls service create mynet myservice examples/apache/blueprint.yml
 cldls paths allow_external mynet myservice 0.0.0.0/0 80
 cldls service get mynet myservice
 # Navigate to the "public_ip" of each instance in a browser to see the service.
@@ -222,8 +242,8 @@ Cloudless will automatically choose a instance type that meets these requirement
 
 The "image" section represents the name of the image you want your instances to
 have.  In this case, we are using an image name only found in AWS by default, so
-this example will only work there.  See `example-blueprints/gce-apache` for a
-GCE example blueprint.
+this example will only work there.  See `examples/apache` for a blueprint that
+works cross cloud because it uses a custom image.
 
 The "initialization" section describes startup scripts that you want to run when
 the instance boots.  You may also pass in variables, which will get passed to
@@ -235,27 +255,21 @@ Once you have the blueprint, the example below shows how you could use it.
 These examples create a group of private instances and then create some HAProxy
 instances in front of those instances to balance load.  Note that many commands
 take `dev_network` as the first argument.  That's the same network object
-returned by the network commands shown above.
+returned by the network commands shown above.  These assume you have created the
+base image in `examples/base-image` on the provider you are using.
 
 ```python
 internal_service = client.service.create(dev_network, "private",
-                                         blueprint="example-blueprints/aws-nginx/blueprint.yml")
+                                         blueprint="examples/nginx/blueprint.yml")
 private_ips = [instance.private_ip for instance in client.service.get_instances(internal_service)]
 load_balancer_service = client.service.create(dev_network, "public",
-                                              blueprint="example-blueprints/aws-haproxy/blueprint.yml",
+                                              blueprint="examples/haproxy/blueprint.yml",
                                               template_vars={"PrivateIps": private_ips})
 internal_service = client.service.get(dev_network, "public")
 load_balancer_service client.service.get(dev_network, "private")
 client.service.list()
 client.service.destroy(internal_service)
 client.service.destroy(load_balancer_service)
-```
-
-There is another example blueprint that works with GCE if you created the GCE
-client above:
-
-```python
-client.instances.create(dev_nework, "public", blueprint="example-blueprints/gce-apache/blueprint.yml")
 ```
 
 ### Path
@@ -301,27 +315,103 @@ cd ui && env PROVIDER=<provider> bash graph.sh
 And open `ui/graph.html` in a browser.  Note this won't work for the `mock-aws`
 provider since it will be running in a different process.
 
-## Blueprint Tester
+## Image Builder
+
+This project provides a cross cloud image builder that depends on the core
+cloudless APIs.  this means that for the most part it is completely cloud
+independent, mod differences in the image that you start with (so it's
+completely independent if you're building your own custom image from scratch).
+
+For this example, we use the Ubuntu image provided by the cloud provider, so we
+have different blueprints for AWS and GCE (because the standard Ubuntu images
+they provide have different names).
+
+First, to deploy a service running a single instance:
+
+```shell
+$ cldls --profile gce image-build deploy examples/base-image/gce_image_build_configuration.yml
+```
+
+Next, to run the configure script.  This is a shellscript that cloudless will
+pass the login credentials to as arguments, and where you can run your
+configuration as code scripts:
+
+```shell
+$ cldls --profile gce image-build configure examples/base-image/gce_image_build_configuration.yml
+```
+
+Next, to run the check script.  This is another shellscript that cloudless will
+pass the login credentials to as arguments, and where you can run your
+validation to make sure the configuration step worked as expected:
+
+```shell
+$ cldls --profile gce image-build check examples/base-image/gce_image_build_configuration.yml
+```
+
+Finally, when you have your scripts working as you want them to, run a cleanup
+in preparation for a full build.  Saving images without a full build is not
+supported to discourage modifications that are made on the machine and not
+recorded in scripts anywhere making it into the image:
+
+```shell
+$ cldls --profile gce image-build cleanup examples/base-image/gce_image_build_configuration.yml
+```
+
+Now, run the full build end to end, and you have your new image!
+
+```shell
+$ cldls --profile gce image-build run examples/base-image/gce_image_build_configuration.yml
+```
+
+We can list the image with:
+
+```shell
+$ cldls --profile gce image list
+Image Name: cloudless-example-base-image-v0
+Image Id: ami-0d7366265fcccbe46
+Image Created At: 2018-09-20T16:51:03.000Z
+```
+
+Get it by name with:
+
+```shell
+$ cldls --profile gce image get cloudless-example-base-image-v0
+Image Name: cloudless-example-base-image-v0
+Image Id: ami-0d7366265fcccbe46
+Image Created At: 2018-09-20T16:51:03.000Z
+```
+
+And finally, delete the image.  You might want to wait on this step because the
+[Service Tester](#service-tester) step below uses this image:
+
+```shell
+$ cldls --profile gce image delete cloudless-example-base-image-v0
+Deleted image: cloudless-example-base-image-v0
+```
+
+See [examples/base-image](examples/base-image) for examples of how to create a
+cross cloud base image using this framework.
+
+## Service Tester
 
 This project also provides a framework to help test that blueprint files work as
 expected.  The framework will create, verify, and clean up the service under
 test.  It also spins up all dependent services so you can test services "in
 context".  It's sort of a hybrid between a unit test and an integration test.
 
-These examples assume you are using a profile called "gce" that is configured
-with the `gce` provider, but there are other example blueprints in
-[`example-blueprints`](example-blueprints) that you can use AWS to test.  They
-are currently different because the different cloud providers provide different
-base images.
+These examples assume the profile you have configured has an image that was
+built using the [Image Builder](#image-builder) step above.  If you've followed
+those steps, these instructions are completely identical regardless of whether
+you're using AWS or GCE.
 
 First, to create the service:
 
 ```shell
-$ cldls --profile gce blueprint create example-blueprints/gce-apache/blueprint-test-configuration.yml
+$ cldls service-test deploy examples/apache/service_test_configuration.yml
 Creation complete!
 To log in, run:
-ssh -i example-blueprints/gce-apache/id_rsa_test cloudless@35.237.12.140
-$ ssh -i example-blueprints/gce-apache/id_rsa_test cloudless@35.237.12.140
+ssh -i examples/apache/id_rsa_test cloudless_service_test@35.237.12.140
+$ ssh -i examples/apache/id_rsa_test cloudless_service_test@35.237.12.140
 ...
 ...
 
@@ -335,29 +425,29 @@ This will create a temporary network to sandbox the test.  Now, to verify that
 the service is behaving as expected:
 
 ```shell
-$ cldls --profile gce blueprint verify example-blueprints/gce-apache/blueprint-test-configuration.yml
+$ cldls service-test check examples/apache/service_test_configuration.yml
 INFO:cloudless.providers.gce:Discovering subnetwork test-network-jmeiwknbsg, test-service-hswonxmeda
 INFO:cloudless.util:Attempt number: 1
-INFO:cloudless.util:Verify successful!
-Verify complete!
+INFO:cloudless.util:Check successful!
+Check complete!
 To log in, run:
-ssh -i example-blueprints/gce-apache/id_rsa_test cloudless@35.237.12.140
+ssh -i examples/apache/id_rsa_test cloudless@35.237.12.140
 ```
 
 Finally, to clean up everything:
 
 ```shell
-$ cldls --profile gce blueprint cleanup example-blueprints/gce-apache/blueprint-test-configuration.yml
+$ cldls service-test cleanup examples/apache/service_test_configuration.yml
 ```
 
 If you want to run all the previous steps all together, you can run:
 
 ```shell
-$ cldls --profile gce blueprint test example-blueprints/gce-apache/blueprint-test-configuration.yml
+$ cldls service-test run examples/apache/service_test_configuration.yml
 ```
 
-See [example-blueprints](example-blueprints) for examples of how to set up a
-blueprint to be testable with this framework.
+See [examples](examples) for examples of how to set up a blueprint to be
+testable with this framework.
 
 ## Testing
 

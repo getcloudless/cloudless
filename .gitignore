@@ -9,5 +9,3 @@ env
 *.egg-info
 build
 dist
-id_rsa_test
-id_rsa_test.pub

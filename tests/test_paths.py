@@ -7,18 +7,11 @@ import cloudless
 from cloudless.types.common import Path
 from cloudless.testutils.blueprint_tester import generate_unique_name
 
-EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
-                                      "..",
-                                      "example-blueprints")
-NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                 "network", "blueprint.yml")
-SUBNETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                    "subnetwork", "blueprint.yml")
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "..", "examples")
+NETWORK_BLUEPRINT = os.path.join(EXAMPLES_DIR, "network", "blueprint.yml")
+AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "aws_blueprint.yml")
+GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "gce_blueprint.yml")
 
-AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                     "aws-nginx", "blueprint.yml")
-GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                     "gce-apache", "blueprint.yml")
 
 def run_paths_test(provider, credentials):
     """

@@ -12,10 +12,10 @@ from cloudless.types.networking import CidrBlock
 from cloudless.testutils.blueprint_tester import generate_unique_name, call_with_retries
 from cloudless.testutils.ssh import generate_ssh_keypair
 
-EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "..", "example-blueprints")
-NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.yml")
-AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
-GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "gce-apache", "blueprint.yml")
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "..", "examples")
+NETWORK_BLUEPRINT = os.path.join(EXAMPLES_DIR, "network", "blueprint.yml")
+AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "aws_blueprint.yml")
+GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "gce_blueprint.yml")
 
 # pylint: disable=too-many-locals,too-many-statements
 def run_ssh_test(provider, credentials):
@@ -39,17 +39,17 @@ def run_ssh_test(provider, credentials):
     test_network = client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
     if provider in ["aws", "mock-aws"]:
         test_service = client.service.create(test_network, service_name, AWS_SERVICE_BLUEPRINT,
-                                             template_vars={"cloudless_test_framework_ssh_key":
+                                             template_vars={"cloudless_image_build_ssh_key":
                                                             key_pair.public_key,
-                                                            "cloudless_test_framework_ssh_username":
+                                                            "cloudless_image_build_ssh_username":
                                                             "cloudless"},
                                              count=1)
     else:
         assert provider == "gce"
         test_service = client.service.create(test_network, service_name, GCE_SERVICE_BLUEPRINT,
-                                             template_vars={"cloudless_test_framework_ssh_key":
+                                             template_vars={"cloudless_image_build_ssh_key":
                                                             key_pair.public_key,
-                                                            "cloudless_test_framework_ssh_username":
+                                                            "cloudless_image_build_ssh_username":
                                                             "cloudless"},
                                              count=1)
 

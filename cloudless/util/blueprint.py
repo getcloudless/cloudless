@@ -15,29 +15,38 @@ from cloudless.util.log import logger
 # pylint: disable=too-few-public-methods
 class Blueprint:
     """
-    Base blueprint object
+    Base blueprint object.  Shouldn't have any reason to use this directly.
+
+    Usage:
+
+    b = Blueprint.from_file("blueprint.yml")
+    print(b.blueprint["raw_data"])
+
+    b = ServiceBlueprint.from_file("blueprint.yml")
+    print(b.image())
     """
 
-    def __init__(self, blueprint_file=None, blueprint_yaml=None):
-        if blueprint_file:
-            with open(blueprint_file, 'r') as stream:
-                try:
-                    self.blueprint = yaml.load(stream)
-                except yaml.YAMLError as exc:
-                    logger.error("Error parsing blueprint: %s", exc)
-                    raise exc
-            self.blueprint_path = os.path.dirname(blueprint_file)
-        else:
-            try:
-                self.blueprint = yaml.load(blueprint_yaml)
-            except yaml.YAMLError as exc:
-                logger.error("Error parsing blueprint: %s", exc)
-                raise exc
-            self.blueprint_path = None
-        self.blueprint_filename = blueprint_file
+    def __init__(self, blueprint, blueprint_path="./"):
+        logger.debug("Creating blueprint from data: %s", blueprint)
+        try:
+            self.blueprint = yaml.load(blueprint)
+        except yaml.YAMLError as exc:
+            logger.error("Error parsing blueprint: %s", exc)
+            raise exc
+        self.blueprint_path = blueprint_path
         if not self.blueprint:
             self.blueprint = {}
 
+    @classmethod
+    def from_file(cls, blueprint_filename):
+        """
+        Loads the blueprint from a file.
+        """
+        logger.debug("Creating blueprint from file: %s", blueprint_filename)
+        blueprint_path = os.path.dirname(blueprint_filename)
+        with open(blueprint_filename, 'r') as stream:
+            blueprint = stream.read()
+        return cls(blueprint, blueprint_path)
 
 class NetworkBlueprint(Blueprint):
     """
@@ -61,11 +70,21 @@ class ServiceBlueprint(Blueprint):
     """
     Blueprint for services.
     """
-    def __init__(self, blueprint_file, template_vars=None):
-        super(ServiceBlueprint, self).__init__(blueprint_file)
+    def __init__(self, blueprint, blueprint_path="./", template_vars=None):
+        super(ServiceBlueprint, self).__init__(blueprint, blueprint_path)
         self.template_vars = template_vars
         if not self.template_vars:
             self.template_vars = {}
+
+    @classmethod
+    def from_file_with_vars(cls, blueprint_filename, template_vars):
+        """
+        Loads the blueprint from a file.
+        """
+        blueprint_path = os.path.dirname(blueprint_filename)
+        with open(blueprint_filename, 'r') as stream:
+            blueprint = stream.read()
+        return cls(blueprint, blueprint_path, template_vars)
 
     def max_count(self):
         """
@@ -86,11 +105,13 @@ class ServiceBlueprint(Blueprint):
         """
         return self.blueprint["image"]["name"]
 
-    def runtime_scripts(self):
+    def runtime_scripts(self, template_vars):
         """
         Returns the contents of the provided runtime scripts.  Currently only supports a list with
         one script.
         """
+        if not template_vars:
+            template_vars = {}
         if len(self.blueprint["initialization"]) > 1:
             raise NotImplementedError("Only one initialization script currently supported")
         def handle_initialization_block(script):
@@ -105,17 +126,17 @@ class ServiceBlueprint(Blueprint):
             template = jinja2.Template(startup_script)
             if "vars" in script:
                 for name, opts in script["vars"].items():
-                    if opts["required"] and name not in self.template_vars:
+                    if opts["required"] and name not in template_vars:
                         raise BlueprintException(
                             "Template Variable: \"%s\" must be set." %
                             (name))
-            return template.render(self.template_vars)
+            return template.render(template_vars)
         all_template_vars = [
             name
             for initialization in self.blueprint["initialization"]
             if "vars" in initialization
             for name in initialization["vars"]]
-        for template_var in self.template_vars:
+        for template_var in template_vars:
             if template_var not in all_template_vars:
                 raise BlueprintException(
                     "Unrecognized Template Variable: \"%s\"." %

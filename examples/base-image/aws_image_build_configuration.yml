@@ -1,0 +1,28 @@
+---
+# Configuration script for the image builder commands.
+
+# Options for how to deploy the instance that we will configure and save into a
+# new image.  Currently, only the "blueprint" option is supported, which tells
+# the build command to create a service with only one instance using that
+# blueprint.  The default value is "blueprint.yml", but we have two different
+# blueprints for AWS and GCE because the base Ubuntu images that they provide
+# have different names.
+deploy:
+  blueprint: aws_blueprint.yml
+
+# Options for how to configure the instance.  The only currently supported
+# option is a "path" to a script.  Cloudless will call this script with the
+# arguments "<ssh_username> <instance_ip> <ssh_private_key_path>" in that order.
+configure:
+  path: configure
+
+# Options for how to check the instance.  The only currently supported option is
+# a "path" to a script.  Cloudless will call this script with the arguments
+# "<ssh_username> <instance_ip> <ssh_private_key_path>" in that order.
+check:
+  path: check
+
+# Options for how to save the instance.  Currently only the "name" option is
+# supported which is the name of the image that will be saved.
+save:
+  name: "cloudless-example-base-image-v0"

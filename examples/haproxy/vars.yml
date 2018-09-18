@@ -1,0 +1,6 @@
+---
+# This is an example vars file.  This particular blueprint only requires this
+# one argument, which is the list of backend servers.  Here you would list the
+# private IPs of the services HAProxy should balance over.  Make sure HAProxy
+# can actually reach these servers.
+PrivateIps: []

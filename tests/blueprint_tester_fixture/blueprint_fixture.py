@@ -10,8 +10,8 @@ from cloudless.testutils.blueprint_tester import generate_unique_name
 from cloudless.testutils.fixture import BlueprintTestInterface, SetupInfo
 from cloudless.types.networking import CidrBlock
 
-SERVICE_BLUEPRINT = os.path.join(os.path.dirname(__file__),
-                                 "../../example-blueprints/aws-nginx/blueprint.yml")
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "examples")
+SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "aws_blueprint.yml")
 
 RETRY_DELAY = float(10.0)
 RETRY_COUNT = int(6)

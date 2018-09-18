@@ -44,7 +44,7 @@ class ServiceClient:
                      network.name, service_name, blueprint, template_vars)
         self.subnetwork.create(network.name, service_name,
                                blueprint=blueprint)
-        instances_blueprint = ServiceBlueprint(blueprint, template_vars)
+        instances_blueprint = ServiceBlueprint.from_file(blueprint)
         az_count = instances_blueprint.availability_zone_count()
         availability_zones = list(itertools.islice(self._get_availability_zones(), az_count))
         if len(availability_zones) < az_count:
@@ -66,14 +66,14 @@ class ServiceClient:
             return images[0]
 
         image = get_image(instances_blueprint.image())
-        instance_type = get_fitting_instance(self, blueprint)
+        instance_type = get_fitting_instance(self, instances_blueprint)
         for availability_zone, instance_num in zip(itertools.cycle(availability_zones),
                                                    range(0, instance_count)):
             full_subnetwork_name = "%s-%s" % (network.name, service_name)
             instance_name = "%s-%s" % (full_subnetwork_name, instance_num)
             metadata = [
                 {"key": "startup-script", "value":
-                 instances_blueprint.runtime_scripts()},
+                 instances_blueprint.runtime_scripts(template_vars)},
                 {"key": "network", "value": network.name},
                 {"key": "subnetwork", "value": service_name}
             ]

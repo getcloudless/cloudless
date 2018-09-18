@@ -11,10 +11,10 @@ import cloudless
 from cloudless.types.common import Service
 from cloudless.testutils.blueprint_tester import generate_unique_name
 
-EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "..", "example-blueprints")
-NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.yml")
-AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
-GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "gce-apache", "blueprint.yml")
+EXAMPLES_DIR = os.path.join(os.path.dirname(__file__), "..", "examples")
+NETWORK_BLUEPRINT = os.path.join(EXAMPLES_DIR, "network", "blueprint.yml")
+AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "aws_blueprint.yml")
+GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "gce_blueprint.yml")
 
 # Set debug logging
 cloudless.set_level(logging.DEBUG)
@@ -55,7 +55,7 @@ def run_instances_test(provider, credentials):
         assert len(instances) == count
         assert instances == client.service.get_instances(service)
 
-    validate_service(test_network, lb_service, 3)
+    validate_service(test_network, lb_service, 1)
     validate_service(test_network, web_service, 6)
 
     if provider in ["aws", "mock-aws"]:
@@ -68,8 +68,9 @@ def run_instances_test(provider, credentials):
         route_tables = ec2.describe_route_tables(Filters=[{
             'Name': 'vpc-id',
             'Values': [dc_id]}])
-        assert len(route_tables["RouteTables"]) == 7
-        assert len(subnets["Subnets"]) == 6
+        # The blueprints we are using to test only create one availability zone right now.
+        assert len(route_tables["RouteTables"]) == 3
+        assert len(subnets["Subnets"]) == 2
 
         # AutoScalingGroup
         autoscaling = boto3.client("autoscaling")
@@ -89,17 +90,17 @@ def run_instances_test(provider, credentials):
         # Make sure subnets don't overlap
         web_asg = web_asgs["AutoScalingGroups"][0]
         web_asg_subnet_ids = web_asg["VPCZoneIdentifier"].split(",")
-        assert len(web_asg_subnet_ids) == 3
+        assert len(web_asg_subnet_ids) == 1
 
         web_lb_asg = web_lb_asgs["AutoScalingGroups"][0]
         web_lb_asg_subnet_ids = web_lb_asg["VPCZoneIdentifier"].split(",")
-        assert len(web_lb_asg_subnet_ids) == 3
+        assert len(web_lb_asg_subnet_ids) == 1
 
         web_asg_subnets = ec2.describe_subnets(SubnetIds=web_asg_subnet_ids)
-        assert len(web_asg_subnets["Subnets"]) == 3
+        assert len(web_asg_subnets["Subnets"]) == 1
 
         web_lb_asg_subnets = ec2.describe_subnets(SubnetIds=web_lb_asg_subnet_ids)
-        assert len(web_lb_asg_subnets["Subnets"]) == 3
+        assert len(web_lb_asg_subnets["Subnets"]) == 1
 
         for web_asg_subnet in web_asg_subnets["Subnets"]:
             web_asg_cidr = ipaddress.ip_network(str(web_asg_subnet["CidrBlock"]))
@@ -135,8 +136,8 @@ def run_instances_test(provider, credentials):
         route_tables = ec2.describe_route_tables(Filters=[{
             'Name': 'vpc-id',
             'Values': [dc_id]}])
-        assert len(route_tables["RouteTables"]) == 4
-        assert len(subnets["Subnets"]) == 3
+        assert len(route_tables["RouteTables"]) == 2
+        assert len(subnets["Subnets"]) == 1
 
         # AutoScalingGroup
         autoscaling = boto3.client("autoscaling")

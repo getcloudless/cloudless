@@ -6,4 +6,4 @@ what you create for the duration of your session.
 You should not use this directly, but instead pass in the string "mock-aws" as the "provider" in the
 top level `cloudless.Client` object.
 """
-from cloudless.providers.aws_mock import (network, service, paths)
+from cloudless.providers.aws_mock import (network, service, paths, image)

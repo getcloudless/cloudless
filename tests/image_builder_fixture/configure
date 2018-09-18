@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "Good configure!"
+echo "$@"

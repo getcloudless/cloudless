@@ -1,6 +1,7 @@
 """
 Cloudless image command line interface.
 """
+import sys
 import click
 from cloudless.cli.utils import NaturalOrderAliasedGroup
 from cloudless.cli.utils import handle_profile_for_cli
@@ -22,61 +23,47 @@ def add_image_group(cldls):
         click.echo('image group with provider: %s' % ctx.obj['PROVIDER'])
         ctx.obj['DEV'] = dev
 
-    @image_group.command(name="build")
-    @click.argument('configuration')
+    @image_group.command(name="get")
+    @click.argument('name')
     @click.pass_context
     # pylint:disable=unused-variable
-    def image_build(ctx, configuration):
+    def image_get(ctx, name):
         """
-        Build an image given a configuration file.  Runs all steps in order and saves the image at
-        the end.
-
-        This is the only way to save images, which ensures that every saved image had all the tests
-        pass.
+        Get an image given a name.
         """
-        click.echo('image group build with profile: %s, configuration: %s' % (ctx.obj['PROFILE'],
-                                                                              configuration))
-
-    @image_group.command(name="provision")
-    @click.argument('configuration')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def image_provision(ctx, configuration):
-        """
-        provision an image given a configuration file.
-        """
-        click.echo('image group provision with profile: %s, configuration: %s' % (
-            ctx.obj['PROFILE'], configuration))
-
-    @image_group.command(name="configure")
-    @click.argument('configuration')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def image_configure(ctx, configuration):
-        """
-        configure an image given a configuration file.
-        """
-        click.echo('image group configure with profile: %s, configuration: %s' % (
-            ctx.obj['PROFILE'], configuration))
-
-    @image_group.command(name="validate")
-    @click.argument('configuration')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def image_validate(ctx, configuration):
-        """
-        validate an image given a configuration file.
-        """
-        click.echo('image group validate with profile: %s, configuration: %s' % (ctx.obj['PROFILE'],
-                                                                                 configuration))
+        image = ctx.obj['CLIENT'].image.get(name)
+        if not image:
+            click.echo("Image %s does not exist" % name)
+            sys.exit(1)
+        click.echo("Image Name: %s" % image.name)
+        click.echo("Image Id: %s" % image.image_id)
+        click.echo("Image Created At: %s" % image.created_at)
 
     @image_group.command(name="list")
-    @click.argument('configuration')
     @click.pass_context
     # pylint:disable=unused-variable
-    def image_list(ctx, configuration):
+    def image_list(ctx):
         """
-        List images given a configuration file.
+        List images.
         """
-        click.echo('image group list with profile: %s, configuration: %s' % (ctx.obj['PROFILE'],
-                                                                             configuration))
+        images = ctx.obj['CLIENT'].image.list()
+        click.echo("Listing all images.")
+        for image in images:
+            click.echo("Image Name: %s" % image.name)
+            click.echo("Image Id: %s" % image.image_id)
+            click.echo("Image Created At: %s" % image.created_at)
+
+    @image_group.command(name="delete")
+    @click.argument('name')
+    @click.pass_context
+    # pylint:disable=unused-variable
+    def image_delete(ctx, name):
+        """
+        Delete an image.
+        """
+        image = ctx.obj['CLIENT'].image.get(name)
+        if not image:
+            click.echo("Image %s does not exist" % name)
+            sys.exit(1)
+        ctx.obj['CLIENT'].image.destroy(image)
+        click.echo("Deleted image: %s" % name)

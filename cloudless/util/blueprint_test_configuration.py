@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Utilities to deal with blueprint test configuration files.
 """
@@ -11,6 +10,10 @@ from cloudless.util.log import logger
 class BlueprintTestConfiguration:
     """
     Base blueprint test configuration object
+
+    This is where to enforce things like types, required arguments, and just general configuration
+    constraints.  This turns it into a kind of "schema" that someday we can probably auto generate
+    using a YAML schema library.
     """
 
     def __init__(self, config):
@@ -21,6 +24,8 @@ class BlueprintTestConfiguration:
                 logger.error("Error parsing config: %s", exc)
                 raise exc
         self.config_path = os.path.dirname(config)
+        if not self.config_path:
+            self.config_path = "./"
         self.config_filename = config
 
     def get_config_dir(self):

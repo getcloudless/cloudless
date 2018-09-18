@@ -4,8 +4,6 @@ Test boilerplate for modules.
 import os
 import time
 import sys
-import random
-import string
 import json
 import importlib
 from functools import partial
@@ -16,6 +14,7 @@ from cloudless.util.blueprint_test_configuration import BlueprintTestConfigurati
 from cloudless.util.exceptions import DisallowedOperationException
 from cloudless.testutils.ssh import generate_ssh_keypair
 from cloudless.types.networking import CidrBlock
+from cloudless.testutils.utils import generate_unique_name
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 NETWORK_BLUEPRINT = os.path.join(SCRIPT_PATH, "network.yml")
@@ -27,8 +26,10 @@ def call_with_retries(function, retry_count, retry_delay):
     """
     logger.debug("Calling function: %s with retry count: %s, retry_delay: %s",
                  function, retry_count, retry_delay)
-    for retry in range(1, int(retry_count) + 1):
+    retry = 0
+    while True:
         logger.info("Attempt number: %s", retry)
+        retry = retry + 1
         try:
             return function()
         # pylint: disable=broad-except
@@ -38,17 +39,6 @@ def call_with_retries(function, retry_count, retry_delay):
             if retry > int(retry_count):
                 logger.info("Exceeded max retries!  Reraising last exception")
                 raise
-    assert False, "Should never get here."
-
-
-def generate_unique_name(base):
-    """
-    Generates a somewhat unique name given "base".
-    """
-    random_length = 10
-    random_string = ''.join(random.choices(string.ascii_lowercase,
-                                           k=random_length))
-    return "%s-%s" % (base, random_string)
 
 def get_blueprint_tester(client, base_dir, fixture_type, fixture_options):
     """
@@ -149,6 +139,7 @@ def setup(client, config):
         "deployment_info": setup_info.deployment_info,
         "blueprint_vars": setup_info.blueprint_vars,
         }
+    state["ssh_username"] = "cloudless_service_test"
     logger.debug("Saving full state: %s", state)
     save_state(state, config_obj)
 
@@ -164,7 +155,7 @@ def setup(client, config):
             "cloudless_test_framework_ssh_username is a parameter reserved by the test "
             "framework and cannot be returned by the test fixture.  Found: %s" % (
                 setup_info.blueprint_vars))
-    setup_info.blueprint_vars["cloudless_test_framework_ssh_username"] = "cloudless"
+    setup_info.blueprint_vars["cloudless_test_framework_ssh_username"] = state["ssh_username"]
 
     logger.debug("Creating services using the blueprint under test")
     service = client.service.create(network, service_name, config_obj.get_blueprint_path(),
@@ -178,7 +169,7 @@ def setup(client, config):
     client.paths.add(internet, service, 22)
 
     logger.debug("Test service instances: %s", client.service.get_instances(service))
-    return (service, private_key_path(config_obj))
+    return (service, state["ssh_username"], private_key_path(config_obj))
 
 def verify(client, config):
     """
@@ -196,7 +187,7 @@ def verify(client, config):
     service = client.service.get(network, state["service_name"])
     blueprint_tester.verify(network, service, setup_info)
     logger.info("Verify successful!")
-    return (service, private_key_path(config_obj))
+    return (service, state["ssh_username"], private_key_path(config_obj))
 
 def teardown(client, config):
     """

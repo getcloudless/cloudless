@@ -70,3 +70,12 @@ class Path:
     destination = attr.ib()
     protocol = attr.ib(type=str)
     port = attr.ib(type=int)
+
+@attr.s
+class Image:
+    """
+    Simple container to hold image information.
+    """
+    name = attr.ib(type=str)
+    image_id = attr.ib(type=str)
+    created_at = attr.ib(type=str)

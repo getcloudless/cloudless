@@ -28,14 +28,21 @@ def add_service_group(cldls):
     @click.argument('network')
     @click.argument('name')
     @click.argument('blueprint')
+    @click.argument('var_file', required=False)
     @click.pass_context
     # pylint:disable=unused-variable
-    def service_create(ctx, network, name, blueprint):
+    def service_create(ctx, network, name, blueprint, var_file=None):
         """
         Create a service in this profile.
         """
+        if var_file:
+            with open(var_file, 'r') as stream:
+                var_file_contents = yaml.load(stream)
+        else:
+            var_file_contents = {}
         network_object = get_network_for_cli(ctx, network)
-        service = ctx.obj['CLIENT'].service.create(network_object, name, blueprint)
+        service = ctx.obj['CLIENT'].service.create(network_object, name, blueprint,
+                                                   var_file_contents)
         click.echo('Created service: %s in network: %s' % (name, network))
 
     @service_group.command(name="list")

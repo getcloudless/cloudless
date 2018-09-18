@@ -5,12 +5,57 @@ import os
 import pytest
 import cloudless
 from cloudless.util.instance_fitter import get_fitting_instance
+from cloudless.util.blueprint import ServiceBlueprint
 
+LARGE_INSTANCE_BLUEPRINT = """
+---
+network:
+  subnetwork_max_instance_count: 768
 
-BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "instance_fitter_blueprints")
-SMALL_INSTANCE_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "instance-fitter-small.yml")
-LARGE_INSTANCE_BLUEPRINT = os.path.join(BLUEPRINTS_DIR, "instance-fitter-large.yml")
+placement:
+  availability_zones: 3
 
+instance:
+  public_ip: True
+  memory: 16GB
+  cpus: 4
+  gpu: false
+  disks:
+    - size: 8GB
+      type: standard
+      device_name: /dev/sda1
+
+image:
+  name: "N/A - only to test instance fitter"
+
+initialization:
+  - path: "N/A - only to test instance fitter"
+"""
+
+SMALL_INSTANCE_BLUEPRINT = """
+---
+network:
+  subnetwork_max_instance_count: 768
+
+placement:
+  availability_zones: 3
+
+instance:
+  public_ip: True
+  memory: 2GB
+  cpus: 1
+  gpu: false
+  disks:
+    - size: 8GB
+      type: standard
+      device_name: /dev/sda1
+
+image:
+  name: "N/A - only to test instance fitter"
+
+initialization:
+  - path: "N/A - only to test instance fitter"
+"""
 
 def run_instance_fitter_test(provider, credentials):
     """
@@ -22,11 +67,15 @@ def run_instance_fitter_test(provider, credentials):
 
     # If no memory, cpu, or storage is passed in, find the cheapest.
     if provider == "aws":
-        assert get_fitting_instance(client.service, SMALL_INSTANCE_BLUEPRINT) == "t2.small"
-        assert get_fitting_instance(client.service, LARGE_INSTANCE_BLUEPRINT) == "m4.xlarge"
+        assert get_fitting_instance(client.service,
+                                    ServiceBlueprint(SMALL_INSTANCE_BLUEPRINT)) == "t2.small"
+        assert get_fitting_instance(client.service,
+                                    ServiceBlueprint(LARGE_INSTANCE_BLUEPRINT)) == "m4.xlarge"
     if provider == "gce":
-        assert get_fitting_instance(client.service, SMALL_INSTANCE_BLUEPRINT) == "n1-highcpu-4"
-        assert get_fitting_instance(client.service, LARGE_INSTANCE_BLUEPRINT) == "n1-highmem-4"
+        assert get_fitting_instance(client.service,
+                                    ServiceBlueprint(SMALL_INSTANCE_BLUEPRINT)) == "n1-highcpu-4"
+        assert get_fitting_instance(client.service,
+                                    ServiceBlueprint(LARGE_INSTANCE_BLUEPRINT)) == "n1-highmem-4"
 
 @pytest.mark.aws
 def test_instance_fitter_aws():

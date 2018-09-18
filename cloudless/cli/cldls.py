@@ -8,9 +8,10 @@ from click_repl import register_repl
 from cloudless.cli.init import add_init_group
 from cloudless.cli.network import add_network_group
 from cloudless.cli.service import add_service_group
+from cloudless.cli.service_test import add_service_test_group
 from cloudless.cli.paths import add_paths_group
 from cloudless.cli.image import add_image_group
-from cloudless.cli.blueprint import add_blueprint_group
+from cloudless.cli.image_build import add_image_build_group
 from cloudless.cli.utils import NaturalOrderGroup
 import cloudless
 
@@ -48,8 +49,9 @@ def get_cldls():
     add_init_group(cldls)
     add_network_group(cldls)
     add_service_group(cldls)
+    add_service_test_group(cldls)
     add_paths_group(cldls)
     add_image_group(cldls)
-    add_blueprint_group(cldls)
+    add_image_build_group(cldls)
     register_repl(cldls)
     return cldls
