@@ -87,9 +87,9 @@ dotfile you don't commit to version control.  Note the credentials file is in
 JSON format:
 
 ```shell
-export BUTTER_GCE_USER_ID="sverch-cloudless@cloudless-000000.iam.gserviceaccount.com"
-export BUTTER_GCE_CREDENTIALS_PATH="/home/sverch/.gce/credentials.json"
-export BUTTER_GCE_PROJECT_NAME="cloudless-000000"
+export CLOUDLESS_GCE_USER_ID="sverch-cloudless@cloudless-000000.iam.gserviceaccount.com"
+export CLOUDLESS_GCE_CREDENTIALS_PATH="/home/sverch/.gce/credentials.json"
+export CLOUDLESS_GCE_PROJECT_NAME="cloudless-000000"
 ```
 
 Then, you can run these commands in a python shell to create a GCE client:
@@ -98,9 +98,9 @@ Then, you can run these commands in a python shell to create a GCE client:
 import cloudless
 import os
 client = cloudless.Client("gce", credentials={
-    "user_id": os.environ['BUTTER_GCE_USER_ID'],
-    "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
-    "project": os.environ['BUTTER_GCE_PROJECT_NAME']})
+    "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
+    "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
+    "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
 ```
 
 ### Amazon Web Services Client
@@ -304,25 +304,60 @@ provider since it will be running in a different process.
 ## Blueprint Tester
 
 This project also provides a framework to help test that blueprint files work as
-expected.
+expected.  The framework will create, verify, and clean up the service under
+test.  It also spins up all dependent services so you can test services "in
+context".  It's sort of a hybrid between a unit test and an integration test.
 
-Example (cloudless must be installed):
+These examples assume you are using a profile called "gce" that is configured
+with the `gce` provider, but there are other example blueprints in
+[`example-blueprints`](example-blueprints) that you can use AWS to test.  They
+are currently different because the different cloud providers provide different
+base images.
+
+First, to create the service:
 
 ```shell
-cloudless-test --provider aws --blueprint_dir example-blueprints/haproxy run
+$ cldls --profile gce blueprint create example-blueprints/gce-apache/blueprint-test-configuration.yml
+Creation complete!
+To log in, run:
+ssh -i example-blueprints/gce-apache/id_rsa_test cloudless@35.237.12.140
+$ ssh -i example-blueprints/gce-apache/id_rsa_test cloudless@35.237.12.140
+...
+...
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+cloudless@test-network-jmeiwknbsg-test-service-hswonxmeda-0:~$ 
 ```
 
-Run `cloudless-test` with no arguments for usage.
+This will create a temporary network to sandbox the test.  Now, to verify that
+the service is behaving as expected:
 
-This runner tries to import `blueprint_fixture.BlueprintTest` from the root of
-your blueprint directory.  This must be a class that inherits from
-`cloudless.testutils.fixture.BlueprintTestInterface` and implements all the
-required methods.  See the documentation on that class for usage details.
+```shell
+$ cldls --profile gce blueprint verify example-blueprints/gce-apache/blueprint-test-configuration.yml
+INFO:cloudless.providers.gce:Discovering subnetwork test-network-jmeiwknbsg, test-service-hswonxmeda
+INFO:cloudless.util:Attempt number: 1
+INFO:cloudless.util:Verify successful!
+Verify complete!
+To log in, run:
+ssh -i example-blueprints/gce-apache/id_rsa_test cloudless@35.237.12.140
+```
 
-The runner expects the blueprint file that you are testing to be name
-`blueprint.yml` in the blueprint directory.
+Finally, to clean up everything:
 
-See [example-blueprints](example-blueprints) for all examples.
+```shell
+$ cldls --profile gce blueprint cleanup example-blueprints/gce-apache/blueprint-test-configuration.yml
+```
+
+If you want to run all the previous steps all together, you can run:
+
+```shell
+$ cldls --profile gce blueprint test example-blueprints/gce-apache/blueprint-test-configuration.yml
+```
+
+See [example-blueprints](example-blueprints) for examples of how to set up a
+blueprint to be testable with this framework.
 
 ## Testing
 
@@ -340,5 +375,5 @@ tox -e gce
 tox -e aws
 ```
 
-For GCE, you must set `BUTTER_GCE_USER_ID`, `BUTTER_GCE_CREDENTIALS_PATH`, and
-`BUTTER_GCE_PROJECT_NAME` as described above.
+For GCE, you must set `CLOUDLESS_GCE_USER_ID`, `CLOUDLESS_GCE_CREDENTIALS_PATH`, and
+`CLOUDLESS_GCE_PROJECT_NAME` as described above.

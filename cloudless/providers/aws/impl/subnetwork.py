@@ -81,8 +81,7 @@ class SubnetworkClient:
         subnet_ids = [subnet_info.subnetwork_id for subnet_info
                       in self.get(network, subnetwork_name)]
         for subnet_id in subnet_ids:
-            subnet_filter = {'Name': 'association.subnet-id',
-                             'Values': [subnet_id]}
+            subnet_filter = {'Name': 'association.subnet-id', 'Values': [subnet_id]}
             route_tables = ec2.describe_route_tables(Filters=[subnet_filter])
             if len(route_tables["RouteTables"]) != 1:
                 raise Exception("Expected to find exactly one route table: %s"
@@ -96,14 +95,14 @@ class SubnetworkClient:
         """
         Get a subnetwork group in "network" named "subnetwork_name".
         """
-        ec2 = self.driver.client("ec2")
-        dc_id = network.network_id
-        subnets = ec2.describe_subnets(Filters=[{'Name': "vpc-id",
-                                                 'Values': [dc_id]},
-                                                {'Name': "tag:Name",
-                                                 'Values': [subnetwork_name]}])
-        return [canonicalize_subnetwork_info(None, subnet, [])
-                for subnet in subnets["Subnets"]]
+        logger.debug("Getting subnet %s in network %s", subnetwork_name, network)
+        subnetworks = self.list()
+        for network_name, subnetwork_info in subnetworks.items():
+            if network_name != network.name:
+                continue
+            if subnetwork_name in subnetwork_info["subnetworks"]:
+                return subnetwork_info["subnetworks"][subnetwork_name]
+        return None
 
     def destroy(self, network, subnetwork_name):
         """
@@ -192,16 +191,39 @@ class SubnetworkClient:
                     return tag["Value"]
             return None
 
+        # 1. List all VPCs and subnets
         subnet_info = {}
         subnets = ec2.describe_subnets()
+        networks = self.network.list()
+        networks_by_id = {}
+
+        # 2. Key networks by ID
+        for network in networks:
+            networks_by_id[network.network_id] = network
+
+        # 3. Group subnets by network
         for subnet in subnets["Subnets"]:
-            vpcs = ec2.describe_vpcs(VpcIds=[subnet["VpcId"]])
-            vpc_name = get_name(vpcs["Vpcs"][0])
+
+            # 3.a. Get the network for this subnet
+            if subnet["VpcId"] not in networks_by_id:
+                raise BadEnvironmentStateException(
+                    "Found subnet with VPC ID %s not in %s" % (subnet["VpcId"], networks_by_id))
+            network = networks_by_id[subnet["VpcId"]]
+
+            # 3.b. Add this network to the result hash if it's not there
+            if network.name not in subnet_info:
+                subnet_info[network.name] = {"network":network, "subnetworks":{}}
+
+            # 3.c. Get subnetwork group name and add empty list if this is the first
             subnet_name = get_name(subnet)
-            if vpc_name not in subnet_info:
-                subnet_info[vpc_name] = {}
-            if subnet_name not in subnet_info[vpc_name]:
-                subnet_info[vpc_name][subnet_name] = []
-            subnet_info[vpc_name][subnet_name].append(
-                canonicalize_subnetwork_info(None, subnet, []))
+            if not subnet_name:
+                continue
+            if subnet_name not in subnet_info[network.name]["subnetworks"]:
+                subnet_info[network.name]["subnetworks"][subnet_name] = []
+
+            # 3.d. Add this subnetwork to the subnetwork group
+            subnet_info[network.name]["subnetworks"][subnet_name].append(
+                canonicalize_subnetwork_info(subnet_name, subnet, []))
+
+        logger.debug("Returning subnet_info: %s", subnet_info)
         return subnet_info

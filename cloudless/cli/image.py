@@ -3,6 +3,7 @@ Cloudless image command line interface.
 """
 import click
 from cloudless.cli.utils import NaturalOrderAliasedGroup
+from cloudless.cli.utils import handle_profile_for_cli
 
 def add_image_group(cldls):
     """
@@ -17,7 +18,8 @@ def add_image_group(cldls):
 
         Commands to interact with machine images.
         """
-        click.echo('image group with profile: %s' % ctx.obj['PROFILE'])
+        handle_profile_for_cli(ctx)
+        click.echo('image group with provider: %s' % ctx.obj['PROVIDER'])
         ctx.obj['DEV'] = dev
 
     @image_group.command(name="build")

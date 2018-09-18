@@ -4,6 +4,7 @@ Cloudless paths command line interface.
 import click
 import cloudless
 from cloudless.cli.utils import NaturalOrderAliasedGroup
+from cloudless.cli.utils import handle_profile_for_cli, get_service_for_cli
 
 # pylint:disable=too-many-statements
 def add_paths_group(cldls):
@@ -18,12 +19,8 @@ def add_paths_group(cldls):
 
         Commands to interact with paths, which are allowed connections between services.
         """
-        profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
-        ctx.obj['PROVIDER'] = profile["provider"]
-        ctx.obj['CREDENTIALS'] = profile["credentials"]
+        handle_profile_for_cli(ctx)
         click.echo('Paths group with provider: %s' % ctx.obj['PROVIDER'])
-        ctx.obj['CLIENT'] = cloudless.Client(provider=ctx.obj['PROVIDER'],
-                                             credentials=ctx.obj['CREDENTIALS'])
 
     @paths_group.command(name="allow_service")
     @click.argument('network')
@@ -36,9 +33,8 @@ def add_paths_group(cldls):
         """
         Allow access from service to service.  These must be names of services in the same network.
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
-        source_service = ctx.obj['CLIENT'].service.get(network_object, source)
-        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        source_service = get_service_for_cli(ctx, network, source)
+        destination_service = get_service_for_cli(ctx, network, destination)
         ctx.obj['CLIENT'].paths.add(source_service, destination_service, port)
         click.echo('Added path from %s to %s in network %s for port %s' % (source, destination,
                                                                            network, port))
@@ -57,9 +53,8 @@ def add_paths_group(cldls):
 
         For example, pass 0,0.0.0/0 to allow all addresses on the internet.
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
         source_block = cloudless.paths.CidrBlock(source)
-        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        destination_service = get_service_for_cli(ctx, network, destination)
         ctx.obj['CLIENT'].paths.add(source_block, destination_service, port)
         click.echo('Added path from %s to %s in network %s for port %s' % (source, destination,
                                                                            network, port))
@@ -75,9 +70,8 @@ def add_paths_group(cldls):
         """
         Revoke access from service to service.  These must be names of services in the same network.
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
-        source_service = ctx.obj['CLIENT'].service.get(network_object, source)
-        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        source_service = get_service_for_cli(ctx, network, source)
+        destination_service = get_service_for_cli(ctx, network, destination)
         ctx.obj['CLIENT'].paths.remove(source_service, destination_service, port)
         click.echo('Removed path from %s to %s in network %s for port %s' % (source, destination,
                                                                              network, port))
@@ -97,9 +91,8 @@ def add_paths_group(cldls):
         For example, pass 0,0.0.0/0 to revoke all addresses on the internet.  Does not revoke access
         for internal services.  Use the "revoke_service" command for that.
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
         source_block = cloudless.paths.CidrBlock(source)
-        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        destination_service = get_service_for_cli(ctx, network, destination)
         ctx.obj['CLIENT'].paths.remove(source_block, destination_service, port)
         click.echo('Removed path from %s to %s in network %s for port %s' % (source, destination,
                                                                              network, port))
@@ -115,9 +108,8 @@ def add_paths_group(cldls):
         """
         Can this service access this service?
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
-        source_service = ctx.obj['CLIENT'].service.get(network_object, source)
-        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        source_service = get_service_for_cli(ctx, network, source)
+        destination_service = get_service_for_cli(ctx, network, destination)
         if ctx.obj['CLIENT'].paths.has_access(source_service, destination_service, port):
             click.echo('Service %s has access to %s in network %s on port %s' % (
                 source, destination, network, port))
@@ -136,9 +128,8 @@ def add_paths_group(cldls):
         """
         Can this network block access this service?
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
         source_block = cloudless.paths.CidrBlock(source)
-        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        destination_service = get_service_for_cli(ctx, network, destination)
         if ctx.obj['CLIENT'].paths.has_access(source_block, destination_service, port):
             click.echo('Network %s has access to %s in network %s on port %s' % (
                 source, destination, network, port))
@@ -156,8 +147,7 @@ def add_paths_group(cldls):
         """
         Is this service reachable from the internet?
         """
-        network_object = ctx.obj['CLIENT'].network.get(network)
-        destination_service = ctx.obj['CLIENT'].service.get(network_object, destination)
+        destination_service = get_service_for_cli(ctx, network, destination)
         if ctx.obj['CLIENT'].paths.internet_accessible(destination_service, port):
             click.echo('Service %s in network %s is internet accessible on port %s' % (
                 destination, network, port))

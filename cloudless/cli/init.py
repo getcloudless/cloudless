@@ -29,8 +29,8 @@ def add_init_group(cldls):
             click.echo(('And create a service account.  "user_id" is the email, '
                         '"key" is the JSON key file you must create, '
                         'and "project" is the project id (not the project name).'))
-            credentials["user_id"] = click.prompt('Please enter gce user id', type=str)
-            credentials["key"] = click.prompt('Please enter path to gce key file', type=str)
-            credentials["project"] = click.prompt('Please enter gce project name', type=str)
+            credentials["user_id"] = click.prompt('Please enter gce user id', type=str).strip()
+            credentials["key"] = click.prompt('Please enter path to gce key file', type=str).strip()
+            credentials["project"] = click.prompt('Please enter gce project name', type=str).strip()
         cloudless.profile.save_profile(ctx.obj['PROFILE'], {"provider": provider,
                                                             "credentials": credentials})

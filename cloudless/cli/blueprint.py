@@ -1,8 +1,15 @@
 """
 Cloudless blueprint command line interface.
 """
+import sys
+import os
 import click
 from cloudless.cli.utils import NaturalOrderAliasedGroup
+from cloudless.testutils.blueprint_tester import setup as do_setup
+from cloudless.testutils.blueprint_tester import verify as do_verify
+from cloudless.testutils.blueprint_tester import teardown as do_teardown
+from cloudless.testutils.blueprint_tester import run_all
+from cloudless.cli.utils import handle_profile_for_cli
 
 def add_blueprint_group(cldls):
     """
@@ -15,62 +22,79 @@ def add_blueprint_group(cldls):
         """
         Blueprint testing framework.
 
-        Commands to interact with machine blueprints.
+        Helper to test blueprints, run create, verify, and cleanup.  Saves deployment state into
+        <config_path>/blueprint-test-state.json.
         """
-        click.echo('blueprint group with profile: %s' % ctx.obj['PROFILE'])
         ctx.obj['DEV'] = dev
+        handle_profile_for_cli(ctx)
+        click.echo('Blueprint group with provider: %s' % ctx.obj['PROVIDER'])
+
+    @blueprint_group.command(name="create")
+    @click.argument('config')
+    @click.pass_context
+    # pylint:disable=unused-variable
+    def blueprint_create(ctx, config):
+        """
+        Create test service from blueprint.
+
+        Config must be the path to a test configuration file.
+        """
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        service, private_key_path = do_setup(ctx.obj['CLIENT'], config)
+        click.echo("Creation complete!")
+        click.echo("To log in, run:")
+        for instance in ctx.obj['CLIENT'].service.get_instances(service):
+            click.echo("ssh -i %s cloudless@%s" % (private_key_path, instance.public_ip))
+
+    @blueprint_group.command(name="verify")
+    @click.argument('config')
+    @click.pass_context
+    # pylint:disable=unused-variable
+    def blueprint_verify(ctx, config):
+        """
+        Verify test service is behaving as expected.
+
+        Config must be the path to a test configuration file.
+        """
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        service, private_key_path = do_verify(ctx.obj['CLIENT'], config)
+        click.echo("Verify complete!")
+        click.echo("To log in, run:")
+        for instance in ctx.obj['CLIENT'].service.get_instances(service):
+            click.echo("ssh -i %s cloudless@%s" % (private_key_path, instance.public_ip))
+
+    @blueprint_group.command(name="cleanup")
+    @click.argument('config')
+    @click.pass_context
+    # pylint:disable=unused-variable
+    def blueprint_cleanup(ctx, config):
+        """
+        Cleanup test service.
+
+        Config must be the path to a test configuration file.
+        """
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        do_teardown(ctx.obj['CLIENT'], config)
+        click.echo("Cleanup complete!")
 
     @blueprint_group.command(name="test")
-    @click.argument('configuration')
+    @click.argument('config')
     @click.pass_context
     # pylint:disable=unused-variable
-    def blueprint_build(ctx, configuration):
+    def blueprint_test(ctx, config):
         """
-        Test an blueprint given a configuration file.  Runs all steps in order.
-        """
-        click.echo('blueprint group test with profile: %s, configuration: %s' % (ctx.obj['PROFILE'],
-                                                                                 configuration))
+        Run create, verify, and cleanup.
 
-    @blueprint_group.command(name="provision")
-    @click.argument('configuration')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def blueprint_provision(ctx, configuration):
+        Config must be the path to a test configuration file.
         """
-        provision an blueprint given a configuration file.
-        """
-        click.echo('blueprint group provision with profile: %s, configuration: %s' % (
-            ctx.obj['PROFILE'], configuration))
-
-    @blueprint_group.command(name="configure")
-    @click.argument('configuration')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def blueprint_configure(ctx, configuration):
-        """
-        configure an blueprint given a configuration file.
-        """
-        click.echo('blueprint group configure with profile: %s, configuration: %s' % (
-            ctx.obj['PROFILE'], configuration))
-
-    @blueprint_group.command(name="validate")
-    @click.argument('configuration')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def blueprint_validate(ctx, configuration):
-        """
-        validate an blueprint given a configuration file.
-        """
-        click.echo('blueprint group validate with profile: %s, configuration: %s' % (
-            ctx.obj['PROFILE'], configuration))
-
-    @blueprint_group.command(name="list")
-    @click.argument('configuration')
-    @click.pass_context
-    # pylint:disable=unused-variable
-    def blueprint_list(ctx, configuration):
-        """
-        List blueprints given a configuration file.
-        """
-        click.echo('blueprint group list with profile: %s, configuration: %s' % (ctx.obj['PROFILE'],
-                                                                                 configuration))
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        run_all(ctx.obj['CLIENT'], config)
+        click.echo("Full test run complete!")

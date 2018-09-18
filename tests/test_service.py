@@ -1,6 +1,7 @@
 """
 Test for instance management.
 """
+import logging
 import ipaddress
 import os
 import pytest
@@ -10,15 +11,13 @@ import cloudless
 from cloudless.types.common import Service
 from cloudless.testutils.blueprint_tester import generate_unique_name
 
-EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
-                                      "..",
-                                      "example-blueprints")
-NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                 "network", "blueprint.yml")
-AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                     "aws-nginx", "blueprint.yml")
-GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                     "gce-apache", "blueprint.yml")
+EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__), "..", "example-blueprints")
+NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "network", "blueprint.yml")
+AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "aws-nginx", "blueprint.yml")
+GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR, "gce-apache", "blueprint.yml")
+
+# Set debug logging
+cloudless.set_level(logging.DEBUG)
 
 # pylint: disable=too-many-locals,too-many-statements
 def run_instances_test(provider, credentials):
@@ -190,6 +189,6 @@ def test_instances_gce():
     Run tests against real GCE (environment variables below must be set).
     """
     run_instances_test(provider="gce", credentials={
-        "user_id": os.environ['BUTTER_GCE_USER_ID'],
-        "key": os.environ['BUTTER_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['BUTTER_GCE_PROJECT_NAME']})
+        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
+        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
+        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})

@@ -120,7 +120,9 @@ class ServiceBlueprint(Blueprint):
                 raise BlueprintException(
                     "Unrecognized Template Variable: \"%s\"." %
                     (template_var))
-        return handle_initialization_block(self.blueprint["initialization"][0])
+        rendered_runtime_scripts = handle_initialization_block(self.blueprint["initialization"][0])
+        logger.debug("Rendered runtime scripts: %s", rendered_runtime_scripts)
+        return rendered_runtime_scripts
 
     def public_ip(self):
         """

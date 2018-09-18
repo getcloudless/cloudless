@@ -119,6 +119,8 @@ class ServiceClient:
                 if retries > RETRY_COUNT:
                     raise OperationTimedOut("Timed out waiting for ASG to be created")
                 time.sleep(RETRY_DELAY)
+            logger.info("Success!  %s of %s instances running.", len(instance_list(asg, state)),
+                        instance_count)
         wait_until("running")
 
         return self.get(network, service_name)
@@ -127,14 +129,30 @@ class ServiceClient:
         """
         List all instance groups.
         """
-        autoscaling = self.driver.client("autoscaling")
-        asgs = autoscaling.describe_auto_scaling_groups()
         services = []
-        for asg in asgs["AutoScalingGroups"]:
-            asg_name = AsgName(name_string=asg["AutoScalingGroupName"])
-            if asg_name.network:
-                services.append(self.get(self.network.get(asg_name.network), asg_name.subnetwork))
+        subnetworks = self.subnetwork.list()
+        for network_name, subnetwork_info in subnetworks.items():
+            for subnetwork_name, _ in subnetwork_info["subnetworks"].items():
+                services.append(self.get(self.network.get(network_name), subnetwork_name))
         return services
+
+    def _discover_asg(self, network_name, service_name):
+        """
+        Discover an autoscaling group given a network and service name.
+        """
+        autoscaling = self.driver.client("autoscaling")
+        logger.debug("Discovering auto scaling groups with name: %s", service_name)
+        asg_name = AsgName(network=network_name, subnetwork=service_name)
+        asgs = autoscaling.describe_auto_scaling_groups(
+            AutoScalingGroupNames=[str(asg_name)])
+        logger.debug("Found asgs: %s", asgs)
+        if len(asgs["AutoScalingGroups"]) > 1:
+            raise BadEnvironmentStateException(
+                "Expected to find at most one auto scaling group "
+                "named: %s, output: %s" % (str(asg_name), asgs))
+        if not asgs["AutoScalingGroups"]:
+            return None
+        return asgs["AutoScalingGroups"][0]
 
     def get(self, network, service_name):
         """
@@ -143,23 +161,10 @@ class ServiceClient:
         logger.debug("Discovering autoscaling group named %s in network: %s",
                      service_name, network)
 
-        def discover_asg(network_name, service_name):
-            autoscaling = self.driver.client("autoscaling")
-            logger.debug("Discovering auto scaling groups with name: %s",
-                         service_name)
-            asg_name = AsgName(network=network_name, subnetwork=service_name)
-            asgs = autoscaling.describe_auto_scaling_groups(
-                AutoScalingGroupNames=[str(asg_name)])
-            logger.debug("Found asgs: %s", asgs)
-            if len(asgs["AutoScalingGroups"]) > 1:
-                raise BadEnvironmentStateException(
-                    "Expected to find at most one auto scaling group "
-                    "named: %s, output: %s" % (str(asg_name), asgs))
-            if not asgs["AutoScalingGroups"]:
-                return None
-            return asgs["AutoScalingGroups"][0]
-
         def discover_instances(instance_ids):
+            """
+            Given instance IDs get the actual instance data for them.
+            """
             ec2 = self.driver.client("ec2")
             logger.debug("Discovering instances: %s", instance_ids)
             instances = {"Reservations": []}
@@ -170,56 +175,65 @@ class ServiceClient:
                     for reservation in instances["Reservations"]
                     for instance in reservation["Instances"]]
 
-        # 1. Get List Of Instances
-        discovery_retries = 0
-        discovery_complete = False
-        while discovery_retries < RETRY_COUNT:
-            try:
-                asg = discover_asg(network.name, service_name)
-                if not asg:
-                    return None
-                instance_ids = [instance["InstanceId"] for instance in asg["Instances"]]
-                instances = discover_instances(instance_ids)
-                logger.debug("Discovered instances: %s", instances)
-                discovery_complete = True
-            except ClientError as client_error:
-                # There is a race between when I discover the autoscaling group
-                # itself and when I try to search for the instances inside it,
-                # so just retry if this happens.
-                logger.debug("Recieved exception discovering instance: %s", client_error)
-                if client_error.response["Error"]["Code"] == "InvalidInstanceID.NotFound":
-                    pass
-                else:
-                    raise
+        def add_instances_to_subnetwork_list(network, service_name, subnetworks):
+            """
+            Add the instances for this service to the list of subnetworks.  Returns the same
+            subnetwork list with the instances added.
+            """
+            # 1. Get List Of Instances.
+            discovery_retries = 0
+            discovery_complete = False
+            while discovery_retries < RETRY_COUNT:
+                try:
+                    asg = self._discover_asg(network.name, service_name)
+                    if not asg:
+                        return subnetworks
+                    instance_ids = [instance["InstanceId"] for instance in asg["Instances"]]
+                    instances = discover_instances(instance_ids)
+                    logger.debug("Discovered instances: %s", instances)
+                    discovery_complete = True
+                except ClientError as client_error:
+                    # There is a race between when I discover the autoscaling group
+                    # itself and when I try to search for the instances inside it,
+                    # so just retry if this happens.
+                    logger.debug("Recieved exception discovering instance: %s", client_error)
+                    if client_error.response["Error"]["Code"] == "InvalidInstanceID.NotFound":
+                        pass
+                    else:
+                        raise
 
-            if discovery_complete:
-                break
-            discovery_retries = discovery_retries + 1
-            logger.debug("Instance discovery retry number: %s",
-                         discovery_retries)
-            if discovery_retries >= RETRY_COUNT:
-                raise OperationTimedOut(
-                    "Exceeded retries while discovering %s, in network %s" %
-                    (service_name, network))
-            time.sleep(RETRY_DELAY)
+                if discovery_complete:
+                    break
+                discovery_retries = discovery_retries + 1
+                logger.debug("Instance discovery retry number: %s", discovery_retries)
+                if discovery_retries >= RETRY_COUNT:
+                    raise OperationTimedOut(
+                        "Exceeded retries while discovering %s, in network %s" %
+                        (service_name, network))
+                time.sleep(RETRY_DELAY)
 
-        # 2. Get List Of Subnets
-        subnetworks = self.subnetwork.get(network, service_name)
-
-        # NOTE: In moto instance objects do not include a "SubnetId" and the IP addresses are
-        # assigned randomly in the VPC, so for now just stripe instances across subnets.
-        if self.mock:
-            for instance, subnetwork, in zip(instances, itertools.cycle(subnetworks)):
-                subnetwork.instances.append(canonicalize_instance_info(instance))
-            return Service(network=network, name=service_name, subnetworks=subnetworks)
-
-        # 3. Group Services By Subnet
-        for subnetwork in subnetworks:
-            for instance in instances:
-                if "SubnetId" in instance and subnetwork.subnetwork_id == instance["SubnetId"]:
+            # 2. Add instances to subnets.
+            # NOTE: In moto instance objects do not include a "SubnetId" and the IP addresses are
+            # assigned randomly in the VPC, so for now just stripe instances across subnets.
+            if self.mock:
+                for instance, subnetwork, in zip(instances, itertools.cycle(subnetworks)):
                     subnetwork.instances.append(canonicalize_instance_info(instance))
+                return subnetworks
+            for subnetwork in subnetworks:
+                for instance in instances:
+                    if "SubnetId" in instance and subnetwork.subnetwork_id == instance["SubnetId"]:
+                        subnetwork.instances.append(canonicalize_instance_info(instance))
+            return subnetworks
 
-        # 4. Profit!
+        # 1. Get List Of subnetworks.  The service exists iff this exists.
+        subnetworks = self.subnetwork.get(network, service_name)
+        if not subnetworks:
+            return None
+
+        # 2. Add instances to subnetworks.
+        subnetworks = add_instances_to_subnetwork_list(network, service_name, subnetworks)
+
+        # 3. Profit!
         return Service(network=network, name=service_name, subnetworks=subnetworks)
 
 
@@ -230,7 +244,9 @@ class ServiceClient:
         logger.debug("Attempting to destroy: %s", service)
         asg_name = AsgName(network=service.network.name, subnetwork=service.name)
 
-        self.asg.destroy_auto_scaling_group_instances(asg_name)
+        asg = self._discover_asg(service.network.name, service.name)
+        if asg:
+            self.asg.destroy_auto_scaling_group_instances(asg_name)
 
         # Wait for instances to be gone.  Need to do this before we can delete
         # the actual ASG otherwise it will error.
@@ -239,27 +255,31 @@ class ServiceClient:
                     for instance in subnetwork.instances
                     if instance.state != state]
 
-        asg = self.get(service.network, service.name)
+        service = self.get(service.network, service.name)
+        logger.debug("Found service: %s", service)
         retries = 0
-        while asg and instance_list(asg, "terminated"):
+        while service and instance_list(service, "terminated"):
             logger.info("Waiting for instance termination in service %s.  %s still terminating",
-                        service.name, len(instance_list(asg, "terminated")))
-            logger.debug("Waiting for instance termination in asg: %s", asg)
-            asg = self.get(service.network, service.name)
+                        service.name, len(instance_list(service, "terminated")))
+            logger.debug("Waiting for instance termination in asg: %s", service)
+            service = self.get(service.network, service.name)
             retries = retries + 1
             if retries > RETRY_COUNT:
                 raise OperationTimedOut("Timed out waiting for ASG scale down")
             time.sleep(RETRY_DELAY)
+        logger.info("Success!  All instances terminated.")
 
-        self.asg.destroy_auto_scaling_group(asg_name)
+        asg = self._discover_asg(service.network.name, service.name)
+        if asg:
+            self.asg.destroy_auto_scaling_group(asg_name)
 
-        # Wait for ASG to be gone.  Need to wait for this because it's a
-        # dependency of the launch configuration.
-        asg = self.get(service.network, service.name)
+        # Wait for ASG to be gone.  Need to wait for this because it's a dependency of the launch
+        # configuration.
+        asg = self._discover_asg(service.network.name, service.name)
         retries = 0
         while asg:
             logger.debug("Waiting for asg deletion: %s", asg)
-            asg = self.get(service.network, service.name)
+            asg = self._discover_asg(service.network.name, service.name)
             retries = retries + 1
             if retries > RETRY_COUNT:
                 raise OperationTimedOut("Timed out waiting for ASG deletion")
@@ -267,14 +287,17 @@ class ServiceClient:
 
         vpc_id = service.network.network_id
         lc_security_group = self.asg.get_launch_configuration_security_group(
-            service.network, service.name)
+            service.network.name, service.name)
         self.asg.destroy_launch_configuration(asg_name)
         if lc_security_group:
+            logger.debug("Deleting referencing rules of sg: %s", lc_security_group)
             self.security_groups.delete_referencing_rules(vpc_id,
                                                           lc_security_group)
+            logger.debug("Attempting to delete sg: %s", lc_security_group)
             self.security_groups.delete_with_retries(lc_security_group,
                                                      RETRY_COUNT, RETRY_DELAY)
         else:
+            logger.debug("Attempting to delete sg by name: %s", str(asg_name))
             self.security_groups.delete_by_name(vpc_id, str(asg_name),
                                                 RETRY_COUNT, RETRY_DELAY)
 
