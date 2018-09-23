@@ -40,7 +40,7 @@ class SubnetworkClient:
 
         # Provision subnets across zones
         subnets_info = []
-        instances_blueprint = ServiceBlueprint(blueprint)
+        instances_blueprint = ServiceBlueprint.from_file(blueprint)
         max_count = instances_blueprint.max_count()
         prefix = 32 - int(math.log(max_count, 2))
         region = DEFAULT_REGION
@@ -124,9 +124,9 @@ class SubnetworkClient:
         existing_cidrs = [subnet.cidr for subnet in existing_subnets]
 
         if blueprint:
-            network_blueprint = NetworkBlueprint(blueprint)
+            network_blueprint = NetworkBlueprint.from_file(blueprint)
         else:
-            network_blueprint = NetworkBlueprint(None, "")
+            network_blueprint = NetworkBlueprint("")
         allowed_private_cidr = network_blueprint.get_allowed_private_cidr()
         subnets = generate_subnets(allowed_private_cidr, existing_cidrs, prefix, count)
         if len(subnets) < count:

@@ -1,2 +1,0 @@
-[packages]
-cloudless = {git = "https://github.com/sverch/cloudless", ref = "master", editable = true}

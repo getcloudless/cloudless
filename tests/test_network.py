@@ -9,8 +9,7 @@ from cloudless.types.common import Network
 from cloudless.testutils.blueprint_tester import generate_unique_name
 
 EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
-                                      "..",
-                                      "example-blueprints")
+                                      "..", "examples")
 NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
                                  "network", "blueprint.yml")
 

@@ -42,7 +42,7 @@ class SubnetworkClient:
         """
         # 1. Create subnets across availability zones.
         subnets_info = []
-        instances_blueprint = ServiceBlueprint(blueprint)
+        instances_blueprint = ServiceBlueprint.from_file(blueprint)
         az_count = instances_blueprint.availability_zone_count()
         max_count = instances_blueprint.max_count()
         prefix = 32 - int(math.log(max_count / az_count, 2))

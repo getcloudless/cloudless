@@ -6,10 +6,9 @@ Implementation of some common helpers necessary to work with ASGs.
 """
 
 from botocore.exceptions import ClientError
-
-from cloudless.util.exceptions import BadEnvironmentStateException
+from retrying import retry
+from cloudless.util.exceptions import (BadEnvironmentStateException, IncompleteOperationException)
 from cloudless.providers.aws.log import logger
-
 
 # pylint: disable=too-few-public-methods
 class AsgName:
@@ -34,6 +33,11 @@ class AsgName:
     def __str__(self):
         return "%s.%s" % (self.network, self.subnetwork)
 
+def retry_if_still_waiting(exception):
+    """
+    Checks if this exception is just because we haven't converged yet.
+    """
+    return isinstance(exception, IncompleteOperationException)
 
 class ASG:
     """
@@ -122,3 +126,21 @@ class ASG:
                              str(asg_name))
             else:
                 raise client_error
+
+    @retry(wait_fixed=5000, stop_max_attempt_number=36, retry_on_exception=retry_if_still_waiting)
+    def wait_for_in_service(self, asg_name, instance_id):
+        logger.debug("Waiting for %s in %s to be in service", instance_id, asg_name)
+        autoscaling = self.driver.client("autoscaling")
+        asgs = autoscaling.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])
+        if len(asgs["AutoScalingGroups"]) != 1:
+            raise BadEnvironmentStateException(
+                "Found multiple asgs for name %s: %s" % (asg_name, asgs))
+        for instance in asgs["AutoScalingGroups"][0]["Instances"]:
+            if instance["InstanceId"] == instance_id:
+                if instance["LifecycleState"] == "InService":
+                    return True
+                logger.debug("Still waiting for %s in %s to be in service", instance_id,
+                             asg_name)
+                raise IncompleteOperationException("Still waiting for in service")
+        raise BadEnvironmentStateException(
+            "Could not find instance %s in asg: %s" % (instance_id, asgs))

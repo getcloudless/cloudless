@@ -23,6 +23,7 @@ import lazy_import
 network = lazy_import.lazy_module("cloudless.network")
 service = lazy_import.lazy_module("cloudless.service")
 paths = lazy_import.lazy_module("cloudless.paths")
+image = lazy_import.lazy_module("cloudless.image")
 
 
 def set_level(level):
@@ -75,6 +76,7 @@ class Client:
         self.network = network.NetworkClient(provider, credentials)
         self.service = service.ServiceClient(provider, credentials)
         self.paths = paths.PathsClient(provider, credentials)
+        self.image = image.ImageClient(provider, credentials)
 
     # pylint: disable=too-many-locals
     def graph(self):

@@ -15,7 +15,7 @@ class NetworkClient:
 
     def __init__(self, credentials):
         self.network = cloudless.providers.aws.impl.network.NetworkClient(boto3, credentials,
-                                                                          mock=False)
+                                                                          mock=True)
 
     def create(self, name, blueprint):
         """

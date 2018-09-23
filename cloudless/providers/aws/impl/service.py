@@ -50,6 +50,11 @@ class ServiceClient:
         Create a group of instances in "network" named "service_name" with blueprint file at
         "blueprint".
         """
+        # Load the service blueprint first so we check if it's valid.
+        service_blueprint = ServiceBlueprint.from_file(blueprint)
+        runtime_scripts = service_blueprint.runtime_scripts(template_vars)
+
+        # Create the subnet we will deploy into.
         subnet_ids = [subnet_info.subnetwork_id for subnet_info
                       in self.subnetwork.create(network, service_name,
                                                 blueprint=blueprint)]
@@ -73,26 +78,23 @@ class ServiceClient:
                     result_image = image
             return result_image["ImageId"]
 
-        def create_launch_configuration(asg_name, blueprint, template_vars):
-            instances_blueprint = ServiceBlueprint(blueprint, template_vars)
-            ami_id = lookup_ami(instances_blueprint.image())
-            user_data = instances_blueprint.runtime_scripts()
-            associate_public_ip = instances_blueprint.public_ip()
-            instance_type = get_fitting_instance(self, blueprint)
+        def create_launch_configuration(asg_name, service_blueprint, runtime_scripts):
+            ami_id = lookup_ami(service_blueprint.image())
+            associate_public_ip = service_blueprint.public_ip()
+            instance_type = get_fitting_instance(self, service_blueprint)
             autoscaling = self.driver.client("autoscaling")
             autoscaling.create_launch_configuration(
                 LaunchConfigurationName=str(asg_name), ImageId=ami_id,
-                SecurityGroups=[security_group_id], UserData=user_data,
+                SecurityGroups=[security_group_id], UserData=runtime_scripts,
                 AssociatePublicIpAddress=associate_public_ip,
                 InstanceType=instance_type)
-        create_launch_configuration(asg_name, blueprint, template_vars)
+        create_launch_configuration(asg_name, service_blueprint, runtime_scripts)
 
         # Auto Scaling Group
         if count:
             instance_count = count
         else:
-            instances_blueprint = ServiceBlueprint(blueprint, template_vars)
-            instance_count = instances_blueprint.availability_zone_count()
+            instance_count = service_blueprint.availability_zone_count()
         autoscaling = self.driver.client("autoscaling")
         autoscaling.create_auto_scaling_group(
             AutoScalingGroupName=str(asg_name),

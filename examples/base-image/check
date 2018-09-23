@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# An example check script.  This is run by the image build command on the
+# machine that the command is running on.  It will pass "<ssh_username>
+# <instance_ip> <ssh_private_key_path>" to this script in that order.  This
+# script has to handle sshing into the instance and running the checks.
+
+echo "Checking instance!"
+echo "ARGS: $*"
+echo "+ ssh -o StrictHostKeyChecking=no -i \"$3\" \"$1@$2\" uname -a"
+ssh -o StrictHostKeyChecking=no -i "$3" "$1@$2" uname -a
+
+echo "Configuring instance!"
+echo "ARGS: $*"
+
+# Run check here, perhaps by calling serverspec or server validation tool.

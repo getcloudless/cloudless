@@ -53,6 +53,7 @@ REQUIRED = [
     # Even though moto is for testing, need it for the "mock-aws" provider.
     'moto>=1.3.5,<1.4.0',
     'lazy_import>=0.2.2,<0.3.0',
+    'retrying>=1.3.3,<1.4.0',
 ]
 
 # What packages are required for this module to be tested?

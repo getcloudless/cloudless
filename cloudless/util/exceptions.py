@@ -37,3 +37,17 @@ class BlueprintException(Exception):
     Encountered error interpreting Blueprint file.
     """
     pass
+
+
+class BadConfigurationException(Exception):
+    """
+    Encountered error interpreting Configuration file.
+    """
+    pass
+
+
+class IncompleteOperationException(Exception):
+    """
+    This is if we are still waiting for something to happen, normally should retry.
+    """
+    pass

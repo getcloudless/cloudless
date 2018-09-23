@@ -41,9 +41,9 @@ class NetworkClient:
             raise DisallowedOperationException(
                 "Found existing VPC named: %s" % name)
         if blueprint:
-            network_blueprint = NetworkBlueprint(blueprint)
+            network_blueprint = NetworkBlueprint.from_file(blueprint)
         else:
-            network_blueprint = NetworkBlueprint(None, "")
+            network_blueprint = NetworkBlueprint("")
         allocation_blocks = network_blueprint.get_allowed_private_cidr()
         def get_cidr(prefix, address_range_includes, address_range_excludes):
             for address_range_include in address_range_includes:
