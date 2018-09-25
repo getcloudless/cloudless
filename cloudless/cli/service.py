@@ -84,6 +84,8 @@ def add_service_group(cldls):
             has_access_to = ["default-all-outgoing-allowed"]
             is_accessible_from = []
             for path in paths:
+                if path.network.name != service.network.name:
+                    continue
                 if path.destination.name == service.name:
                     if path.source.name:
                         is_accessible_from.append("%s:%s:%s" % (path.network.name, path.source.name,
