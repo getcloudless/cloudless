@@ -54,6 +54,7 @@ REQUIRED = [
     'moto>=1.3.5,<1.4.0',
     'lazy_import>=0.2.2,<0.3.0',
     'retrying>=1.3.3,<1.4.0',
+    'paramiko>=2.4.1,<2.5.0',
 ]
 
 # What packages are required for this module to be tested?
@@ -62,7 +63,6 @@ TESTS_REQUIRED = [
     'pytest-xdist>=1.23.0,<1.24.0',
     'tox>=3.2.1,<3.3.0',
     'pylint>=2.1.1,<2.2.0',
-    'paramiko>=2.4.1,<2.5.0'
 ]
 
 # What packages are optional?
