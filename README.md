@@ -75,12 +75,27 @@ Cloudless.
 
 Once you have the prerequisites, you can create your service with:
 
-```
+```shell
 cldls network create examples/network/blueprint.yml
 cldls service create mynet myservice examples/apache/blueprint.yml
 cldls paths allow_external mynet myservice 0.0.0.0/0 80
 cldls service get mynet myservice
 # Navigate to the "public_ip" of each instance in a browser to see the service.
+```
+
+### Command Line Autocomplete
+
+Since this project uses [click](https://click.palletsprojects.com/en/7.x/),
+autocomplete is built in.  Just follow
+[https://click.palletsprojects.com/en/5.x/bashcomplete/](https://click.palletsprojects.com/en/5.x/bashcomplete/)
+if you use bash or
+[https://github.com/click-contrib/click-completion](https://github.com/click-contrib/click-completion)
+for other shells.
+
+For example, for bash puth this in your .bashrc:
+
+```shell
+eval "$(_CLDLS_COMPLETE=source cldls)"
 ```
 
 ## Client Setup In Python API
