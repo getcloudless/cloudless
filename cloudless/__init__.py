@@ -24,6 +24,9 @@ network = lazy_import.lazy_module("cloudless.network")
 service = lazy_import.lazy_module("cloudless.service")
 paths = lazy_import.lazy_module("cloudless.paths")
 image = lazy_import.lazy_module("cloudless.image")
+model = lazy_import.lazy_module("cloudless.model")
+types = lazy_import.lazy_module("cloudless.types")
+providers = lazy_import.lazy_module("cloudless.providers")
 
 
 def set_level(level):
