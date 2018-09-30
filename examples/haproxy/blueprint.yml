@@ -7,7 +7,7 @@ placement:
 
 instance:
   public_ip: True
-  memory: 4GB
+  memory: 2GB
   cpus: 1
   gpu: false
   disks:
