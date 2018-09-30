@@ -29,7 +29,9 @@ class Firewalls:
                 if tag in firewall.source_tags:
                     logger.info("Deleting firewall %s because of source tag: %s", firewall, tag)
                     self.driver.ex_destroy_firewall(firewall)
+                    continue
             if firewall.target_tags:
                 if tag in firewall.target_tags:
                     logger.info("Deleting firewall %s because of target tag: %s", firewall, tag)
                     self.driver.ex_destroy_firewall(firewall)
+                    continue
