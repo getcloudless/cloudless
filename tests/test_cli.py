@@ -153,19 +153,109 @@ def test_service_subcommand(mock_config_source):
         r'  id: vpc-.*\n'
         r'  block: 10.0.0.0/16\n'
         r'  region: us-east-1\n'
-        r'  subnetworks:\n.*'))
-#        r'  - name: bar\n'
-#        r'    id: subnet-.*\n'
-#        r'    block: 10.0..*.0/24\n'
-#        r'    region: us-east-1\n'
-#        r'    availability_zone: us-east-1.\n'
-#        r'    instances:\n'
-#        r'    - id: i-.*\n'
-#        r'      public_ip: .*\n'
-#        r'      private_ip: .*\n'
-#        r'      state: running\n'
-#        r'      availability_zone: us-east-1.\n'))
+        r'  subnetworks:\n'
+        r'  - name: bar\n'
+        r'    id: subnet-.*\n'
+        r'    block: 10.0..*.0/23\n'
+        r'    region: us-east-1\n'
+        r'    availability_zone: us-east-1.\n'
+        r'    instances:\n'
+        r'    - id: i-.*\n'
+        r'      public_ip: .*\n'
+        r'      private_ip: .*\n'
+        r'      state: running\n'
+        r'      availability_zone: us-east-1.\n'))
+    assert result.exception is None
+    assert result.exit_code == 0
 
+    result = runner.invoke(get_cldls(), ['service', 'destroy', 'foo', 'bar'])
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Destroyed service: bar in network: foo\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    # Destroy the network we created.
+    result = runner.invoke(get_cldls(), ['network', 'destroy', 'foo'])
+    assert result.output == ('Network group with provider: mock-aws\n'
+                             'Destroyed network: foo\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+# Need to patch this so the test doesn't mess up our real configuration.
+# pylint:disable=unused-argument
+@patch('cloudless.profile.FileConfigSource')
+def test_service_subcommand_with_count(mock_config_source):
+    """
+    Test that the subcommand to work with services works.
+    """
+    # Do some mock weirdness to make sure our commands get the right values for the default profile.
+    mock_config_source = mock_config_source.return_value
+    mock_config_source.load.return_value = {"default": {"provider": "mock-aws", "credentials": {}}}
+    result = cloudless.profile.load_profile("default")
+    assert result == {"provider": "mock-aws", "credentials": {}}
+
+    runner = CliRunner()
+
+    # Create the network that I'll deploy into
+    result = runner.invoke(get_cldls(), ['network', 'create', 'foo', NETWORK_BLUEPRINT])
+    assert result.output == ('Network group with provider: mock-aws\n'
+                             'Created network: foo\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['service', 'create', 'foo', 'bar', AWS_SERVICE_BLUEPRINT,
+                                         '--count', '3'])
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Created service: bar in network: foo\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['service', 'list'])
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Network: foo, Service: bar\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['service', 'ls'])
+    assert result.output == ('Service group with provider: mock-aws\n'
+                             'Network: foo, Service: bar\n')
+    assert result.exception is None
+    assert result.exit_code == 0
+
+    result = runner.invoke(get_cldls(), ['service', 'get', 'foo', 'bar'])
+    assert result.output == (pytest_regex(
+        r'Service group with provider: mock-aws\n'
+        r'name: bar\n'
+        r'has_access_to:\n'
+        r'- default-all-outgoing-allowed\n'
+        r'is_accessible_from: \[\]\n'
+        r'network:\n'
+        r'  name: foo\n'
+        r'  id: vpc-.*\n'
+        r'  block: 10.0.0.0/16\n'
+        r'  region: us-east-1\n'
+        r'  subnetworks:\n'
+        r'  - name: bar\n'
+        r'    id: subnet-.*\n'
+        r'    block: 10.0..*.0/23\n'
+        r'    region: us-east-1\n'
+        r'    availability_zone: us-east-1.\n'
+        r'    instances:\n'
+        r'    - id: i-.*\n'
+        r'      public_ip: .*\n'
+        r'      private_ip: .*\n'
+        r'      state: running\n'
+        r'      availability_zone: us-east-1.\n'
+        r'    - id: i-.*\n'
+        r'      public_ip: .*\n'
+        r'      private_ip: .*\n'
+        r'      state: running\n'
+        r'      availability_zone: us-east-1.\n'
+        r'    - id: i-.*\n'
+        r'      public_ip: .*\n'
+        r'      private_ip: .*\n'
+        r'      state: running\n'
+        r'      availability_zone: us-east-1.\n'))
     assert result.exception is None
     assert result.exit_code == 0
 
