@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# An example configure script.  This is run by the image build command on the
+# machine that the command is running on.  It will pass "<ssh_username>
+# <instance_ip> <ssh_private_key_path>" to this script in that order.  This
+# script has to handle sshing into the instance and running the configuration.
+
+echo "Configuring instance!"
+echo "ARGS: $*"
+
+# Because configure runs right after deploy in the image build, this script has
+# to handle retrying ssh until it's available.  See
+# https://github.com/getcloudless/cloudless/issues/22 for a potential
+# improvement on this.
+TRIES=0
+while true; do
+    TRIES=$((TRIES + 1))
+    if [ $TRIES -gt 120 ]; then
+        echo "Exceeded maximum retries..."
+        exit 1
+    fi
+    echo "+ ssh -o StrictHostKeyChecking=no -i \"$3\" \"$1@$2\" uname -a"
+    ssh -o StrictHostKeyChecking=no -i "$3" "$1@$2" uname -a || (sleep 1;false)
+    if [ $? -eq 0 ]; then
+        break
+    fi
+    echo "Retrying ssh.  Retry number $TRIES..."
+done
+
+# Run configuration here, perhaps by calling ansible or another configuration as
+# code tool.
