@@ -28,10 +28,11 @@ def add_service_group(cldls):
     @click.argument('network')
     @click.argument('name')
     @click.argument('blueprint')
-    @click.argument('var_file', required=False)
+    @click.option('--var-file')
+    @click.option('--count', type=int)
     @click.pass_context
-    # pylint:disable=unused-variable
-    def service_create(ctx, network, name, blueprint, var_file=None):
+    # pylint:disable=unused-variable,too-many-arguments
+    def service_create(ctx, network, name, blueprint, var_file=None, count=None):
         """
         Create a service in this profile.
         """
@@ -42,7 +43,7 @@ def add_service_group(cldls):
             var_file_contents = {}
         network_object = get_network_for_cli(ctx, network)
         service = ctx.obj['CLIENT'].service.create(network_object, name, blueprint,
-                                                   var_file_contents)
+                                                   var_file_contents, count)
         click.echo('Created service: %s in network: %s' % (name, network))
 
     @service_group.command(name="list")
