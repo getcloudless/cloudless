@@ -60,7 +60,9 @@ def save_state(state, config):
     """
     Save test state so we can run each command independently.
     """
-    state_file_path = "%s/%s" % (config.get_config_dir(), TEST_STATE_FILENAME)
+    if not os.path.exists(config.get_state_dir()):
+        os.mkdir(config.get_state_dir())
+    state_file_path = "%s/%s" % (config.get_state_dir(), TEST_STATE_FILENAME)
     state_json = json.dumps(state, indent=2, sort_keys=True)
     with open(state_file_path, "w") as state_file:
         state_file.write(state_json)
@@ -69,13 +71,13 @@ def private_key_path(config):
     """
     Path where this framework saves the private test key.
     """
-    return "%s/%s" % (config.get_config_dir(), "id_rsa_test")
+    return "%s/%s" % (config.get_state_dir(), "id_rsa_test")
 
 def public_key_path(config):
     """
     Path where this framework saves the public test key.
     """
-    return "%s/%s" % (config.get_config_dir(), "id_rsa_test.pub")
+    return "%s/%s" % (config.get_state_dir(), "id_rsa_test.pub")
 
 def save_key_pair(key_pair, config):
     """
@@ -98,7 +100,7 @@ def get_state(config):
     """
     Get test state so we can run each command independently.
     """
-    state_file_path = "%s/%s" % (config.get_config_dir(), TEST_STATE_FILENAME)
+    state_file_path = "%s/%s" % (config.get_state_dir(), TEST_STATE_FILENAME)
     if not os.path.exists(state_file_path):
         return {}
     with open(state_file_path, "r") as state_file:

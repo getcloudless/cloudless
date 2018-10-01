@@ -52,6 +52,13 @@ class MockFileSystemWrapper:
         """
         del self.files[path]
 
+    # pylint:disable=no-self-use, unused-argument
+    def mkdir(self, path):
+        """
+        Make the directory at the given path.
+        """
+        return True
+
 @pytest.fixture
 def mock_filesystem():
     """
@@ -74,6 +81,13 @@ class MockImageBuildConfiguration:
         Get directory of the file behind this configuration.
         """
         return "/test-directory"
+
+    # pylint:disable=no-self-use
+    def get_state_dir(self):
+        """
+        Get directory of the file behind this configuration.
+        """
+        return "/test-directory/.cloudless/"
 
     # pylint:disable=no-self-use
     def get_blueprint_path(self):

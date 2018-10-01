@@ -2,6 +2,7 @@
 Test the cloudless command line interface.
 """
 import os
+import shutil
 import re
 from unittest.mock import patch
 from click.testing import CliRunner
@@ -15,11 +16,11 @@ AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "aws_blueprint.
 # Get the blueprint locations relative to the test script
 BLUEPRINT_DIR = os.path.join(os.path.dirname(__file__), "cli_blueprint_tester_fixture")
 BLUEPRINT_TEST_CONFIGURATION = os.path.join(BLUEPRINT_DIR, "blueprint-test-configuration.yml")
-BLUEPRINT_TEST_STATE = os.path.join(BLUEPRINT_DIR, "blueprint-test-state.json")
+BLUEPRINT_TEST_STATE = os.path.join(BLUEPRINT_DIR, ".cloudless")
 
 IMAGE_DIR = os.path.join(os.path.dirname(__file__), "cli_image_build_fixture")
 IMAGE_BUILD_CONFIGURATION = os.path.join(IMAGE_DIR, "image-build-configuration.yml")
-IMAGE_BUILD_STATE = os.path.join(IMAGE_DIR, "cloudless-image-build-state.json")
+IMAGE_BUILD_STATE = os.path.join(IMAGE_DIR, ".cloudless")
 
 # Make sure we don't leak this from the environment.
 if 'CLOUDLESS_PROFILE' in os.environ:
@@ -283,7 +284,7 @@ def test_service_test_subcommand(mock_config_source):
 
     # Remove state from old tests that may have failed.
     if os.path.exists(BLUEPRINT_TEST_STATE):
-        os.remove(BLUEPRINT_TEST_STATE)
+        shutil.rmtree(BLUEPRINT_TEST_STATE)
 
     # Do some mock weirdness to make sure our commands get the right values for the default profile.
     mock_config_source = mock_config_source.return_value
@@ -296,7 +297,7 @@ def test_service_test_subcommand(mock_config_source):
         r'Service test group with provider: mock-aws\n'
         r'Deploy complete!\n'
         r'To log in, run:\n'
-        r'ssh -i /.*/tests/cli_blueprint_tester_fixture/id_rsa_test cloudless_service_test@.*\n'))
+        r'ssh -i /.*/tests/.*/.cloudless/id_rsa_test cloudless_service_test@.*\n'))
     assert result.exception is None
     assert result.exit_code == 0
 
@@ -305,7 +306,7 @@ def test_service_test_subcommand(mock_config_source):
         r'Service test group with provider: mock-aws\n'
         r'Check complete!\n'
         r'To log in, run:\n'
-        r'ssh -i /.*/tests/cli_blueprint_tester_fixture/id_rsa_test cloudless_service_test@.*\n'))
+        r'ssh -i /.*/tests/.*/.cloudless/id_rsa_test cloudless_service_test@.*\n'))
     assert result.exception is None
     assert result.exit_code == 0
 
@@ -433,14 +434,14 @@ def test_image_build_subcommand(mock_config_source):
 
     # Remove state from old tests that may have failed.
     if os.path.exists(IMAGE_BUILD_STATE):
-        os.remove(IMAGE_BUILD_STATE)
+        shutil.rmtree(IMAGE_BUILD_STATE)
 
     result = runner.invoke(get_cldls(), ['image-build', 'deploy', IMAGE_BUILD_CONFIGURATION])
     assert result.exception is None
     assert result.output == (pytest_regex(
         r'image group with provider: mock-aws\n'
         r'Successfully deployed!  Log in with:\n'
-        r'ssh -i /.*/tests/cli_image_build_fixture/id_rsa_image_build cloudless_image_build@.*\n'))
+        r'ssh -i /.*/tests/.*/.cloudless/id_rsa_image_build cloudless_image_build@.*\n'))
     assert result.exit_code == 0
 
     result = runner.invoke(get_cldls(), ['image-build', 'configure', IMAGE_BUILD_CONFIGURATION])
