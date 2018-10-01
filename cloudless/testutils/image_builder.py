@@ -58,6 +58,13 @@ class FileSystemWrapper:
         """
         return os.remove(path)
 
+    # pylint:disable=no-self-use
+    def mkdir(self, path):
+        """
+        Make the directory at the given path.
+        """
+        return os.mkdir(path)
+
 
 class ImageBuilder:
     """
@@ -75,18 +82,18 @@ class ImageBuilder:
         self.client = client
         self.config = config
         self.filesystem = filesystem
-        self.state_path = os.path.join(self.config.get_config_dir(),
-                                       "cloudless-image-build-state.json")
-        self.private_key_path = os.path.join(self.config.get_config_dir(),
-                                             "id_rsa_image_build")
-        self.public_key_path = os.path.join(self.config.get_config_dir(),
-                                            "id_rsa_image_build.pub")
+        self.state_dir = self.config.get_state_dir()
+        self.state_file = os.path.join(self.state_dir, "cloudless-image-build-state.json")
+        self.private_key_path = os.path.join(self.state_dir, "id_rsa_image_build")
+        self.public_key_path = os.path.join(self.state_dir, "id_rsa_image_build.pub")
 
     def _save_state(self, state):
         """
         Save state in a json file in our image configuration directory.
         """
-        self.filesystem.write(self.state_path, json.dumps(state))
+        if not self.filesystem.exists(self.state_dir):
+            self.filesystem.mkdir(self.state_dir)
+        self.filesystem.write(self.state_file, json.dumps(state))
 
     def _save_keypair(self, keypair):
         """
@@ -99,9 +106,9 @@ class ImageBuilder:
         """
         Load state from a json file in our image configuration directory.
         """
-        if not self.filesystem.exists(self.state_path):
+        if not self.filesystem.exists(self.state_file):
             return {}
-        return json.loads(self.filesystem.read(self.state_path))
+        return json.loads(self.filesystem.read(self.state_file))
 
     def _remove_keypair(self):
         """
@@ -124,7 +131,7 @@ class ImageBuilder:
             raise DisallowedOperationException(
                 "Called deploy but found existing state %s in state file %s" % (
                     state,
-                    self.state_path))
+                    self.state_file))
         self._save_state(state)
         network = self.client.network.create(state["network"], NETWORK_BLUEPRINT)
 
@@ -161,7 +168,7 @@ class ImageBuilder:
         if not self._load_state():
             raise DisallowedOperationException(
                 "Called configure but found no state at %s.  Call deploy first." % (
-                    self.state_path))
+                    self.state_file))
         logger.debug("Loaded state: %s", state)
 
         network = self.client.network.get(state["network"])
@@ -191,7 +198,7 @@ class ImageBuilder:
         if not self._load_state():
             raise DisallowedOperationException(
                 "Called check but found no state at %s.  Call deploy first." % (
-                    self.state_path))
+                    self.state_file))
         logger.debug("Loaded state: %s", state)
 
         network = self.client.network.get(state["network"])
@@ -224,7 +231,7 @@ class ImageBuilder:
         if not self._load_state():
             raise DisallowedOperationException(
                 "Called save but found no state at %s.  Call deploy first." % (
-                    self.state_path))
+                    self.state_file))
         logger.debug("Loaded state: %s", state)
 
         network = self.client.network.get(state["network"])

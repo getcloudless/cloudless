@@ -1,3 +1,2 @@
-cloudless-image-build-state.json
-id_rsa_image_build
-id_rsa_image_build.pub
+Pipfile.lock
+.cloudless

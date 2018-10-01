@@ -38,7 +38,13 @@ class ImageBuildConfiguration:
         """
         Get directory of the file behind this configuration.
         """
-        return self.config_path
+        return os.path.abspath(self.config_path)
+
+    def get_state_dir(self):
+        """
+        Get temporary state directory for this configuration.
+        """
+        return os.path.join(self.get_config_dir(), ".cloudless")
 
     def get_blueprint_path(self):
         """
