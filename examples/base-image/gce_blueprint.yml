@@ -16,7 +16,7 @@ instance:
       device_name: /dev/sda1
 
 image:
-  name: "ubuntu-1604-xenial-v20180912"
+  name: "ubuntu-1604-xenial-*"
 
 initialization:
   - path: "image_build_allow_ssh.sh"

@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2018-10-15
+### Added
+- Add documentation about how to set up CLI auto completion
+- Add --count option to service creation command line
+
+### Changed
+- Speed up GCE client by only creating driver once
+- Put temporary test state in a .cloudless directory
+- Reduce resource usage in examples and tests
+- Fix multiple firewall deletions when service references itself
+- Fix paths being printed in service output for other networks
+
 ## [0.0.4] - 2018-09-24
 ### Changed
 - Make missing paramiko package real dependency instead of just test dependency.
