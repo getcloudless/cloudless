@@ -191,6 +191,19 @@ def verify(client, config):
     logger.info("Verify successful!")
     return (service, state["ssh_username"], private_key_path(config_obj))
 
+def load_config_for_cli(client, config):
+    """
+    Try to load the configuration for an existing
+    """
+    logger.debug("Running load_config_for_cli on: %s", config)
+    config_obj = BlueprintTestConfiguration(config)
+    state = get_state(config_obj)
+    if not state:
+        return None
+    network = client.network.get(state["network_name"])
+    service = client.service.get(network, state["service_name"])
+    return (service, state["ssh_username"], private_key_path(config_obj))
+
 def teardown(client, config):
     """
     Destroy all services in this network, and destroy the network.

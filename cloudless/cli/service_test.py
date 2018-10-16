@@ -10,6 +10,7 @@ from cloudless.testutils.blueprint_tester import setup as do_setup
 from cloudless.testutils.blueprint_tester import verify as do_verify
 from cloudless.testutils.blueprint_tester import teardown as do_teardown
 from cloudless.testutils.blueprint_tester import run_all
+from cloudless.testutils.blueprint_tester import load_config_for_cli
 from cloudless.cli.utils import handle_profile_for_cli
 
 def add_service_test_group(cldls):
@@ -50,6 +51,30 @@ def add_service_test_group(cldls):
         for instance in ctx.obj['CLIENT'].service.get_instances(service):
             click.echo("ssh -i %s %s@%s" % (private_key_path, ssh_username, instance.public_ip))
 
+    @service_test_group.command(name="credentials")
+    @click.argument('config')
+    @click.pass_context
+    # pylint:disable=unused-variable
+    def service_test_credentials(ctx, config):
+        """
+        Get credentials for test service.
+
+        Config must be the path to a test configuration file.  This will detect any existing
+        configuration and print it out.
+        """
+        if os.path.isdir(config):
+            click.echo("Configuration must be a file, not a directory!")
+            sys.exit(1)
+        config = load_config_for_cli(ctx.obj['CLIENT'], config)
+        if not config:
+            click.echo("No configuration found! Run deploy first.")
+            sys.exit(1)
+        service, ssh_username, private_key_path = config
+        click.echo("Config loaded!")
+        click.echo("To log in, run:")
+        for instance in ctx.obj['CLIENT'].service.get_instances(service):
+            click.echo("ssh -i %s %s@%s" % (private_key_path, ssh_username, instance.public_ip))
+
     @service_test_group.command(name="check")
     @click.argument('config')
     @click.pass_context
@@ -65,9 +90,6 @@ def add_service_test_group(cldls):
             sys.exit(1)
         service, ssh_username, private_key_path = do_verify(ctx.obj['CLIENT'], config)
         click.echo("Check complete!")
-        click.echo("To log in, run:")
-        for instance in ctx.obj['CLIENT'].service.get_instances(service):
-            click.echo("ssh -i %s %s@%s" % (private_key_path, ssh_username, instance.public_ip))
 
     @service_test_group.command(name="cleanup")
     @click.argument('config')
