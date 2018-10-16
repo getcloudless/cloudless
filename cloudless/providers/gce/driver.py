@@ -16,6 +16,7 @@ def get_gce_driver(credentials):
     """
     Uses the given credentials to get a GCE driver object from libcloud.
     """
+    # pylint:disable=global-statement
     global DRIVER
     if not DRIVER:
         logger.debug("GCE driver not initialized, creating.")
