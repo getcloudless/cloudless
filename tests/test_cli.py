@@ -301,12 +301,20 @@ def test_service_test_subcommand(mock_config_source):
     assert result.exception is None
     assert result.exit_code == 0
 
+    result = runner.invoke(get_cldls(), ['service-test', 'credentials',
+                                         BLUEPRINT_TEST_CONFIGURATION])
+    assert result.output == (pytest_regex(
+        r'Service test group with provider: mock-aws\n'
+        r'Config loaded!\n'
+        r'To log in, run:\n'
+        r'ssh -i /.*/tests/.*/.cloudless/id_rsa_test cloudless_service_test@.*\n'))
+    assert result.exception is None
+    assert result.exit_code == 0
+
     result = runner.invoke(get_cldls(), ['service-test', 'check', BLUEPRINT_TEST_CONFIGURATION])
     assert result.output == (pytest_regex(
         r'Service test group with provider: mock-aws\n'
-        r'Check complete!\n'
-        r'To log in, run:\n'
-        r'ssh -i /.*/tests/.*/.cloudless/id_rsa_test cloudless_service_test@.*\n'))
+        r'Check complete!\n'))
     assert result.exception is None
     assert result.exit_code == 0
 
