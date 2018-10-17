@@ -76,7 +76,7 @@ Cloudless.
 Once you have the prerequisites, you can create your service with:
 
 ```shell
-cldls network create examples/network/blueprint.yml
+cldls network create mynet examples/network/blueprint.yml
 cldls service create mynet myservice examples/apache/blueprint.yml
 cldls paths allow_external mynet myservice 0.0.0.0/0 80
 cldls service get mynet myservice
