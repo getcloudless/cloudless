@@ -78,7 +78,7 @@ Once you have the prerequisites, you can create your service with:
 ```shell
 cldls network create mynet examples/network/blueprint.yml
 cldls service create mynet myservice examples/apache/blueprint.yml
-cldls paths allow_external mynet myservice 0.0.0.0/0 80
+cldls paths allow_network_block mynet myservice 0.0.0.0/0 80
 cldls service get mynet myservice
 # Navigate to the "public_ip" of each instance in a browser to see the service.
 ```
