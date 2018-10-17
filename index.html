@@ -187,7 +187,7 @@ Cloudless.</p>
 <p>Once you have the prerequisites, you can create your service with:</p>
 <pre><code class="shell">cldls network create mynet examples/network/blueprint.yml
 cldls service create mynet myservice examples/apache/blueprint.yml
-cldls paths allow_external mynet myservice 0.0.0.0/0 80
+cldls paths allow_network_block mynet myservice 0.0.0.0/0 80
 cldls service get mynet myservice
 # Navigate to the &quot;public_ip&quot; of each instance in a browser to see the service.
 </code></pre>
@@ -548,5 +548,5 @@ tox -e aws
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2018-10-17 18:09:54
+Build Date UTC : 2018-10-17 18:11:49
 -->
