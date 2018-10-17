@@ -185,11 +185,22 @@ Ubuntu 16.04 installed on it in your provider.  See the <a href="#image-builder"
 Builder</a> section for how to build an image like this using
 Cloudless.</p>
 <p>Once you have the prerequisites, you can create your service with:</p>
-<pre><code>cldls network create examples/network/blueprint.yml
+<pre><code class="shell">cldls network create mynet examples/network/blueprint.yml
 cldls service create mynet myservice examples/apache/blueprint.yml
 cldls paths allow_external mynet myservice 0.0.0.0/0 80
 cldls service get mynet myservice
 # Navigate to the &quot;public_ip&quot; of each instance in a browser to see the service.
+</code></pre>
+
+<h3 id="command-line-autocomplete">Command Line Autocomplete</h3>
+<p>Since this project uses <a href="https://click.palletsprojects.com/en/7.x/">click</a>,
+autocomplete is built in.  Just follow
+<a href="https://click.palletsprojects.com/en/5.x/bashcomplete/">https://click.palletsprojects.com/en/5.x/bashcomplete/</a>
+if you use bash or
+<a href="https://github.com/click-contrib/click-completion">https://github.com/click-contrib/click-completion</a>
+for other shells.</p>
+<p>For example, for bash puth this in your .bashrc:</p>
+<pre><code class="shell">eval &quot;$(_CLDLS_COMPLETE=source cldls)&quot;
 </code></pre>
 
 <h2 id="client-setup-in-python-api">Client Setup In Python API</h2>
@@ -537,5 +548,5 @@ tox -e aws
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2018-09-25 03:02:58
+Build Date UTC : 2018-10-17 18:09:54
 -->
