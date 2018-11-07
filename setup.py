@@ -36,10 +36,8 @@ NAME = 'cloudless'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'boto3>=1.7.77,<1.8.0',
-    # Should update to a more recent botocore version once
-    # https://github.com/spulec/moto/issues/1793 is updated.
-    'botocore>=1.10.84,<1.11.0',
+    'boto3>=1.9.39,<1.10.0',
+    'botocore>=1.12.39,<1.13.0',
     'PyYaml>=3.13,<4.0',
     'jinja2>=2.10,<3.0',
     # This pytest dependency is only for the module tester.  Perhaps this should
@@ -51,7 +49,7 @@ REQUIRED = [
     'apache-libcloud>=2.3.0,<2.4.0',
     'pycryptodome>=3.6.6,<3.7.0',
     # Even though moto is for testing, need it for the "mock-aws" provider.
-    'moto>=1.3.5,<1.4.0',
+    'moto>=1.3.7,<1.4.0',
     'lazy_import>=0.2.2,<0.3.0',
     'retrying>=1.3.3,<1.4.0',
     'paramiko>=2.4.1,<2.5.0',

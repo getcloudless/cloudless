@@ -70,7 +70,7 @@ def run_instance_fitter_test(provider, credentials):
         assert get_fitting_instance(client.service,
                                     ServiceBlueprint(SMALL_INSTANCE_BLUEPRINT)) == "t2.small"
         assert get_fitting_instance(client.service,
-                                    ServiceBlueprint(LARGE_INSTANCE_BLUEPRINT)) == "m4.xlarge"
+                                    ServiceBlueprint(LARGE_INSTANCE_BLUEPRINT)) == "m5.xlarge"
     if provider == "gce":
         assert get_fitting_instance(client.service,
                                     ServiceBlueprint(SMALL_INSTANCE_BLUEPRINT)) == "n1-highcpu-4"
