@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2018-11-14
+### Added
+- Add "credentials" subcommand to the "service-test" command to dump SSH
+  credentials for currently deployed service.
+- Add contributor guide and initial list of known modules.
+
+### Changed
+- Fix errors in code examples in README.
+- Update botocore, moto, and other package dependencies.
+
 ## [0.0.5] - 2018-10-15
 ### Added
 - Add documentation about how to set up CLI auto completion
