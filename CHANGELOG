@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2018-11-15
+### Changed
+- Fix packaging by adding MANIFEST.in with correct files
+
 ## [0.0.6] - 2018-11-14
 ### Added
 - Add "credentials" subcommand to the "service-test" command to dump SSH
