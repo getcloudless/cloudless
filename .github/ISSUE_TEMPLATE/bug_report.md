@@ -1,6 +1,9 @@
 ---
 name: Bug report
 about: Report a bug in Cloudless
+title: ''
+labels: ''
+assignees: ''
 
 ---
 
