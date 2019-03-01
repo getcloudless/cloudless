@@ -21,11 +21,10 @@ class ImageClient:
     This is the object through which all image related calls are made for AWS.
     """
 
-    def __init__(self, driver, credentials, mock=False):
+    def __init__(self, driver, mock=False):
         self.driver = driver
-        self.credentials = credentials
         self.mock = mock
-        self.asg = ASG(driver, credentials)
+        self.asg = ASG(driver)
 
     # pylint:disable=too-many-locals
     def create(self, name, service):

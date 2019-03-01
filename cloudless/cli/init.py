@@ -32,5 +32,11 @@ def add_init_group(cldls):
             credentials["user_id"] = click.prompt('Please enter gce user id', type=str).strip()
             credentials["key"] = click.prompt('Please enter path to gce key file', type=str).strip()
             credentials["project"] = click.prompt('Please enter gce project name', type=str).strip()
+        if provider == 'aws':
+            click.echo('You can explicitly set an AWS profile for a cloudless profile.')
+            click.echo('Default is unset, which uses your AWS_PROFILE environment variable.')
+            aws_profile = click.prompt('Please enter aws profile', type=str).strip()
+            if aws_profile:
+                credentials["profile"] = aws_profile
         cloudless.profile.save_profile(ctx.obj['PROFILE'], {"provider": provider,
                                                             "credentials": credentials})

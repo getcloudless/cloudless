@@ -14,7 +14,9 @@ class PathsClient:
     Client object to interact with paths between resources.
     """
     def __init__(self, credentials):
-        self.paths = cloudless.providers.aws.impl.paths.PathsClient(boto3, credentials, mock=False)
+        if "profile" in credentials:
+            boto3.setup_default_session(profile_name=credentials["profile"])
+        self.paths = cloudless.providers.aws.impl.paths.PathsClient(boto3, mock=False)
 
 
     def add(self, source, destination, port):
