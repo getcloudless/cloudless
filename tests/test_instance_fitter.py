@@ -1,7 +1,6 @@
 """
 Test instance fitter.
 """
-import os
 import pytest
 import cloudless
 from cloudless.util.instance_fitter import get_fitting_instance
@@ -57,21 +56,21 @@ initialization:
   - path: "N/A - only to test instance fitter"
 """
 
-def run_instance_fitter_test(provider, credentials):
+def run_instance_fitter_test(profile=None, provider=None, credentials=None):
     """
     Test that we get the proper instance sizes for the given provider.
     """
 
     # Get the client for this test
-    client = cloudless.Client(provider, credentials)
+    client = cloudless.Client(profile, provider, credentials)
 
     # If no memory, cpu, or storage is passed in, find the cheapest.
-    if provider == "aws":
+    if client.provider == "aws":
         assert get_fitting_instance(client.service,
                                     ServiceBlueprint(SMALL_INSTANCE_BLUEPRINT)) == "t2.small"
         assert get_fitting_instance(client.service,
                                     ServiceBlueprint(LARGE_INSTANCE_BLUEPRINT)) == "m5.xlarge"
-    if provider == "gce":
+    if client.provider == "gce":
         assert get_fitting_instance(client.service,
                                     ServiceBlueprint(SMALL_INSTANCE_BLUEPRINT)) == "n1-highcpu-4"
         assert get_fitting_instance(client.service,
@@ -82,14 +81,11 @@ def test_instance_fitter_aws():
     """
     Test instance fitter with AWS and global configuration.
     """
-    run_instance_fitter_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
+    run_instance_fitter_test(profile="aws-cloudless-test")
 
 @pytest.mark.gce
 def test_instance_fitter_gce():
     """
     Test instance fitter with GCE and below environment configuration.
     """
-    run_instance_fitter_test(provider="gce", credentials={
-        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
-        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
+    run_instance_fitter_test(profile="gce-cloudless-test")

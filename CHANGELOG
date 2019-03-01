@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Allow setting "profile" in the AWS credentials to select a specific AWS
   profile.
+- Support using profiles in the python api with the `profile` argument.
 
 ## [0.0.7] - 2018-11-15
 ### Changed

@@ -18,13 +18,13 @@ AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "aws_blueprint.
 GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "gce_blueprint.yml")
 
 # pylint: disable=too-many-locals,too-many-statements
-def run_ssh_test(provider, credentials):
+def run_ssh_test(profile=None, provider=None, credentials=None):
     """
     Test that the instance management works against the given provider.
     """
 
     # Get the client for this test
-    client = cloudless.Client(provider, credentials)
+    client = cloudless.Client(profile, provider, credentials)
 
     # Get a somewhat unique network name
     network_name = generate_unique_name("unittest")
@@ -37,7 +37,7 @@ def run_ssh_test(provider, credentials):
 
     # Provision all the resources
     test_network = client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
-    if provider in ["aws", "mock-aws"]:
+    if client.provider in ["aws", "mock-aws"]:
         test_service = client.service.create(test_network, service_name, AWS_SERVICE_BLUEPRINT,
                                              template_vars={"cloudless_image_build_ssh_key":
                                                             key_pair.public_key,
@@ -45,7 +45,7 @@ def run_ssh_test(provider, credentials):
                                                             "cloudless"},
                                              count=1)
     else:
-        assert provider == "gce"
+        assert client.provider == "gce"
         test_service = client.service.create(test_network, service_name, GCE_SERVICE_BLUEPRINT,
                                              template_vars={"cloudless_image_build_ssh_key":
                                                             key_pair.public_key,
@@ -73,7 +73,7 @@ def run_ssh_test(provider, credentials):
     internet = CidrBlock("0.0.0.0/0")
     client.paths.add(internet, test_service, 22)
 
-    if provider != "mock-aws":
+    if client.provider != "mock-aws":
         # Test that we can connect with the given key
         def attempt_connection():
             ssh = paramiko.SSHClient()
@@ -112,14 +112,11 @@ def test_ssh_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_ssh_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
+    run_ssh_test(profile="aws-cloudless-test")
 
 @pytest.mark.gce
 def test_ssh_gce():
     """
     Run tests against real GCE (environment variables below must be set).
     """
-    run_ssh_test(provider="gce", credentials={
-        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
-        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
+    run_ssh_test(profile="gce-cloudless-test")

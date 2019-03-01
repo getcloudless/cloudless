@@ -13,24 +13,24 @@ AWS_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "aws_blueprint.
 GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "gce_blueprint.yml")
 
 
-def run_paths_test(provider, credentials):
+def run_paths_test(profile=None, provider=None, credentials=None):
     """
     Test that the path management works against the given provider.
     """
 
     # Get the client for this test
-    client = cloudless.Client(provider, credentials)
+    client = cloudless.Client(profile, provider, credentials)
 
     # Get a somewhat unique network name
     network_name = generate_unique_name("unittest")
 
     # Provision all the resources
     test_network = client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
-    if provider in ["aws", "mock-aws"]:
+    if client.provider in ["aws", "mock-aws"]:
         lb_service = client.service.create(test_network, "web-lb", AWS_SERVICE_BLUEPRINT, {})
         web_service = client.service.create(test_network, "web", AWS_SERVICE_BLUEPRINT, {})
     else:
-        assert provider == "gce"
+        assert client.provider == "gce"
         lb_service = client.service.create(test_network, "web-lb", GCE_SERVICE_BLUEPRINT, {})
         web_service = client.service.create(test_network, "web", GCE_SERVICE_BLUEPRINT, {})
 
@@ -71,14 +71,11 @@ def test_paths_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_paths_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
+    run_paths_test(profile="aws-cloudless-test")
 
 @pytest.mark.gce
 def test_paths_gce():
     """
     Run tests against real GCE (environment variables below must be set).
     """
-    run_paths_test(provider="gce", credentials={
-        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
-        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
+    run_paths_test(profile="gce-cloudless-test")

@@ -20,24 +20,24 @@ GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "gce_blueprint.
 cloudless.set_level(logging.DEBUG)
 
 # pylint: disable=too-many-locals,too-many-statements
-def run_instances_test(provider, credentials):
+def run_instances_test(profile=None, provider=None, credentials=None):
     """
     Test that the instance management works against the given provider.
     """
 
     # Get the client for this test
-    client = cloudless.Client(provider, credentials)
+    client = cloudless.Client(profile, provider, credentials)
 
     # Get a somewhat unique network name
     network_name = generate_unique_name("unittest")
 
     # Provision all the resources
     test_network = client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
-    if provider in ["aws", "mock-aws"]:
+    if client.provider in ["aws", "mock-aws"]:
         lb_service = client.service.create(test_network, "web-lb", AWS_SERVICE_BLUEPRINT, {})
         web_service = client.service.create(test_network, "web", AWS_SERVICE_BLUEPRINT, {}, count=6)
     else:
-        assert provider == "gce"
+        assert client.provider == "gce"
         lb_service = client.service.create(test_network, "web-lb", GCE_SERVICE_BLUEPRINT, {})
         web_service = client.service.create(test_network, "web", GCE_SERVICE_BLUEPRINT, {}, count=6)
 
@@ -58,7 +58,7 @@ def run_instances_test(provider, credentials):
     validate_service(test_network, lb_service, 1)
     validate_service(test_network, web_service, 6)
 
-    if provider in ["aws", "mock-aws"]:
+    if client.provider in ["mock-aws"]:
         # Networking
         ec2 = boto3.client("ec2")
         dc_id = client.network.get(network_name).network_id
@@ -127,7 +127,7 @@ def run_instances_test(provider, credentials):
     # Make sure they are gone when I destroy them
     client.service.destroy(lb_service)
 
-    if provider in ["aws", "mock-aws"]:
+    if client.provider in ["mock-aws"]:
         # Networking
         ec2 = boto3.client("ec2")
         subnets = ec2.describe_subnets(Filters=[{
@@ -151,7 +151,7 @@ def run_instances_test(provider, credentials):
     # Now destroy the rest
     client.service.destroy(web_service)
 
-    if provider in ["aws", "mock-aws"]:
+    if client.provider in ["mock-aws"]:
         # AutoScalingGroups
         autoscaling = boto3.client("autoscaling")
         asgs = autoscaling.describe_auto_scaling_groups(
@@ -182,14 +182,11 @@ def test_instances_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_instances_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
+    run_instances_test(profile="aws-cloudless-test")
 
 @pytest.mark.gce
 def test_instances_gce():
     """
     Run tests against real GCE (environment variables below must be set).
     """
-    run_instances_test(provider="gce", credentials={
-        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
-        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
+    run_instances_test(profile="gce-cloudless-test")

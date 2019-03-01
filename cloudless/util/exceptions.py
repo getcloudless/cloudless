@@ -18,6 +18,13 @@ class DisallowedOperationException(Exception):
     pass
 
 
+class ProfileNotFoundException(Exception):
+    """
+    Could not find the provided profile.
+    """
+    pass
+
+
 class NotEnoughIPSpaceException(Exception):
     """
     Could not allocate the given CIDR range.

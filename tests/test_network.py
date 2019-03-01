@@ -14,13 +14,13 @@ NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
                                  "network", "blueprint.yml")
 
 
-def run_network_test(provider, credentials):
+def run_network_test(profile=None, provider=None, credentials=None):
     """
     Test network management on the given provider.
     """
 
     # Get the client for this test
-    client = cloudless.Client(provider, credentials)
+    client = cloudless.Client(profile, provider, credentials)
 
     # Get somewhat unique network names
     network1_name = generate_unique_name("network1")
@@ -61,7 +61,7 @@ def test_network_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_network_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
+    run_network_test(profile="aws-cloudless-test")
 
 
 @pytest.mark.gce
@@ -69,7 +69,4 @@ def test_network_gce():
     """
     Run tests against real GCE (environment variables below must be set).
     """
-    run_network_test(provider="gce", credentials={
-        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
-        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
+    run_network_test(profile="gce-cloudless-test")
