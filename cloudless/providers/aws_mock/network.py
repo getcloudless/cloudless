@@ -13,9 +13,10 @@ class NetworkClient:
     This is the object through which all network related calls are made for AWS.
     """
 
+    # You can set a "profile" in credentials, but that doesn't matter for moto
+    # pylint: disable=unused-argument
     def __init__(self, credentials):
-        self.network = cloudless.providers.aws.impl.network.NetworkClient(boto3, credentials,
-                                                                          mock=True)
+        self.network = cloudless.providers.aws.impl.network.NetworkClient(boto3, mock=True)
 
     def create(self, name, blueprint):
         """

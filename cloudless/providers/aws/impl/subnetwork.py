@@ -28,13 +28,12 @@ class SubnetworkClient:
     Client object to manage subnetworks.
     """
 
-    def __init__(self, driver, credentials, mock=False):
+    def __init__(self, driver, mock=False):
         self.driver = driver
-        self.credentials = credentials
-        self.network = cloudless.providers.aws.impl.network.NetworkClient(driver, credentials, mock)
-        self.internet_gateways = InternetGateways(driver, credentials)
-        self.subnets = Subnets(driver, credentials)
-        self.availability_zones = AvailabilityZones(driver, credentials, mock)
+        self.network = cloudless.providers.aws.impl.network.NetworkClient(driver, mock)
+        self.internet_gateways = InternetGateways(driver)
+        self.subnets = Subnets(driver)
+        self.availability_zones = AvailabilityZones(driver, mock)
 
     def create(self, network, subnetwork_name, blueprint):
         """

@@ -9,11 +9,8 @@ class AvailabilityZones:
     """
     Client object for getting availability zones for AWS.
     """
-    def __init__(self, driver, credentials, mock=False):
+    def __init__(self, driver, mock=False):
         self.driver = driver
-        if credentials:
-            # Currently only using the global defaults is supported
-            raise NotImplementedError("Passing credentials not implemented")
         self.mock = mock
 
     def get_availability_zones(self):

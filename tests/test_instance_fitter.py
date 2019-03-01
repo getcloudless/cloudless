@@ -82,7 +82,7 @@ def test_instance_fitter_aws():
     """
     Test instance fitter with AWS and global configuration.
     """
-    run_instance_fitter_test(provider="aws", credentials={})
+    run_instance_fitter_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
 
 @pytest.mark.gce
 def test_instance_fitter_gce():

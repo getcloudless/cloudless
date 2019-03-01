@@ -112,7 +112,7 @@ def test_ssh_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_ssh_test(provider="aws", credentials={})
+    run_ssh_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
 
 @pytest.mark.gce
 def test_ssh_gce():

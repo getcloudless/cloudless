@@ -11,9 +11,11 @@ class ServiceClient:
     """
     Cloudless Service Client Object for Mock AWS
     """
+
+    # You can set a "profile" in credentials, but that doesn't matter for moto
+    # pylint: disable=unused-argument
     def __init__(self, credentials):
-        self.service = cloudless.providers.aws.impl.service.ServiceClient(boto3, credentials,
-                                                                          mock=True)
+        self.service = cloudless.providers.aws.impl.service.ServiceClient(boto3, mock=True)
 
     # pylint: disable=too-many-arguments
     def create(self, network, service_name, blueprint, template_vars, count):

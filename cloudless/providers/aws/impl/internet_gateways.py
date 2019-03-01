@@ -11,11 +11,8 @@ class InternetGateways:
     Internet Gateways helpers class.
     """
 
-    def __init__(self, driver, credentials):
+    def __init__(self, driver):
         self.driver = driver
-        if credentials:
-            # Currently only using the global defaults is supported
-            raise NotImplementedError("Passing credentials not implemented")
 
     def route_count(self, vpc_id, igw_id):
         """

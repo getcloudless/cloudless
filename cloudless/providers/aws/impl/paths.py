@@ -20,12 +20,11 @@ class PathsClient:
     """
     Client object to interact with paths between resources.
     """
-    def __init__(self, driver, credentials, mock=False):
+    def __init__(self, driver, mock=False):
         self.driver = driver
-        self.credentials = credentials
         self.mock = mock
-        self.service = cloudless.providers.aws.impl.service.ServiceClient(driver, credentials, mock)
-        self.asg = ASG(driver, credentials)
+        self.service = cloudless.providers.aws.impl.service.ServiceClient(driver, mock)
+        self.asg = ASG(driver)
 
     def _extract_service_info(self, source, destination, port):
         """

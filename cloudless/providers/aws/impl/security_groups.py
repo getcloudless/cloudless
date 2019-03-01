@@ -17,11 +17,8 @@ class SecurityGroups:
     Security Groups helpers class.
     """
 
-    def __init__(self, driver, credentials):
+    def __init__(self, driver):
         self.driver = driver
-        if credentials:
-            # Currently only using the global defaults is supported
-            raise NotImplementedError("Passing credentials not implemented")
 
     def create(self, name, vpc_id):
         ec2 = self.driver.client("ec2")

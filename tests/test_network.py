@@ -61,7 +61,7 @@ def test_network_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_network_test(provider="aws", credentials={})
+    run_network_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
 
 
 @pytest.mark.gce

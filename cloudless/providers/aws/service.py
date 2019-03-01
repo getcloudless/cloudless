@@ -15,8 +15,9 @@ class ServiceClient:
     """
 
     def __init__(self, credentials):
-        self.service = cloudless.providers.aws.impl.service.ServiceClient(boto3, credentials,
-                                                                          mock=False)
+        if "profile" in credentials:
+            boto3.setup_default_session(profile_name=credentials["profile"])
+        self.service = cloudless.providers.aws.impl.service.ServiceClient(boto3, mock=False)
 
     # pylint: disable=too-many-arguments
     def create(self, network, service_name, blueprint, template_vars, count):

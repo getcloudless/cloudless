@@ -182,7 +182,7 @@ def test_instances_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_instances_test(provider="aws", credentials={})
+    run_instances_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
 
 @pytest.mark.gce
 def test_instances_gce():

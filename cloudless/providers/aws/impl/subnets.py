@@ -18,11 +18,8 @@ class Subnets:
     Subnets helpers class.
     """
 
-    def __init__(self, driver, credentials):
+    def __init__(self, driver):
         self.driver = driver
-        if credentials:
-            # Currently only using the global defaults is supported
-            raise NotImplementedError("Passing credentials not implemented")
 
     def carve_subnets(self, vpc_id, vpc_cidr, prefix=28, count=3):
         ec2 = self.driver.client("ec2")

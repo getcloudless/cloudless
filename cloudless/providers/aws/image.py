@@ -12,8 +12,9 @@ class ImageClient:
     """
 
     def __init__(self, credentials):
-        self.image = cloudless.providers.aws.impl.image.ImageClient(boto3, credentials,
-                                                                    mock=True)
+        if "profile" in credentials:
+            boto3.setup_default_session(profile_name=credentials["profile"])
+        self.image = cloudless.providers.aws.impl.image.ImageClient(boto3, mock=True)
 
     def create(self, name, service):
         """

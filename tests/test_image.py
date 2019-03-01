@@ -89,7 +89,7 @@ def test_image_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_image_test(provider="aws", credentials={})
+    run_image_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
 
 @pytest.mark.gce
 def test_image_gce():

@@ -71,7 +71,7 @@ def test_paths_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_paths_test(provider="aws", credentials={})
+    run_paths_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
 
 @pytest.mark.gce
 def test_paths_gce():

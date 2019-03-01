@@ -15,8 +15,11 @@ class PathsClient:
     """
     Client object to interact with paths between resources.
     """
+
+    # You can set a "profile" in credentials, but that doesn't matter for moto
+    # pylint: disable=unused-argument
     def __init__(self, credentials):
-        self.paths = cloudless.providers.aws.impl.paths.PathsClient(boto3, credentials, mock=True)
+        self.paths = cloudless.providers.aws.impl.paths.PathsClient(boto3, mock=True)
 
 
     def add(self, source, destination, port):

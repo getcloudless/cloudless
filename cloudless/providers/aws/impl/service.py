@@ -33,16 +33,13 @@ class ServiceClient:
     Client object to manage instances.
     """
 
-    def __init__(self, driver, credentials, mock=False):
+    def __init__(self, driver, mock=False):
         self.driver = driver
-        self.credentials = credentials
         self.mock = mock
-        self.subnetwork = cloudless.providers.aws.impl.subnetwork.SubnetworkClient(driver,
-                                                                                   credentials,
-                                                                                   mock)
-        self.network = cloudless.providers.aws.impl.network.NetworkClient(driver, credentials)
-        self.asg = ASG(driver, credentials)
-        self.security_groups = SecurityGroups(driver, credentials)
+        self.subnetwork = cloudless.providers.aws.impl.subnetwork.SubnetworkClient(driver, mock)
+        self.network = cloudless.providers.aws.impl.network.NetworkClient(driver)
+        self.asg = ASG(driver)
+        self.security_groups = SecurityGroups(driver)
 
     # pylint: disable=too-many-arguments, too-many-locals
     def create(self, network, service_name, blueprint, template_vars=None, count=None):

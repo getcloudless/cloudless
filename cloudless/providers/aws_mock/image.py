@@ -14,9 +14,10 @@ class ImageClient:
     This is the object through which all image related calls are made for AWS.
     """
 
+    # You can set a "profile" in credentials, but that doesn't matter for moto
+    # pylint: disable=unused-argument
     def __init__(self, credentials):
-        self.image = cloudless.providers.aws.impl.image.ImageClient(boto3, credentials,
-                                                                    mock=True)
+        self.image = cloudless.providers.aws.impl.image.ImageClient(boto3, mock=True)
 
     def create(self, name, service):
         """
