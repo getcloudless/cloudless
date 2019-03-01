@@ -50,6 +50,9 @@ class NaturalOrderAliasedGroup(NaturalOrderGroup):
 def handle_profile_for_cli(ctx):
     """
     Loads the profile and sets the proper fields on the context object for the command line.
+
+    Note, the API does handle the profile as well, but this is an attempt to return nice errors to
+    the user.  It would be nice to make this cleaner/deduplicate code.
     """
     profile = cloudless.profile.load_profile(ctx.obj['PROFILE'])
     if not profile:

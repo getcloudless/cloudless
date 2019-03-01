@@ -45,7 +45,7 @@ cldls network list
 
 This will set the "default" profile to use the "gce" backend.  You can change
 the profile by passing `--profile` to cloudless or setting the
-`CLOUDLESS_PROFILE` environment variable.
+`CLOUDLESS_PROFILE` environment variable.  See [Profiles](#profiles) for more information.
 
 ### Amazon Web Services Credentials
 
@@ -63,7 +63,7 @@ cldls network list
 
 This will set the "default" profile to use the "aws" backend.  You can change
 the profile by passing `--profile` to cloudless or setting the
-`CLOUDLESS_PROFILE` environment variable.
+`CLOUDLESS_PROFILE` environment variable.  See [Profiles](#profiles) for more information.
 
 ### Simple Service
 
@@ -97,6 +97,16 @@ For example, for bash puth this in your .bashrc:
 ```shell
 eval "$(_CLDLS_COMPLETE=source cldls)"
 ```
+
+## Profiles
+
+Both the API and the command line support using profiles that are created with `cldls init`.  The
+order of priority for loading profiles is:
+
+1. Explicitly set via the `profile` argument to `cloudless.Client` in the python api, or via the
+   `--profile` option to the `cldls` command line.
+2. Set in the `CLOUDLESS_PROFILE` environment variable.
+3. `"default"`
 
 ## Client Setup In Python API
 
@@ -138,6 +148,9 @@ client = cloudless.Client("gce", credentials={
     "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
 ```
 
+If you want to avoid having to pass all this configuration explicitly to the client object, you can
+use a [Cloudless Profile](#profiles).
+
 ### Amazon Web Services Client
 
 Currently no credentials can be passed in as arguments for the AWS provider
@@ -148,13 +161,17 @@ credential setup
 documentation](https://boto3.readthedocs.io/en/latest/guide/configuration.html)
 for more details.
 
-Once you have set up your credentials, you can run the following to create an
-AWS client:
+Once you have set up your credentials, you can run the following to create an AWS client that uses
+the "default" aws profile (if you pass an empty credentials object, this cloudless profile will use
+whatever the `AWS_PROFILE` environment variable is set to, which might be confusing):
 
 ```python
 import cloudless
-client = cloudless.Client("aws", credentials={})
+client = cloudless.Client("aws", credentials={"profile": "default"})
 ```
+
+If you want to avoid having to pass all this configuration explicitly to the client object, you can
+use a [Cloudless Profile](#profiles).
 
 ### Mock Amazon Web Services Client
 
@@ -480,5 +497,5 @@ tox -e gce
 tox -e aws
 ```
 
-For GCE, you must set `CLOUDLESS_GCE_USER_ID`, `CLOUDLESS_GCE_CREDENTIALS_PATH`, and
-`CLOUDLESS_GCE_PROJECT_NAME` as described above.
+These will use the `gce-cloudless-test` and `aws-cloudless-test` cloudless
+profiles respectively.  See [Profiles](#profiles) for more information.

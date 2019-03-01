@@ -16,7 +16,11 @@ The main entry point to this module is through the `cloudless.Client` object, an
 interact with a backing cloud provider go through this object.
 """
 import logging
+import os
 import lazy_import
+from cloudless.util.exceptions import DisallowedOperationException, ProfileNotFoundException
+import cloudless.profile
+
 # Lazily import these so the import and command line is fast unless we are actually creating a
 # client.
 # pylint:disable=invalid-name
@@ -72,11 +76,42 @@ class Client:
     details.
     """
 
-    def __init__(self, provider, credentials):
-        self.network = network.NetworkClient(provider, credentials)
-        self.service = service.ServiceClient(provider, credentials)
-        self.paths = paths.PathsClient(provider, credentials)
-        self.image = image.ImageClient(provider, credentials)
+    def __init__(self, profile=None, provider=None, credentials=None):
+        """
+        Initialize the client.  These are the three ways to set provider and credentials, in order
+        of priority:
+
+        1. Explicitly set the `provider` and `credentials` arguments.
+        2. Explicitly set the the `profile` argument.
+        3. Set the `CLOUDLESS_PROFILE` environment variable.
+        4. Set none of the above to use the "default" profile.
+
+        You must have created a profile with `cldls init` to use any of the above profile based
+        options.
+        """
+        if profile and provider:
+            raise DisallowedOperationException("Cannot set both profile and provider")
+        if profile and credentials:
+            raise DisallowedOperationException("Cannot set credentials if profile is set")
+
+        self.provider = provider
+        self.credentials = credentials
+
+        if not self.provider:
+            self.profile = cloudless.profile.select_profile(profile)
+            profile_data = cloudless.profile.load_profile(self.profile)
+            if not profile_data:
+                raise ProfileNotFoundException("Profile: \"%s\" not found." % self.profile)
+            if 'provider' not in profile_data:
+                raise DisallowedOperationException(
+                    "Provider not set in profile \"%s\"" % self.profile)
+            self.provider = profile_data["provider"]
+            self.credentials = profile_data["credentials"]
+
+        self.network = network.NetworkClient(self.provider, self.credentials)
+        self.service = service.ServiceClient(self.provider, self.credentials)
+        self.paths = paths.PathsClient(self.provider, self.credentials)
+        self.image = image.ImageClient(self.provider, self.credentials)
 
     # pylint: disable=too-many-locals
     def graph(self):

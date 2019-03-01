@@ -17,13 +17,13 @@ GCE_SERVICE_BLUEPRINT = os.path.join(EXAMPLES_DIR, "base-image", "gce_blueprint.
 cloudless.set_level(logging.DEBUG)
 
 # pylint: disable=too-many-locals,too-many-statements
-def run_image_test(provider, credentials):
+def run_image_test(profile=None, provider=None, credentials=None):
     """
     Test that the instance management works against the given provider.
     """
 
     # Get the client for this test
-    client = cloudless.Client(provider, credentials)
+    client = cloudless.Client(profile, provider, credentials)
 
     # Get a somewhat unique network name
     network_name = generate_unique_name("unittest")
@@ -31,10 +31,10 @@ def run_image_test(provider, credentials):
 
     # Provision a service with one instance
     test_network = client.network.create(network_name, blueprint=NETWORK_BLUEPRINT)
-    if provider in ["aws", "mock-aws"]:
+    if client.provider in ["aws", "mock-aws"]:
         service = client.service.create(test_network, "service", AWS_SERVICE_BLUEPRINT, {}, count=1)
     else:
-        assert provider == "gce"
+        assert client.provider == "gce"
         service = client.service.create(test_network, "service", GCE_SERVICE_BLUEPRINT, {}, count=1)
 
     def validate_service(network, service, count):
@@ -70,7 +70,7 @@ def run_image_test(provider, credentials):
 
     # Get image
     assert not client.image.get(image_name)
-    if provider == "mock-aws":
+    if client.provider == "mock-aws":
         assert not client.image.list()
 
     # Clean up everything else
@@ -89,14 +89,11 @@ def test_image_aws():
     """
     Run tests against real AWS (using global configuration).
     """
-    run_image_test(provider="aws", credentials={"profile": "aws-cloudless-test"})
+    run_image_test(profile="aws-cloudless-test")
 
 @pytest.mark.gce
 def test_image_gce():
     """
     Run tests against real GCE (environment variables below must be set).
     """
-    run_image_test(provider="gce", credentials={
-        "user_id": os.environ['CLOUDLESS_GCE_USER_ID'],
-        "key": os.environ['CLOUDLESS_GCE_CREDENTIALS_PATH'],
-        "project": os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
+    run_image_test(profile="gce-cloudless-test")

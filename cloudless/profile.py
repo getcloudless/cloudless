@@ -51,3 +51,17 @@ def load_profile(profile):
     file_config_source = FileConfigSource()
     config = file_config_source.load()
     return config.get(profile, None)
+
+def select_profile(profile=None):
+    """
+    Figure out what profile we should use.  Order of precedence:
+
+    1. Explicitly set profile
+    2. CLOUDLESS_PROFILE environment variable
+    3. "default"
+    """
+    if profile:
+        return profile
+    if "CLOUDLESS_PROFILE" in os.environ:
+        return os.environ["CLOUDLESS_PROFILE"]
+    return "default"

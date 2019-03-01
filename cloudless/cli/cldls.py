@@ -1,7 +1,6 @@
 """
 Cloudless command line interface definitions.
 """
-import os
 import logging
 import click
 from click_repl import register_repl
@@ -14,6 +13,7 @@ from cloudless.cli.image import add_image_group
 from cloudless.cli.image_build import add_image_build_group
 from cloudless.cli.utils import NaturalOrderGroup
 import cloudless
+import cloudless.profile
 
 cloudless.set_level(logging.INFO)
 cloudless.set_global_level(logging.WARN)
@@ -39,12 +39,7 @@ def get_cldls():
         if debug:
             click.echo('Enabling debug logging.')
             cloudless.set_level(logging.DEBUG)
-        if profile:
-            ctx.obj['PROFILE'] = profile
-        elif "CLOUDLESS_PROFILE" in os.environ:
-            ctx.obj['PROFILE'] = os.environ["CLOUDLESS_PROFILE"]
-        else:
-            ctx.obj['PROFILE'] = "default"
+        ctx.obj['PROFILE'] = cloudless.profile.select_profile(profile)
 
     add_init_group(cldls)
     add_network_group(cldls)
