@@ -94,11 +94,12 @@ class NetworkClient:
             raise BadEnvironmentStateException(
                 "Expected to find at most one VPC named: %s, "
                 "output: %s" % (name, vpcs))
-        elif not vpcs["Vpcs"]:
+
+        if not vpcs["Vpcs"]:
             return None
-        else:
-            return canonicalize_network_info(name, vpcs["Vpcs"][0],
-                                             self.driver.session.Session().region_name)
+
+        return canonicalize_network_info(name, vpcs["Vpcs"][0],
+                                         self.driver.session.Session().region_name)
 
     # pylint: disable=no-self-use
     def destroy(self, network):
