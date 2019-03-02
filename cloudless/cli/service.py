@@ -38,7 +38,7 @@ def add_service_group(cldls):
         """
         if var_file:
             with open(var_file, 'r') as stream:
-                var_file_contents = yaml.load(stream)
+                var_file_contents = yaml.safe_load(stream)
         else:
             var_file_contents = {}
         network_object = get_network_for_cli(ctx, network)
