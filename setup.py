@@ -38,7 +38,9 @@ NAME = 'cloudless'
 REQUIRED = [
     'boto3>=1.9.39,<1.10.0',
     'botocore>=1.12.39,<1.13.0',
-    'PyYaml>=4.2b1,<4.3',
+    # This is vulnerable to https://github.com/yaml/pyyaml/issues/207, but unfortunately there's no
+    # released version that fixes that at this moment.  For now, use safe_load everywhere.
+    'PyYaml>=3.13,<4.3',
     'jinja2>=2.10,<3.0',
     # This pytest dependency is only for the module tester.  Perhaps this should
     # be a separate module eventually.

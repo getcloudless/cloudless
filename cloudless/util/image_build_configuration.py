@@ -20,7 +20,7 @@ class ImageBuildConfiguration:
     def __init__(self, config):
         with open(config, 'r') as stream:
             try:
-                self.config = yaml.load(stream)
+                self.config = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 logger.error("Error parsing config: %s", exc)
                 raise exc

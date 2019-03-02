@@ -22,7 +22,7 @@ class FileConfigSource:
         if not os.path.exists(self.config_path):
             return None
         with open(self.config_path, 'r') as config_file:
-            return yaml.load(config_file)
+            return yaml.safe_load(config_file)
 
     def save(self, config):
         """

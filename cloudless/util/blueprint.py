@@ -29,7 +29,7 @@ class Blueprint:
     def __init__(self, blueprint, blueprint_path="./"):
         logger.debug("Creating blueprint from data: %s", blueprint)
         try:
-            self.blueprint = yaml.load(blueprint)
+            self.blueprint = yaml.safe_load(blueprint)
         except yaml.YAMLError as exc:
             logger.error("Error parsing blueprint: %s", exc)
             raise exc
