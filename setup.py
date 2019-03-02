@@ -60,7 +60,7 @@ TESTS_REQUIRED = [
     'pytest>=3.8.0,<3.9.0',
     'pytest-xdist>=1.23.0,<1.24.0',
     'tox>=3.2.1,<3.3.0',
-    'pylint>=2.1.1,<2.2.0',
+    'pylint>=2.3.1,<2.4.0',
 ]
 
 # What packages are optional?
@@ -118,7 +118,6 @@ class UploadCommand(Command):
         """
         Unused/noop
         """
-        pass
 
     def run(self):
         """
