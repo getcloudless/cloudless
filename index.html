@@ -61,6 +61,8 @@
         
             <li><a class="toctree-l3" href="#quick-start">Quick Start</a></li>
         
+            <li><a class="toctree-l3" href="#profiles">Profiles</a></li>
+        
             <li><a class="toctree-l3" href="#client-setup-in-python-api">Client Setup In Python API</a></li>
         
             <li><a class="toctree-l3" href="#architecture">Architecture</a></li>
@@ -163,7 +165,7 @@ cldls network list
 
 <p>This will set the "default" profile to use the "gce" backend.  You can change
 the profile by passing <code>--profile</code> to cloudless or setting the
-<code>CLOUDLESS_PROFILE</code> environment variable.</p>
+<code>CLOUDLESS_PROFILE</code> environment variable.  See <a href="#profiles">Profiles</a> for more information.</p>
 <h3 id="amazon-web-services-credentials">Amazon Web Services Credentials</h3>
 <p>To set up the Amazon Web Services client, follow the steps at
 <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html">https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html</a>
@@ -177,7 +179,7 @@ cldls network list
 
 <p>This will set the "default" profile to use the "aws" backend.  You can change
 the profile by passing <code>--profile</code> to cloudless or setting the
-<code>CLOUDLESS_PROFILE</code> environment variable.</p>
+<code>CLOUDLESS_PROFILE</code> environment variable.  See <a href="#profiles">Profiles</a> for more information.</p>
 <h3 id="simple-service">Simple Service</h3>
 <p>The next steps are identical regardless of which cloud provider you're using.
 They do assume you have an image named "cloudless-example-base-image-v0" with
@@ -203,6 +205,15 @@ for other shells.</p>
 <pre><code class="shell">eval &quot;$(_CLDLS_COMPLETE=source cldls)&quot;
 </code></pre>
 
+<h2 id="profiles">Profiles</h2>
+<p>Both the API and the command line support using profiles that are created with <code>cldls init</code>.  The
+order of priority for loading profiles is:</p>
+<ol>
+<li>Explicitly set via the <code>profile</code> argument to <code>cloudless.Client</code> in the python api, or via the
+   <code>--profile</code> option to the <code>cldls</code> command line.</li>
+<li>Set in the <code>CLOUDLESS_PROFILE</code> environment variable.</li>
+<li><code>"default"</code></li>
+</ol>
 <h2 id="client-setup-in-python-api">Client Setup In Python API</h2>
 <p>In the Python API, you must create a client object to connect to the cloud
 platform that you'll be working with.  The client handles authentication with
@@ -234,6 +245,8 @@ client = cloudless.Client(&quot;gce&quot;, credentials={
     &quot;project&quot;: os.environ['CLOUDLESS_GCE_PROJECT_NAME']})
 </code></pre>
 
+<p>If you want to avoid having to pass all this configuration explicitly to the client object, you can
+use a <a href="#profiles">Cloudless Profile</a>.</p>
 <h3 id="amazon-web-services-client">Amazon Web Services Client</h3>
 <p>Currently no credentials can be passed in as arguments for the AWS provider
 (they are ignored).  However this provider is implemented with
@@ -242,12 +255,15 @@ for the credentials, so you can configure them in other ways.  See the <a href="
 credential setup
 documentation</a>
 for more details.</p>
-<p>Once you have set up your credentials, you can run the following to create an
-AWS client:</p>
+<p>Once you have set up your credentials, you can run the following to create an AWS client that uses
+the "default" aws profile (if you pass an empty credentials object, this cloudless profile will use
+whatever the <code>AWS_PROFILE</code> environment variable is set to, which might be confusing):</p>
 <pre><code class="python">import cloudless
-client = cloudless.Client(&quot;aws&quot;, credentials={})
+client = cloudless.Client(&quot;aws&quot;, credentials={&quot;profile&quot;: &quot;default&quot;})
 </code></pre>
 
+<p>If you want to avoid having to pass all this configuration explicitly to the client object, you can
+use a <a href="#profiles">Cloudless Profile</a>.</p>
 <h3 id="mock-amazon-web-services-client">Mock Amazon Web Services Client</h3>
 <p>The Mock AWS client is for demonstration and testing.  Since it is all running
 locally, you don't need any credentials.  Simply run:</p>
@@ -498,8 +514,8 @@ tox
 tox -e aws
 </code></pre>
 
-<p>For GCE, you must set <code>CLOUDLESS_GCE_USER_ID</code>, <code>CLOUDLESS_GCE_CREDENTIALS_PATH</code>, and
-<code>CLOUDLESS_GCE_PROJECT_NAME</code> as described above.</p>
+<p>These will use the <code>gce-cloudless-test</code> and <code>aws-cloudless-test</code> cloudless
+profiles respectively.  See <a href="#profiles">Profiles</a> for more information.</p>
               
             </div>
           </div>
@@ -548,5 +564,5 @@ tox -e aws
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2018-10-17 18:11:49
+Build Date UTC : 2019-03-03 17:46:39
 -->
