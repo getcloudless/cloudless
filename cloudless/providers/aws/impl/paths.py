@@ -10,7 +10,7 @@ import ipaddress
 import cloudless.providers.aws.service
 from cloudless.providers.aws.impl.asg import ASG
 from cloudless.providers.aws.log import logger
-from cloudless.util.exceptions import BadEnvironmentStateException, DisallowedOperationException
+from cloudless.util.exceptions import DisallowedOperationException
 from cloudless.util.public_blocks import get_public_blocks
 from cloudless.types.common import Service, Path, Subnetwork
 from cloudless.types.networking import CidrBlock
@@ -136,10 +136,9 @@ class PathsClient:
             sg_id = self.asg.get_launch_configuration_security_group(
                 service.network.name, service.name)
             if sg_id in sg_to_service:
-                raise BadEnvironmentStateException(
-                    "Service %s and %s have same security group: %s" %
-                    (sg_to_service[sg_id], service, sg_id))
-            sg_to_service[sg_id] = service
+                sg_to_service[sg_id].append(service)
+            else:
+                sg_to_service[sg_id] = [service]
         security_groups = ec2.describe_security_groups()
 
         def make_path(destination, source, rule):
@@ -162,8 +161,9 @@ class PathsClient:
         def get_sg_paths(destination, ip_permissions):
             paths = []
             for group in ip_permissions["UserIdGroupPairs"]:
-                service = sg_to_service[group["GroupId"]]
-                paths.append(make_path(destination, service, ip_permissions))
+                services = sg_to_service[group["GroupId"]]
+                for service in services:
+                    paths.append(make_path(destination, service, ip_permissions))
             return paths
 
         paths = []
@@ -174,11 +174,12 @@ class PathsClient:
                              security_group["GroupId"])
                 continue
 
-            service = sg_to_service[security_group["GroupId"]]
-            for ip_permissions in security_group["IpPermissions"]:
-                logger.debug("ip_permissions: %s", ip_permissions)
-                paths.extend(get_cidr_paths(service, ip_permissions))
-                paths.extend(get_sg_paths(service, ip_permissions))
+            services = sg_to_service[security_group["GroupId"]]
+            for service in services:
+                for ip_permissions in security_group["IpPermissions"]:
+                    logger.debug("ip_permissions: %s", ip_permissions)
+                    paths.extend(get_cidr_paths(service, ip_permissions))
+                    paths.extend(get_sg_paths(service, ip_permissions))
 
         return paths
 
