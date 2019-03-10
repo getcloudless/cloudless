@@ -50,6 +50,8 @@ REQUIRED = [
     'click-repl>=0.1.5,<0.2.0',
     'apache-libcloud>=2.3.0,<2.4.0',
     'pycryptodome>=3.6.6,<3.7.0',
+    "jsonschema>=3.0.1,<4.0.0",
+    "cattrs>=0.9.0,<1.0.0",
     # Even though moto is for testing, need it for the "mock-aws" provider.
     'moto>=1.3.7,<1.4.0',
     'lazy_import>=0.2.2,<0.3.0',

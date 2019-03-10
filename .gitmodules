@@ -1,0 +1,3 @@
+[submodule "cloudless/cloudless-core-model"]
+	path = cloudless/cloudless-core-model
+	url = git@github.com:getcloudless/cloudless-core-model.git
