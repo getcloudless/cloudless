@@ -20,6 +20,7 @@ import os
 import lazy_import
 from cloudless.util.exceptions import DisallowedOperationException, ProfileNotFoundException
 import cloudless.profile
+from cloudless.providers import get_provider
 
 # Lazily import these so the import and command line is fast unless we are actually creating a
 # client.
@@ -52,7 +53,7 @@ def set_global_level(level):
 set_level(logging.INFO)
 set_global_level(logging.INFO)
 
-# pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods, too-many-instance-attributes
 class Client:
     """
     Top Level Cloudless Client.
@@ -108,6 +109,7 @@ class Client:
             self.provider = profile_data["provider"]
             self.credentials = profile_data["credentials"]
 
+        self.model = get_provider(self.provider).model.get_model(self.credentials)
         self.network = network.NetworkClient(self.provider, self.credentials)
         self.service = service.ServiceClient(self.provider, self.credentials)
         self.paths = paths.PathsClient(self.provider, self.credentials)

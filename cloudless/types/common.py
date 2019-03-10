@@ -16,7 +16,11 @@ This is because the API only has two entry points: a Network or a Service.  The 
 what Network it's in and encapsulates all information about it.  Additional functions to only
 extract instances or subnetworks could be layered on top of this.
 """
+import os
+import json
+from typing import Optional
 import attr
+from cloudless.model import Resource
 
 @attr.s
 class Network:
@@ -79,3 +83,52 @@ class Image:
     name = attr.ib(type=str)
     image_id = attr.ib(type=str)
     created_at = attr.ib(type=str)
+
+@attr.s(auto_attribs=True)
+class Selector:
+    """
+    A selector of various things.
+    """
+    name: str
+    ids: Optional[list] = None
+
+def load_model(model_filename):
+    """
+    Hackish helper function to load the schema json file.  The goal here is to make each python
+    resource object validate its own JSON schema on load.
+
+    I might just have to not use attrs to do this.  :(
+    """
+    schema_path = "%s/../cloudless-core-model/models/%s" % (os.path.dirname(
+        os.path.realpath(__file__)), model_filename)
+    with open(schema_path) as model_raw:
+        model = json.loads(model_raw.read())
+    return model
+
+@attr.s(auto_attribs=True)
+class Firewall(Resource):
+    """
+    Simple container to hold firewall information.
+    """
+    version: str
+    name: str
+    id: Optional[str] = None
+    target: Optional[Selector] = None
+    source_instances: Optional[list] = None
+    source_cidr_blocks: Optional[list] = None
+    network: Optional[Selector] = None
+Firewall.schema = load_model("firewall.json")
+
+@attr.s(auto_attribs=True)
+class NetworkModel(Resource):
+    """
+    Simple container to hold network information.
+    """
+    version: str
+    name: str
+    id: Optional[str] = None
+    parent_id: Optional[str] = None
+    region: Optional[str] = None
+    availability_zone: Optional[str] = None
+    cidr_block: Optional[str] = None
+NetworkModel.schema = load_model("network.json")
