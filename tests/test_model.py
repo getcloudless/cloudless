@@ -1,18 +1,12 @@
 """
 Tests for model management.
 """
-import os
 import pytest
 import cloudless
 from cloudless.testutils.blueprint_tester import generate_unique_name
-from cloudless.types.common import Firewall, NetworkModel
+from cloudless.types.common import Firewall, NetworkModel, ImageModel
 
-EXAMPLE_BLUEPRINTS_DIR = os.path.join(os.path.dirname(__file__),
-                                      "..", "examples")
-NETWORK_BLUEPRINT = os.path.join(EXAMPLE_BLUEPRINTS_DIR,
-                                 "network", "blueprint.yml")
-
-def run_model_test(profile=None, provider=None, credentials=None):
+def run_firewall_model_test(profile=None, provider=None, credentials=None):
     """
     Test model management on the given provider.
     """
@@ -60,27 +54,51 @@ def run_model_test(profile=None, provider=None, credentials=None):
     network_get = client.model.get("Network", network)
     assert not network_get
 
+def run_image_model_test(profile=None, provider=None, credentials=None):
+    """
+    Test image model on the given provider.
+    """
+    client = cloudless.Client(profile, provider, credentials)
+
+    # Create Image model
+    image = ImageModel.fromdict({"name": "*ubuntu*xenial*", "version": "0.0.0",
+                                 "creation_date": "latest"})
+
+    # Make sure the image model is registered
+    assert "Image" in client.model.resources()
+
+    image_get = client.model.get("Image", image)
+    assert len(image_get) == 1
+    assert "ubuntu" in image_get[0].name
+
 
 @pytest.mark.mock_aws
-def test_model_mock():
+def test_firewall_model_mock():
     """
     Run tests using the mock aws driver (moto).
     """
-    run_model_test(provider="mock-aws", credentials={})
+    run_firewall_model_test(provider="mock-aws", credentials={})
+
+@pytest.mark.mock_aws
+def test_image_model_mock():
+    """
+    Run tests using the mock aws driver (moto).
+    """
+    run_image_model_test(provider="mock-aws", credentials={})
 
 
 # Disabling anything besides mock AWS as this API is still in flux
 #@pytest.mark.aws
-#def test_model_aws():
+#def test_firewall_model_aws():
 #    """
 #    Run tests against real AWS (using global configuration).
 #    """
-#    run_model_test(profile="aws-cloudless-test")
+#    run_firewall_model_test(profile="aws-cloudless-test")
 #
 #
 #@pytest.mark.gce
-#def test_model_gce():
+#def test_firewall_model_gce():
 #    """
 #    Run tests against real GCE (environment variables below must be set).
 #    """
-#    run_model_test(profile="gce-cloudless-test")
+#    run_firewall_model_test(profile="gce-cloudless-test")

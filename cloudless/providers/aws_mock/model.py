@@ -3,7 +3,7 @@ Cloudless Model on Mock AWS
 """
 import os
 import cloudless.model
-from cloudless.providers.aws_mock import firewall, network_model
+from cloudless.providers.aws_mock import firewall, network_model, image_model
 
 def get_model(credentials):
     """
@@ -18,4 +18,7 @@ def get_model(credentials):
     model.register("Network",
                    "%s/network.json" % models_dir,
                    network_model.MockNetworkResourceDriver("mock_aws", credentials))
+    model.register("Image",
+                   "%s/image.json" % models_dir,
+                   image_model.MockImageResourceDriver("mock_aws", credentials))
     return model
