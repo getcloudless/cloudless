@@ -132,3 +132,14 @@ class NetworkModel(Resource):
     availability_zone: Optional[str] = None
     cidr_block: Optional[str] = None
 NetworkModel.schema = load_model("network.json")
+
+@attr.s(auto_attribs=True)
+class ImageModel(Resource):
+    """
+    Simple container to hold image information.
+    """
+    version: str
+    name: str
+    id: Optional[str] = None
+    creation_date: Optional[str] = None
+ImageModel.schema = load_model("image.json")
