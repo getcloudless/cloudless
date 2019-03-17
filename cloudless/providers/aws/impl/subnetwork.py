@@ -39,28 +39,37 @@ class SubnetworkClient:
         """
         Provision the subnets with AWS.
         """
-        # 1. Create subnets across availability zones.
-        subnets_info = []
         instances_blueprint = ServiceBlueprint.from_file(blueprint)
         az_count = instances_blueprint.availability_zone_count()
         max_count = instances_blueprint.max_count()
+        return self.create_from_args(network.name, network.network_id, network.cidr_block,
+                                     subnetwork_name, az_count, max_count)
+
+    # pylint: disable=too-many-arguments
+    def create_from_args(self, network_name, network_id, cidr_block, subnetwork_name, az_count,
+                         max_count):
+        """
+        Provision the subnets with AWS.
+        """
+        # 1. Create subnets across availability zones.
+        subnets_info = []
         prefix = 32 - int(math.log(max_count / az_count, 2))
-        cidr_az_list = zip(self.subnets.carve_subnets(network.network_id, network.cidr_block,
+        cidr_az_list = zip(self.subnets.carve_subnets(network_id, cidr_block,
                                                       prefix, az_count),
                            self.availability_zones.get_availability_zones())
         for subnet_cidr, availability_zone in cidr_az_list:
             subnet_info = canonicalize_subnetwork_info(
                 None,
                 self.subnets.create(subnetwork_name, subnet_cidr, availability_zone,
-                                    network.network_id, RETRY_COUNT, RETRY_DELAY), [])
+                                    network_id, RETRY_COUNT, RETRY_DELAY), [])
             subnets_info.append(subnet_info)
 
         # 2. Make sure we have a route to the internet.
-        self._make_internet_routable(network, subnetwork_name)
+        self._make_internet_routable(network_name, network_id, subnetwork_name)
 
         return subnets_info
 
-    def _make_internet_routable(self, network, subnetwork_name):
+    def _make_internet_routable(self, network_name, network_id, subnetwork_name):
         """
         Create an internet gateway for this network and add routes to it for
         all subnets.
@@ -74,11 +83,11 @@ class SubnetworkClient:
         ec2 = self.driver.client("ec2")
 
         # 1. Get the internet gateway for this VPC.
-        igw_id = self.internet_gateways.get_internet_gateway(network.network_id)
+        igw_id = self.internet_gateways.get_internet_gateway(network_id)
 
         # 2. Add route to it from all subnets.
         subnet_ids = [subnet_info.subnetwork_id for subnet_info
-                      in self.get(network, subnetwork_name)]
+                      in self.get_with_args(network_name, subnetwork_name)]
         for subnet_id in subnet_ids:
             subnet_filter = {'Name': 'association.subnet-id', 'Values': [subnet_id]}
             route_tables = ec2.describe_route_tables(Filters=[subnet_filter])
@@ -95,15 +104,28 @@ class SubnetworkClient:
         Get a subnetwork group in "network" named "subnetwork_name".
         """
         logger.debug("Getting subnet %s in network %s", subnetwork_name, network)
+        return self.get_with_args(network.name, subnetwork_name)
+
+    def get_with_args(self, network_name, subnetwork_name):
+        """
+        Get a subnetwork group in "network" named "subnetwork_name".
+        """
+        logger.debug("Getting subnet %s in network_name %s", subnetwork_name, network_name)
         subnetworks = self.list()
-        for network_name, subnetwork_info in subnetworks.items():
-            if network_name != network.name:
+        for subnetwork_network_name, subnetwork_info in subnetworks.items():
+            if subnetwork_network_name != network_name:
                 continue
             if subnetwork_name in subnetwork_info["subnetworks"]:
                 return subnetwork_info["subnetworks"][subnetwork_name]
         return None
 
     def destroy(self, network, subnetwork_name):
+        """
+        Destroy using the old legacy network object.
+        """
+        return self.destroy_with_args(network.name, network.network_id, subnetwork_name)
+
+    def destroy_with_args(self, network_name, network_id, subnetwork_name):
         """
         Destroy all networks represented by this object.  Also destroys the
         underlying VPC if it's empty.
@@ -119,10 +141,10 @@ class SubnetworkClient:
         """
         ec2 = self.driver.client("ec2")
         subnet_ids = [subnet_info.subnetwork_id for subnet_info
-                      in self.get(network, subnetwork_name)]
+                      in self.get_with_args(network_name, subnetwork_name)]
 
         # 1. Discover the current VPC.
-        dc_id = network.network_id
+        dc_id = network_id
 
         # 2. Destroy route tables.
         def delete_route_table(route_table):

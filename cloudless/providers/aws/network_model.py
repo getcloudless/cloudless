@@ -26,14 +26,19 @@ class NetworkResourceDriver(cloudless.model.ResourceDriver):
         # Get rid of this when I reimplement here, now just for compatibility/testing.
         # Also do not pass the blueprint.
         old_network = self.network.create(network.name, None)
-        return NetworkModel(version=network.version, name=old_network.name)
+        return NetworkModel(version=network.version, name=old_network.name,
+                            id=old_network.network_id,
+                            cidr_block=old_network.cidr_block,
+                            region=old_network.region)
 
     def apply(self, resource_definition):
         network = resource_definition
         # Get rid of this when I reimplement here, now just for compatibility/testing.
         # Also do not pass the blueprint.
         old_network = self.network.get(network.name)
-        return NetworkModel(version=network.version, name=old_network.name)
+        return NetworkModel(version=network.version, name=old_network.name,
+                            cidr_block=old_network.cidr_block,
+                            region=old_network.region)
 
     def delete(self, resource_definition):
         network = resource_definition
@@ -49,7 +54,10 @@ class NetworkResourceDriver(cloudless.model.ResourceDriver):
         # Also do not pass the blueprint.
         old_network = self.network.get(network.name)
         if old_network:
-            return [NetworkModel(version=network.version, name=old_network.name)]
+            return [NetworkModel(version=network.version, name=old_network.name,
+                                 id=old_network.network_id,
+                                 cidr_block=old_network.cidr_block,
+                                 region=old_network.region)]
         return None
 
     def flags(self, resource_definition):
