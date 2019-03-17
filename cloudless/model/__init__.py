@@ -21,7 +21,10 @@ class Resource:
     @classmethod
     def fromdict(cls, resource_dict):
         """Create a new instance of this resource from a dictionary representation."""
-        # This is a gross hack to get this working for now...
+        # This is a gross hack to get this working for now...  I want each instance of a Resource
+        # object to include a "schema" member, and so I attach it to the class and reference it
+        # here.  I could probably just have the init do it, but then the subclasses have to remember
+        # to call super.
         # pylint: disable=no-member
         validate(instance=resource_dict, schema=cls.schema)
         return cattr.structure(resource_dict, cls)

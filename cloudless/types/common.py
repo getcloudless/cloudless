@@ -17,8 +17,8 @@ what Network it's in and encapsulates all information about it.  Additional func
 extract instances or subnetworks could be layered on top of this.
 """
 import os
-import json
 from typing import Optional
+import jsonref
 import attr
 from cloudless.model import Resource
 
@@ -99,10 +99,11 @@ def load_model(model_filename):
 
     I might just have to not use attrs to do this.  :(
     """
-    schema_path = "%s/../cloudless-core-model/models/%s" % (os.path.dirname(
-        os.path.realpath(__file__)), model_filename)
+    schema_path = os.path.abspath("%s/../cloudless-core-model/models/%s" % (os.path.dirname(
+        os.path.realpath(__file__)), model_filename))
+    schema_uri = 'file://{}/'.format(os.path.dirname(schema_path))
     with open(schema_path) as model_raw:
-        model = json.loads(model_raw.read())
+        model = jsonref.loads(model_raw.read(), base_uri=schema_uri, jsonschema=True)
     return model
 
 @attr.s(auto_attribs=True)
