@@ -143,3 +143,16 @@ class ImageModel(Resource):
     id: Optional[str] = None
     creation_date: Optional[str] = None
 ImageModel.schema = load_model("image.json")
+
+@attr.s(auto_attribs=True)
+class SubnetModel(Resource):
+    """
+    Simple container to hold subnet information.
+    """
+    version: str
+    name: str
+    network: Optional[NetworkModel] = None
+    region: Optional[str] = None
+    subnets: Optional[list] = None
+    size: Optional[int] = 256
+SubnetModel.schema = load_model("subnet.json")
