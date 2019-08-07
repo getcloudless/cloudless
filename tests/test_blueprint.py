@@ -35,11 +35,11 @@ def test_blueprint():
     assert sbp.runtime_scripts(template_vars) == OPTIONAL_SET
     template_vars = {"list_var": ["foo"], "other_var": ["bar"], "optional_var": ["baz"],
                      "unrecognized_var": ["bop"]}
-    with pytest.raises(BlueprintException,
-                       message="Expected unrecognized value exception"):
+    with pytest.raises(BlueprintException):
         sbp.runtime_scripts(template_vars)
-    with pytest.raises(BlueprintException,
-                       message="Expected missing value exception"):
+        pytest.fail("Expected unrecognized value exception")
+    with pytest.raises(BlueprintException):
         sbp.runtime_scripts({})
+        pytest.fail("Expected missing value exception")
     sbp = ServiceBlueprint.from_file(NOVARS_BLUEPRINT)
     sbp.runtime_scripts({})

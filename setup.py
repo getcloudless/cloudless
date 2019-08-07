@@ -36,36 +36,34 @@ NAME = 'cloudless'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'boto3>=1.9.39,<1.10.0',
-    'botocore>=1.12.39,<1.13.0',
-    # This is vulnerable to https://github.com/yaml/pyyaml/issues/207, but unfortunately there's no
-    # released version that fixes that at this moment.  For now, use safe_load everywhere.
-    'PyYaml>=3.13,<4.3',
-    'jinja2>=2.10,<3.0',
+    'boto3==1.9.202',
+    'botocore==1.12.202',
+    'PyYAML==5.1.2',
+    'Jinja2==2.10.1',
     # This pytest dependency is only for the module tester.  Perhaps this should
     # be a separate module eventually.
-    'pytest>=3.8.0,<3.9.0',
-    'attr>=0.3.1,<0.4.0',
-    'click>=6.7,<7.0',
-    'click-repl>=0.1.5,<0.2.0',
-    'apache-libcloud>=2.3.0,<2.4.0',
-    'pycryptodome>=3.6.6,<3.7.0',
-    "jsonschema>=3.0.1,<4.0.0",
-    "jsonref>=0.2,<1.0",
-    "cattrs>=0.9.0,<1.0.0",
+    'pytest==5.0.1',
+    'attr==0.3.1',
+    'Click==7.0',
+    'click-repl==0.1.6',
+    'apache-libcloud==2.5.0',
+    'pycryptodome==3.8.2',
+    'jsonschema==3.0.2',
+    'jsonref==0.2',
+    'cattrs==0.9.0',
     # Even though moto is for testing, need it for the "mock-aws" provider.
-    'moto>=1.3.7,<1.4.0',
-    'lazy_import>=0.2.2,<0.3.0',
-    'retrying>=1.3.3,<1.4.0',
-    'paramiko>=2.4.1,<2.5.0',
+    'moto==1.3.13',
+    'lazy_import==0.2.2',
+    'retrying==1.3.3',
+    'paramiko==2.6.0',
 ]
 
 # What packages are required for this module to be tested?
 TESTS_REQUIRED = [
-    'pytest>=3.8.0,<3.9.0',
-    'pytest-xdist>=1.23.0,<1.24.0',
-    'tox>=3.2.1,<3.3.0',
-    'pylint>=2.3.1,<2.4.0',
+    'pytest==5.0.1',
+    'pytest-xdist==1.29.0',
+    'tox==3.13.2',
+    'pylint==2.3.1',
 ]
 
 # What packages are optional?
