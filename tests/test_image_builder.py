@@ -156,18 +156,18 @@ def test_image_builder(mock_filesystem, mock_image_build_configuration):
     # Make sure configure works and properly finds errors.
     image_builder.configure()
     mock_image_build_configuration.set_configure_script_path(BAD_CONFIGURE_FILE)
-    with pytest.raises(Exception,
-                       message="Expected exception on bad configure file"):
+    with pytest.raises(Exception):
         image_builder.configure()
+        pytest.fail("Expected exception on bad configure file")
     mock_image_build_configuration.set_configure_script_path(CONFIGURE_FILE)
     image_builder.configure()
 
     # Make sure check works and properly finds errors.
     image_builder.check()
     mock_image_build_configuration.set_check_script_path(BAD_CHECK_FILE)
-    with pytest.raises(Exception,
-                       message="Expected exception on bad check file"):
+    with pytest.raises(Exception):
         image_builder.check()
+        pytest.fail("Expected exception on bad check file")
     mock_image_build_configuration.set_check_script_path(CHECK_FILE)
     image_builder.check()
 

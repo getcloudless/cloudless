@@ -7,7 +7,6 @@ instances.
 import time
 import json
 import itertools
-import requests
 import dateutil.parser
 from botocore.exceptions import ClientError
 
@@ -307,6 +306,14 @@ class ServiceClient:
         Get a list of node sizes to use for matching resource requirements to
         instance type.
         """
+        # The pricing api is not implemented in moto
+        if self.mock:
+            return [{
+                "type": "c4.8xlarge",
+                "memory": 9999999999999,
+                "cpus": 100
+                }]
+
         pricing = self.driver.client("pricing")
 
         filters = [
@@ -321,22 +328,13 @@ class ServiceClient:
             ]
         next_token = ""
         node_sizes = []
-        try:
-            while True:
-                products = pricing.get_products(ServiceCode="AmazonEC2",
-                                                Filters=filters, NextToken=next_token)
-                for node_info in products["PriceList"]:
-                    node_sizes.append(
-                        canonicalize_node_size(json.loads(node_info)["product"]["attributes"]))
-                if "NextToken" not in products:
-                    break
-                next_token = products["NextToken"]
-        except requests.exceptions.ConnectionError:
-            # This happens in moto, this should probably figure out whether moto
-            # is in use in a smarter way.
-            return [{
-                "type": "c4.8xlarge",
-                "memory": 9999999999999,
-                "cpus": 100
-                }]
+        while True:
+            products = pricing.get_products(ServiceCode="AmazonEC2",
+                                            Filters=filters, NextToken=next_token)
+            for node_info in products["PriceList"]:
+                node_sizes.append(
+                    canonicalize_node_size(json.loads(node_info)["product"]["attributes"]))
+            if "NextToken" not in products:
+                break
+            next_token = products["NextToken"]
         return node_sizes
