@@ -1,1 +1,7 @@
 include cloudless/testutils/network.yml
+include cloudless/cloudless-core-model/models/firewall.json
+include cloudless/cloudless-core-model/models/image.json
+include cloudless/cloudless-core-model/models/network.json
+include cloudless/cloudless-core-model/models/private-network.json
+include cloudless/cloudless-core-model/models/subnet.json
+include cloudless/cloudless-core-model/models/virtual-machine.json
