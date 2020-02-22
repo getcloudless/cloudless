@@ -1,5 +1,7 @@
 # Cloudless
 
+# WARNING: I'm no longer maintaining this project, see [this post](https://getcloudless.com/cloudless/2020/02/21/abandoning-cloudless-v1.html)
+
 Cloudless makes it easier to interact with cloud resources by doing most of the
 work that a human doesn't need to care about for you, and by being transparent
 about what it's doing.
